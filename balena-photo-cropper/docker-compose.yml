@@ -1,0 +1,23 @@
+version: '2.1'
+
+services:
+  # Service de traitement d'image (OpenCV + Flask)
+  cropper:
+    build: ./cropper
+    privileged: true
+    restart: always
+    ports:
+      - "5000:5000"
+    labels:
+      io.balena.features.kernel-modules: '1'
+
+  # Service Web (Interface PHP)
+  web:
+    build: 
+      context: ./web
+      dockerfile: Dockerfile
+    depends_on:
+      - cropper
+    ports:
+      - "80:80"
+    restart: always
