@@ -3,7 +3,6 @@ from flask import Flask, request, send_file
 import cv2
 import numpy as np
 import io
-import os
 
 app = Flask(__name__)
 
@@ -16,8 +15,7 @@ def process_image():
     nparr = np.frombuffer(file.read(), np.uint8)
     img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
-    if img is None:
-        return "Invalid image", 400
+    if img is None: return "Invalid image", 400
 
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     blurred = cv2.GaussianBlur(gray, (7, 7), 0)
@@ -34,11 +32,10 @@ def process_image():
             x, y, w, h = cv2.boundingRect(cnt)
             if w < w_img * 0.98:
                 roi = img[y:y+h, x:x+w]
-                if roi is not None and roi.size > 0:
-                    if h > w * 1.1:
-                        roi = cv2.rotate(roi, cv2.ROTATE_90_CLOCKWISE)
-                    _, buffer = cv2.imencode('.jpg', roi)
-                    return send_file(io.BytesIO(buffer), mimetype='image/jpeg')
+                if h > w * 1.1:
+                    roi = cv2.rotate(roi, cv2.ROTATE_90_CLOCKWISE)
+                _, buffer = cv2.imencode('.jpg', roi)
+                return send_file(io.BytesIO(buffer), mimetype='image/jpeg')
 
     return "No contours found", 404
 
