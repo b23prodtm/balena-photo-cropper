@@ -1,0 +1,28 @@
+name: Docker Build Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Build with Docker Compose
+      run: |
+        docker compose build
+      env:
+        # On simule un environnement de build pour éviter les erreurs liées aux secrets
+        DOCKER_BUILDKIT: 1
+
+    - name: Success message
+      run: echo "Build test passed for all services (cropper & web)."
