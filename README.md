@@ -1,6 +1,3 @@
-# balena-photo-cropper
-Balena Photo Cropper
-=======
 # Balena Photo Cropper 📸✂️
 Auteur : www.b23prodtm.info | Licence : Apache v2
 
