@@ -25,6 +25,10 @@ jobs:
         context: ./cropper
         platforms: linux/arm/v7
         push: false
+        # Fix: Install build tools inside the Docker image
+        pre-build: |
+          apt-get update && apt-get install -y build-essential gcc g++ make
+          pip install --upgrade pip setuptools
 
     - name: Build Web (ARM v7)
       uses: docker/build-push-action@v5
