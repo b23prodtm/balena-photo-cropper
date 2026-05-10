@@ -1,7 +1,10 @@
 # Balena Photo Cropper 📸✂️
 Balena Photo Cropper is a multi-container solution for Raspberry Pi 3 designed to automate the process of cropping scanned analog photo contact sheets.
 
-[![balena deploy button](https://www.balena.io/deploy.svg)](https://dashboard.balena-cloud.com/deploy?repoUrl=https://github.com/VOTRE_NOM_UTILISATEUR/balena-photo-cropper)
+![Docker Build Test](https://github.com/b23prodtm/balena-photo-cropper/actions/workflows/docker-build.yml/badge.svg)
+
+[![balena deploy button](https://www.balena.io/deploy.svg)](https://dashboard.balena-cloud.com/deploy?repoUrl=https://github.com/b23prodtm/balena-photo-cropper)
+
 ## Features / Fonctionnalités
 - **Web API**: OpenCV + Flask for BalenaCloud.
 - **Desktop Tool**: High-portability script for Windows, macOS, and Linux.
