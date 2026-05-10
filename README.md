@@ -5,11 +5,6 @@ Balena Photo Cropper is a multi-container solution for Raspberry Pi 3 designed t
 
 [![balena deploy button](https://www.balena.io/deploy.svg)](https://dashboard.balena-cloud.com/deploy?repoUrl=https://github.com/b23prodtm/balena-photo-cropper)
 
-## Features / Fonctionnalités
-- **Web API**: OpenCV + Flask for BalenaCloud.
-- **Desktop Tool**: High-portability script for Windows, macOS, and Linux.
-- **Auto-Rotation**: Specifically handles vertical "tourniquet" photos.
-
 🛠 Architecture
 
 Cropper Service (Python/OpenCV): A Flask API that processes images to detect contours and extract individual photos with auto-rotation for vertical shots.
@@ -32,3 +27,16 @@ Once deployed, enable the Public Device URL in your balenaCloud dashboard. Acces
 cd tools
 python interactive_cropper.py your_image.jpg
 ```
+
+## 🚀 Installation
+
+1. **Clone via SSH** : `git clone git@github.com:votre-utilisateur/balena-photo-cropper.git`
+2. **Push vers Balena** : `balena push <fleet_name>`
+
+---
+
+# English
+
+Multi-container service for Raspberry Pi 3 to automate the cropping of analog photo sheets.
+
+**Author**: [www.b23prodtm.info](https://www.b23prodtm.info) | **License**: Apache v2

@@ -1,6 +1,7 @@
 version: '2.1'
 
 services:
+  # Service de traitement d'image (OpenCV + Flask)
   cropper:
     build: ./cropper
     privileged: true
@@ -10,8 +11,11 @@ services:
     labels:
       io.balena.features.kernel-modules: '1'
 
+  # Service Web (Interface CakePHP / PHP)
   web:
-    build: ./web
+    build: 
+      context: ./web
+      dockerfile: Dockerfile
     depends_on:
       - cropper
     ports:

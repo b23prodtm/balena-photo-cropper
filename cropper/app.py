@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from flask import Flask, request, send_file, jsonify
+from flask import Flask, request, send_file
 import cv2
 import numpy as np
 import io
@@ -34,10 +34,11 @@ def process_image():
             x, y, w, h = cv2.boundingRect(cnt)
             if w < w_img * 0.98:
                 roi = img[y:y+h, x:x+w]
-                if h > w * 1.1:
-                    roi = cv2.rotate(roi, cv2.ROTATE_90_CLOCKWISE)
-                _, buffer = cv2.imencode('.jpg', roi)
-                return send_file(io.BytesIO(buffer), mimetype='image/jpeg')
+                if roi is not None and roi.size > 0:
+                    if h > w * 1.1:
+                        roi = cv2.rotate(roi, cv2.ROTATE_90_CLOCKWISE)
+                    _, buffer = cv2.imencode('.jpg', roi)
+                    return send_file(io.BytesIO(buffer), mimetype='image/jpeg')
 
     return "No contours found", 404
 
