@@ -13,14 +13,10 @@ RUN apt-get update && apt-get install -y \
     libblas-dev \
     liblapack-dev \
     libopenblas-dev \
-    libatlas-base-dev \
-    libjasper-dev \
     libtiff-dev \
     libharfbuzz0b \
-    libwebp6 \
     libopenjp2-7 \
     libxslt1-dev \
-    libglib2.0-0 \
     libsm6 \
     libxext6 \
     libxrender-dev \
