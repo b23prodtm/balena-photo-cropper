@@ -4,7 +4,6 @@ FROM python:3.11-slim
 WORKDIR /app
 
 # Installation des dépendances système
-# Note : libatlas-base-dev remplace avantageusement openblas-dev sur Debian pour ARM
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libopenblas-dev \
     libblas-dev \
@@ -23,8 +22,11 @@ RUN pip install --no-cache-dir --upgrade pip wheel setuptools
 # Installation des dépendances Python
 COPY requirements.txt .
 # --prefer-binary est indispensable pour éviter la compilation sur ARM 
-RUN pip install --no-cache-dir --prefer-binary -r requirements.txt
-
+RUN pip install --no-cache-dir \
+    --index-url https://www.piwheels.org/simple \
+    --extra-index-url https://pypi.org/simple \
+    --only-binary=:all: \
+    -r requirements.txt
 COPY app.py .
 
 EXPOSE 5000
