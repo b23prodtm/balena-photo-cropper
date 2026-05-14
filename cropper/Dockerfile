@@ -25,6 +25,6 @@ RUN pip install --no-cache-dir --prefer-binary -r requirements.txt
 
 COPY app.py .
 
-EXPOSE 5000 [cite: 6]
+EXPOSE 5000
 
 CMD ["python3", "app.py"]
