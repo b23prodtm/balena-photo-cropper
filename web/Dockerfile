@@ -1,18 +1,15 @@
-FROM php:8.2-apache
-RUN apt-get update && apt-get install -y \
+FROM php:7.4.33-fpm-alpine3.16
+
+RUN apk add --no-cache \
   libicu-dev \
   libzip-dev \
-  zip unzip git \
-  openssl-provider-legacy libssl3t64 \
-    && rm -rf /var/lib/apt/lists/*
+  zip unzip git
 
-ADD https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
-RUN chmod +x /usr/local/bin/install-php-extensions
+COPY --from=ghcr.io/mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/local/bin/
 RUN install-php-extensions \
   intl zip
 
-RUN a2enmod rewrite
 WORKDIR /var/www/html
 COPY . .
 RUN chown -R www-data:www-data /var/www/html
-EXPOSE 80
+EXPOSE 9000
