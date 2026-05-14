@@ -32,10 +32,9 @@ jobs:
       with:
         images: bprtkop/balena-photo-cropper
         tags: |
-          # Tag 'latest' uniquement sur la branche main
           type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
-          # Tag avec le nom de la branche pour les autres (ex: gemini)
           type=ref,event=branch,enable=${{ github.ref != 'refs/heads/main' }}
+          type=ref,event=pr
 
     - name: Build Cropper (ARM v7)
       uses: docker/build-push-action@v5
