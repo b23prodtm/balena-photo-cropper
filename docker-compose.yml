@@ -20,5 +20,19 @@ services:
     depends_on:
       - cropper
     ports:
-      - "80:80"
+      - "9000:9000"
     restart: always
+    environment:
+      - CROPPER_URL=http://cropper:5000
+
+  nginx:
+    image: nginx:alpine
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - web
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/certs:/etc/nginx/certs:ro
