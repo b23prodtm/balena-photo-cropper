@@ -44,16 +44,6 @@ jobs:
         push: true
         tags: ${{ id.meta.outputs.tags }}
         labels: ${{ id.meta.outputs.labels }}
-        # Fix: Install build tools inside the Docker image
-        pre-build: |
-          # Install necessary build tools
-          apt-get update && apt-get install -y build-essential gcc g++ make libffi-dev libssl-dev python3-dev
-        
-          # Set up Python environment
-          python3 -m pip install --upgrade pip setuptools wheel numpy==1.26.0
-        
-          # Install numpy first separately to ensure wheels are built, then the other requirements
-          pip install -r requirements.txt
 
     - name: Build Web (ARM v7)
       uses: docker/build-push-action@v5
