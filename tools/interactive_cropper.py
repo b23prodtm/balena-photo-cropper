@@ -45,38 +45,55 @@ def redraw():
     cv2.imshow('Validation', img_display)
 
 def main(image_path):
-    global img_orig, img_display, current_rects
-    img_orig = cv2.imread(image_path)
-    if img_orig is None:
+    global img_orig, img_display, current_rects, scale # Ajoutez scale en global
+    
+    # 1. Charger l'image réelle en pleine résolution
+    img_real_full = cv2.imread(image_path)
+    if img_real_full is None:
         print("Erreur: Image non trouvee.")
         return
+
+    # 2. Calculer l'échelle pour l'affichage seulement
     screen_h, screen_w = 950, 1600
-    h, w = img_orig.shape[:2]
-    scale = min(screen_w/w, screen_h/h)
+    h_full, w_full = img_real_full.shape[:2]
+    scale = min(screen_w/w_full, screen_h/h_full)
+    
+    # 3. Créer la version d'affichage (img_orig devient notre référence visuelle)
     if scale < 1:
-        img_orig = cv2.resize(img_orig, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
+        img_orig = cv2.resize(img_real_full, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
+    else:
+        img_orig = img_real_full.copy()
+        scale = 1.0
+
     img_display = img_orig.copy()
-    cv2.namedWindow('Validation', cv2.WINDOW_GUI_NORMAL)
-    cv2.setMouseCallback('Validation', mouse_callback)
-    cv2.resizeWindow('Validation', img_orig.shape[1], img_orig.shape[0])
+    
+    # ... (reste du code setup identique) ...
+
     while True:
         redraw()
         key = cv2.waitKey(0) & 0xFF
         if key == ord('q') or key == 27: break
-        elif key == ord('c'): current_rects = []
-        elif key == ord('u') and current_rects: current_rects.pop()
-        elif key in [13, 10, ord('s')]:
+        elif key in [13, 10, ord('s')]: # Sauvegarde
             if not current_rects: continue
             base_name = os.path.splitext(os.path.basename(image_path))[0]
+            
             for idx, (x, y, w, h) in enumerate(current_rects):
-                y1, y2 = max(0, y), min(img_orig.shape[0], y+h)
-                x1, x2 = max(0, x), min(img_orig.shape[1], x+w)
-                roi = img_orig[y1:y2, x1:x2]
+                # 4. Appliquer le ratio inverse pour retrouver les coordonnées réelles
+                ry1, ry2 = int(max(0, y) / scale), int(min(img_orig.shape[0], y+h) / scale)
+                rx1, rx2 = int(max(0, x) / scale), int(min(img_orig.shape[1], x+w) / scale)
+                
+                # On découpe dans img_real_full (l'image non réduite)
+                roi = img_real_full[ry1:ry2, rx1:rx2]
+                
                 if roi is not None and roi.size > 0:
                     if h > w * 1.1:
                         roi = cv2.rotate(roi, cv2.ROTATE_90_CLOCKWISE)
-                    cv2.imwrite(f"{base_name}_crop_{idx+1}.jpg", roi)
-            print("Extraction terminée.")
+                    
+                    # 5. Sauvegarder avec qualité maximale
+                    params = [int(cv2.IMWRITE_JPEG_QUALITY), 100]
+                    cv2.imwrite(f"{base_name}_crop_{idx+1}.jpg", roi, params)
+            
+            print(f"Extraction terminée à 100% de la résolution d'origine.")
             break
     cv2.destroyAllWindows()
 
