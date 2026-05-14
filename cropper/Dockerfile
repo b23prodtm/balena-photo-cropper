@@ -4,11 +4,7 @@ WORKDIR /app
 
 # Install build tools and BLAS BEFORE pip install
 RUN apt-get update && apt-get install -y \
-    build-essential \
-    cmake \
     git \
-    gcc \
-    g++ \
     gfortran \
     libblas-dev \
     liblapack-dev \
@@ -25,8 +21,11 @@ RUN apt-get update && apt-get install -y \
 
 # Copy and install Python dependencies with BLAS support
 COPY requirements.txt .
-RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
-    pip install --no-cache-dir -r requirements.txt
+# On installe wheel UNE SEULE FOIS pour préparer le terrain
+RUN pip install --no-cache-dir --upgrade pip wheel setuptools
+
+# On force l'utilisation de binaires (wheels) déjà existants
+RUN pip install --no-cache-dir --prefer-binary -r requirements.txt
 
 COPY app.py .
 
