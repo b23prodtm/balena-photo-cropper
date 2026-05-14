@@ -2,6 +2,8 @@ version: '2.1'
 
 services:
   cropper:
+    # On utilise l'image générée par le build bake
+    image: bprtkop/balena-photo-cropper-api:latest
     build: 
       context: ./cropper
       dockerfile: Dockerfile
@@ -11,11 +13,26 @@ services:
       - "5000:5000"
 
   web:
+    image: bprtkop/balena-photo-cropper-web:latest
     build: 
       context: ./web
       dockerfile: Dockerfile
     depends_on:
       - cropper
     ports:
-      - "80:80"
+      - "9000:9000"
     restart: always
+    environment:
+      - CROPPER_URL=http://cropper:5000
+
+  nginx:
+    image: nginx:alpine
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - web
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/certs:/etc/nginx/certs:ro

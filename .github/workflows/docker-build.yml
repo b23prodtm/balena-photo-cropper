@@ -1,15 +1,13 @@
 name: Docker Build Test
 
 on:
-  push:
-    branches: [ main ]
   pull_request:
     branches: [ main ]
 
 jobs:
   build:
-    #runs-on: ubuntu-latest
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
+    #runs-on: self-hosted
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -25,31 +23,11 @@ jobs:
       with:
         username: bprtkop
         password: ${{ secrets.DOCKERHUB_TOKEN }}
-    
-    - name: Extract Docker metadata
-      id: meta
-      uses: docker/metadata-action@v5
-      with:
-        images: bprtkop/balena-photo-cropper
-        tags: |
-          type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
-          type=ref,event=branch,enable=${{ github.ref != 'refs/heads/main' }}
-          type=ref,event=pr
 
-    - name: Build Cropper (ARM v7)
-      uses: docker/build-push-action@v5
+    - name: Build and Push with Bake
+      uses: docker/bake-action@v5
       with:
-        context: ./cropper
-        platforms: linux/arm/v7
         push: true
-        tags: ${{ steps.meta.outputs.tags }}
-        labels: ${{ steps.meta.outputs.labels }}
-
-    - name: Build Web (ARM v7)
-      uses: docker/build-push-action@v5
-      with:
-        context: ./web
-        platforms: linux/arm/v7
-        push: true
-        tags: ${{ steps.meta.outputs.tags }}
-        labels: ${{ steps.meta.outputs.labels }}
+        set: |
+          *.cache-from=type=gha
+          *.cache-to=type=gha,mode=max

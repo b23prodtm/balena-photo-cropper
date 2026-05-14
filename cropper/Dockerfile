@@ -1,33 +1,32 @@
-FROM arm32v7/python:3.11-slim
+# Utilisation d'une image de base agnostique à l'architecture
+FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install build tools and BLAS BEFORE pip install
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    cmake \
-    git \
-    gcc \
-    g++ \
-    gfortran \
+# Installation des dépendances système
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libopenblas-dev \
     libblas-dev \
     liblapack-dev \
-    libopenblas-dev \
-    libtiff-dev \
-    libharfbuzz0b \
     libopenjp2-7 \
-    libxslt1-dev \
+    libtiff5-dev \
     libsm6 \
     libxext6 \
     libxrender-dev \
     pkg-config \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy and install Python dependencies with BLAS support
-COPY requirements.txt .
-RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
-    pip install --no-cache-dir -r requirements.txt
+# Préparation de l'environnement Python
+RUN pip install --no-cache-dir --upgrade pip wheel setuptools 
 
+# Installation des dépendances Python
+COPY requirements.txt .
+# --prefer-binary est indispensable pour éviter la compilation sur ARM 
+RUN pip install --no-cache-dir \
+    --index-url https://www.piwheels.org/simple \
+    --extra-index-url https://pypi.org/simple \
+    --only-binary=:all: \
+    -r requirements.txt
 COPY app.py .
 
 EXPOSE 5000
