@@ -6,7 +6,9 @@ WORKDIR /app
 # Installation des dépendances système
 # Note : libatlas-base-dev remplace avantageusement openblas-dev sur Debian pour ARM
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libatlas-base-dev \
+    libopenblas-dev \
+    libblas-dev \
+    liblapack-dev \
     libopenjp2-7 \
     libtiff5-dev \
     libsm6 \
