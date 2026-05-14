@@ -1,34 +1,30 @@
-FROM arm32v7/python:3.11-slim
+# Utilisation d'une image de base agnostique à l'architecture
+FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install build tools and BLAS BEFORE pip install
-RUN apt-get update && apt-get install -y \
-    git \
-    gfortran \
-    libblas-dev \
-    liblapack-dev \
-    libopenblas-dev \
-    libtiff-dev \
-    libharfbuzz0b \
+# Installation des dépendances système
+# Note : libatlas-base-dev remplace avantageusement openblas-dev sur Debian pour ARM
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libatlas-base-dev \
     libopenjp2-7 \
-    libxslt1-dev \
+    libtiff5-dev \
     libsm6 \
     libxext6 \
     libxrender-dev \
     pkg-config \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy and install Python dependencies with BLAS support
-COPY requirements.txt .
-# On installe wheel UNE SEULE FOIS pour préparer le terrain
-RUN pip install --no-cache-dir --upgrade pip wheel setuptools
+# Préparation de l'environnement Python
+RUN pip install --no-cache-dir --upgrade pip wheel setuptools 
 
-# On force l'utilisation de binaires (wheels) déjà existants
+# Installation des dépendances Python
+COPY requirements.txt .
+# --prefer-binary est indispensable pour éviter la compilation sur ARM 
 RUN pip install --no-cache-dir --prefer-binary -r requirements.txt
 
 COPY app.py .
 
-EXPOSE 5000
+EXPOSE 5000 [cite: 6]
 
 CMD ["python3", "app.py"]
