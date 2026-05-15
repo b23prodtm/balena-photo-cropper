@@ -27,6 +27,9 @@ services:
 
   nginx:
     image: nginx:alpine
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
     restart: always
     ports:
       - "80:80"
@@ -35,4 +38,3 @@ services:
       - web
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/certs:/etc/nginx/certs:ro
