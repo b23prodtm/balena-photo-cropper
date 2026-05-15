@@ -8,7 +8,11 @@ assets:
   repository:
     type: blob.asset.repo
     data:
-      url: 'https://github.com/votre-utilisateur/balena-photo-cropper'
+      url: 'https://github.com/b23prodtm/balena-photo-cropper'
+  logo:
+    type: blob.asset
+    data:
+      url: 'https://raw.githubusercontent.com/balena-io-examples/balena-python-hello-world/master/logo.png'
 data:
   applicationConfigVariables:
     - BALENA_HOST_CONFIG_gpu_mem: 128
