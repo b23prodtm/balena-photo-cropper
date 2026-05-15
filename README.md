@@ -34,9 +34,4 @@ python interactive_cropper.py your_image.jpg
 2. **Push vers Balena** : `balena push <fleet_name>`
 
 ---
-
-# English
-
-Multi-container service for Raspberry Pi 3 to automate the cropping of analog photo sheets.
-
 **Author**: [www.b23prodtm.info](https://www.b23prodtm.info) | **License**: Apache v2
