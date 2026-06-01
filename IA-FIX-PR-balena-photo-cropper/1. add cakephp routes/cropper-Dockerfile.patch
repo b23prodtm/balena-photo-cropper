@@ -1,0 +1,30 @@
+# Dockerfile - Service cropper (armhf fix)
+# Ajout des dépendances système manquantes pour opencv-python
+
+FROM balena/rpi-raspbian:bullseye
+
+# Install system dependencies for OpenCV
+RUN apt-get update && apt-get install -y \
+    libpng16-16 \
+    libjasper1 \
+    libtiff5 \
+    libwebp6 \
+    libjasper-dev \
+    libtiff-dev \
+    libwebp-dev \
+    libharfbuzz0b \
+    libwebpmux3 \
+    python3-pip \
+    python3-dev \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Copy requirements with proper opencv version for ARM
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY app.py .
+
+CMD ["python3", "app.py"]

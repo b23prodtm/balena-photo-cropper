@@ -1,0 +1,12 @@
+# requirements.txt - Fixed for armhf (Raspberry Pi)
+
+# Use pre-compiled wheels compatible with Python 3.11 armhf
+opencv-python==4.8.1.78
+numpy>=1.21.0,<1.26.0
+Pillow>=9.0.0
+requests>=2.28.0
+flask>=2.2.0
+werkzeug>=2.2.0
+
+# Optional but recommended
+gunicorn>=20.1.0
