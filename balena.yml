@@ -3,12 +3,16 @@ description: >-
   Outil de découpage automatique et interactif pour planches de photos argentiques.
   Optimisé pour Raspberry Pi 3.
 version: 1.2.0
-type: sw.stack
+type: sw.application
 assets:
   repository:
     type: blob.asset.repo
     data:
-      url: 'https://github.com/votre-utilisateur/balena-photo-cropper'
+      url: 'https://github.com/b23prodtm/balena-photo-cropper'
+  logo:
+    type: blob.asset
+    data:
+      url: 'https://raw.githubusercontent.com/balena-io-examples/balena-python-hello-world/master/logo.png'
 data:
   applicationConfigVariables:
     - BALENA_HOST_CONFIG_gpu_mem: 128
