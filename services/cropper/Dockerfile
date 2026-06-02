@@ -1,29 +1,22 @@
-# services/cropper/Dockerfile - Image Python officielle Docker Hub (pas Balena)
-
+# ⚠️ IMPORTANT: Commencer par image légère
 FROM python:3.11-slim
 
-# Set environment variables
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PIP_NO_CACHE_DIR=1
-
-# Install system dependencies for OpenCV on armhf (Raspberry Pi)
-# These are REQUIRED before pip installing opencv-python
+# 🔴 ÉTAPE CRITIQUE: Installer dépendances système AVANT pip install
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    # Image library dependencies (CRITICAL for cv2)
+    # === Dépendances CRITIQUE pour OpenCV ===
     libpng16-16 \
     libjasper1 \
     libtiff5 \
     libwebp6 \
     libwebpmux3 \
     \
-    # Development headers (for building some packages)
+    # === Headers de développement ===
+    libpng-dev \
     libjasper-dev \
     libtiff-dev \
     libwebp-dev \
-    libpng-dev \
     \
-    # Display/GUI libraries (if needed for cv2 imshow)
+    # === Autres libs graphiques ===
     libsm6 \
     libxext6 \
     libxrender-dev \
@@ -31,27 +24,30 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libharfbuzz0b \
     libfreetype6 \
     \
-    # Build tools
+    # === Build tools ===
     build-essential \
+    python3-pip \
+    python3-dev \
     git \
     curl \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Upgrade pip to latest version
+# Upgrade pip
 RUN python3 -m pip install --upgrade pip setuptools wheel
 
 WORKDIR /app
 
-# Copy and install requirements
+# Copier requirements.txt
 COPY requirements.txt .
+
+# 🔴 ÉTAPE IMPORTANT: pip install APRÈS dépendances système
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application
-COPY app.py .
+# Copier l'application
 COPY . /app
 
-# Create necessary directories
+# Créer répertoires nécessaires
 RUN mkdir -p /app/uploads /app/tmp && chmod +x /app/app.py
 
 EXPOSE 5000
@@ -60,5 +56,5 @@ EXPOSE 5000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:5000/health || exit 1
 
-# Run application
+# Commande de démarrage
 CMD ["python3", "-u", "app.py"]

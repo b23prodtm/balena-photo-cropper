@@ -1,117 +1,99 @@
-# docker-compose.yml - Images officielles Docker Hub (pas Balena)
+# docker-compose.yml - Configuration mise à jour avec cropper + web CakePHP3
 
 version: '3.8'
 
 services:
-  # Nginx - Reverse proxy (image officielle)
+  # Nginx - Reverse proxy et routeur
   nginx:
-    image: nginx:latest
-    container_name: photo-cropper-nginx
-    build:
-      context: ./services/nginx
-      dockerfile: Dockerfile
+    image: balena/rpi-nginx:latest
     ports:
       - "80:80"
       - "443:443"
     volumes:
       - ./services/nginx/conf.d:/etc/nginx/conf.d:ro
-      - ./services/web:/var/www/html:ro
+      - ./services/nginx/ssl:/etc/nginx/ssl:ro
     depends_on:
       - web
       - cropper
+    environment:
+      PYTHONUNBUFFERED: "1"
     networks:
       - photo-cropper
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
-    restart: unless-stopped
 
-  # Web Service - PHP-FPM CakePHP (image officielle)
+  # Service Web - CakePHP3
   web:
-    image: php:7.4-fpm
+    image: balena/rpi-php:7.4-fpm
     container_name: photo-cropper-web
-    build:
-      context: ./services/web
-      dockerfile: Dockerfile
     volumes:
       - ./services/web:/var/www/html
+      - ./services/php/php-fpm.conf:/etc/php/7.4/fpm/php-fpm.conf:ro
     environment:
-      # Application
-      APP_NAME: "Photo Cropper"
+      # CakePHP configuration
+      DB_DRIVER: Mysql
+      DB_HOST: "db"
+      DB_PORT: "3306"
+      DB_USERNAME: "cropper_user"
+      DB_PASSWORD: "${DB_PASSWORD:-change-me}"
+      DB_DATABASE: "photo_cropper"
+      
+      # Cropper service endpoint
       CROPPER_SERVICE_URL: "http://cropper:5000"
       
-      # Database (if using)
-      DB_DRIVER: Mysql
-      DB_HOST: db
-      DB_PORT: "3306"
-      DB_USERNAME: cropper_user
-      DB_PASSWORD: ${DB_PASSWORD:-change-me}
-      DB_DATABASE: photo_cropper
-      
-      # PHP settings
-      PHP_MEMORY_LIMIT: 256M
-      PHP_UPLOAD_MAX_FILESIZE: 100M
-      PHP_POST_MAX_SIZE: 100M
-      
-      # Logging
-      LOG_LEVEL: info
+      # PHP configuration
+      MEMORY_LIMIT: "256M"
+      UPLOAD_MAX_FILESIZE: "100M"
+      POST_MAX_SIZE: "100M"
     depends_on:
       - cropper
+      - db
     networks:
       - photo-cropper
     healthcheck:
-      test: ["CMD", "php-fpm", "-t"]
-      interval: 30s
-      timeout: 10s
+      test: ["CMD", "curl", "-f", "http://localhost:9000/ping"]
+      interval: 10s
+      timeout: 5s
       retries: 3
-      start_period: 40s
     restart: unless-stopped
 
-  # Cropper Service - Python OpenCV (image officielle)
+  # Service Cropper - Python + OpenCV
   cropper:
-    image: python:3.11-slim
+    image: balena/rpi-python:3.11
     container_name: photo-cropper-service
     build:
       context: ./services/cropper
       dockerfile: Dockerfile
     volumes:
+      - cropper_tmp:/tmp
       - cropper_uploads:/app/uploads
-      - cropper_cache:/tmp
     environment:
-      # Runtime
-      FLASK_ENV: production
+      FLASK_ENV: "production"
+      FLASK_APP: "app.py"
       PYTHONUNBUFFERED: "1"
+      LOG_LEVEL: "INFO"
       
-      # Configuration
-      LOG_LEVEL: info
+      # Cropper configuration
       MAX_FILE_SIZE: "100M"
       ALLOWED_FORMATS: "jpg,jpeg,png,gif,webp"
-      
-      # Performance
-      WORKERS: "4"
-      TIMEOUT: "30"
+    depends_on:
+      - redis
     networks:
       - photo-cropper
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
-      interval: 30s
-      timeout: 10s
+      interval: 15s
+      timeout: 5s
       retries: 3
-      start_period: 40s
     restart: unless-stopped
 
-  # Database - MySQL (optionnel)
+  # Database - MySQL (optionnel, pour CakePHP)
   db:
-    image: mysql:5.7
+    image: balena/rpi-mysql:5.7
     container_name: photo-cropper-db
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root-password}
-      MYSQL_DATABASE: photo_cropper
-      MYSQL_USER: cropper_user
-      MYSQL_PASSWORD: ${DB_PASSWORD:-change-me}
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:-root-password}"
+      MYSQL_DATABASE: "photo_cropper"
+      MYSQL_USER: "cropper_user"
+      MYSQL_PASSWORD: "${DB_PASSWORD:-change-me}"
     volumes:
       - db_data:/var/lib/mysql
       - ./services/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
@@ -124,9 +106,9 @@ services:
       retries: 5
     restart: unless-stopped
 
-  # Redis - Cache (optionnel)
+  # Redis - Cache (optionnel, pour session/cache CakePHP)
   redis:
-    image: redis:7-alpine
+    image: balena/rpi-redis:7-alpine
     container_name: photo-cropper-cache
     volumes:
       - redis_data:/data
@@ -145,9 +127,9 @@ volumes:
     driver: local
   redis_data:
     driver: local
-  cropper_uploads:
+  cropper_tmp:
     driver: local
-  cropper_cache:
+  cropper_uploads:
     driver: local
 
 # Networks
