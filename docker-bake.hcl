@@ -12,6 +12,14 @@ variable "REGISTRY_IMAGE" {
   default = "bprtkop"
 }
 
+variable "TAG" {
+  default = ""
+}
+
+variable "GIT_SHA" {
+  default = ""
+}
+
 target "common" {
   context = "."
   
