@@ -68,8 +68,10 @@ jobs:
           *.cache-from=type=gha
           *.cache-to=type=gha,mode=max
       env:
-        GIT_SHA: ${{ env.GIT_SHA }}
-        TAG: ${{ env.TAG }}
+          REGISTRY: docker.io
+          REGISTRY_IMAGE: bprtkop
+          GIT_SHA: ${{ github.sha }}
+          TAG: ${{ github.event_name != 'pull_request' && github.ref_name || '' }}
 
     - name: Build (AMD64 only for PR testing)
       if: github.event_name == 'pull_request'
