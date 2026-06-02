@@ -1,38 +1,156 @@
-version: '2.1'
+# docker-compose.yml - Images officielles Docker Hub (pas Balena)
+
+version: '3.8'
 
 services:
-  cropper:
-    # On utilise l'image générée par le build bake
-    image: bprtkop/balena-photo-cropper-api:latest
-    build: 
-      context: ./cropper
-      dockerfile: Dockerfile
-    privileged: true
-    restart: always
-    ports:
-      - "5000:5000"
-
-  web:
-    image: bprtkop/balena-photo-cropper-web:latest
-    build: 
-      context: ./web
-      dockerfile: Dockerfile
-    depends_on:
-      - cropper
-    ports:
-      - "9000:9000"
-    restart: always
-    environment:
-      - CROPPER_URL=http://cropper:5000
-
+  # Nginx - Reverse proxy (image officielle)
   nginx:
-    image: nginx:alpine
+    image: nginx:latest
+    container_name: photo-cropper-nginx
     build:
-      context: ./nginx
+      context: ./services/nginx
       dockerfile: Dockerfile
-    restart: always
     ports:
       - "80:80"
       - "443:443"
+    volumes:
+      - ./services/nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./services/web:/var/www/html:ro
     depends_on:
       - web
+      - cropper
+    networks:
+      - photo-cropper
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
+  # Web Service - PHP-FPM CakePHP (image officielle)
+  web:
+    image: php:7.4-fpm
+    container_name: photo-cropper-web
+    build:
+      context: ./services/web
+      dockerfile: Dockerfile
+    volumes:
+      - ./services/web:/var/www/html
+    environment:
+      # Application
+      APP_NAME: "Photo Cropper"
+      CROPPER_SERVICE_URL: "http://cropper:5000"
+      
+      # Database (if using)
+      DB_DRIVER: Mysql
+      DB_HOST: db
+      DB_PORT: "3306"
+      DB_USERNAME: cropper_user
+      DB_PASSWORD: ${DB_PASSWORD:-change-me}
+      DB_DATABASE: photo_cropper
+      
+      # PHP settings
+      PHP_MEMORY_LIMIT: 256M
+      PHP_UPLOAD_MAX_FILESIZE: 100M
+      PHP_POST_MAX_SIZE: 100M
+      
+      # Logging
+      LOG_LEVEL: info
+    depends_on:
+      - cropper
+    networks:
+      - photo-cropper
+    healthcheck:
+      test: ["CMD", "php-fpm", "-t"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+
+  # Cropper Service - Python OpenCV (image officielle)
+  cropper:
+    image: python:3.11-slim
+    container_name: photo-cropper-service
+    build:
+      context: ./services/cropper
+      dockerfile: Dockerfile
+    volumes:
+      - cropper_uploads:/app/uploads
+      - cropper_cache:/tmp
+    environment:
+      # Runtime
+      FLASK_ENV: production
+      PYTHONUNBUFFERED: "1"
+      
+      # Configuration
+      LOG_LEVEL: info
+      MAX_FILE_SIZE: "100M"
+      ALLOWED_FORMATS: "jpg,jpeg,png,gif,webp"
+      
+      # Performance
+      WORKERS: "4"
+      TIMEOUT: "30"
+    networks:
+      - photo-cropper
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+
+  # Database - MySQL (optionnel)
+  db:
+    image: mysql:5.7
+    container_name: photo-cropper-db
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root-password}
+      MYSQL_DATABASE: photo_cropper
+      MYSQL_USER: cropper_user
+      MYSQL_PASSWORD: ${DB_PASSWORD:-change-me}
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./services/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - photo-cropper
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Redis - Cache (optionnel)
+  redis:
+    image: redis:7-alpine
+    container_name: photo-cropper-cache
+    volumes:
+      - redis_data:/data
+    networks:
+      - photo-cropper
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    restart: unless-stopped
+
+# Volumes
+volumes:
+  db_data:
+    driver: local
+  redis_data:
+    driver: local
+  cropper_uploads:
+    driver: local
+  cropper_cache:
+    driver: local
+
+# Networks
+networks:
+  photo-cropper:
+    driver: bridge
