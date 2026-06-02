@@ -46,8 +46,8 @@ target "cropper" {
   # Multi-tag strategy
   tags = [
     "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-api:latest",
-    "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-api:${TAG:-v1.2.0}",
-    "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-api:${GIT_SHA:-latest}"
+    TAG != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-api:${TAG}" : "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-api:v1.2.0",
+    GIT_SHA != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-api:${GIT_SHA}" : "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-api:latest"
   ]
   
   output = ["type=registry"]
@@ -68,8 +68,8 @@ target "web" {
   
   tags = [
     "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-web:latest",
-    "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-web:${TAG:-v1.2.0}",
-    "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-web:${GIT_SHA:-latest}"
+    TAG != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-web:${TAG}" : "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-web:v1.2.0",
+    GIT_SHA != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-web:${GIT_SHA}" : "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-web:latest"
   ]
   
   output = ["type=registry"]
@@ -89,8 +89,8 @@ target "nginx" {
   
   tags = [
     "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-nginx:latest",
-    "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-nginx:${TAG:-v1.2.0}",
-    "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-nginx:${GIT_SHA:-latest}"
+    TAG != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-nginx:${TAG}" : "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-nginx:v1.2.0",
+    GIT_SHA != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-nginx:${GIT_SHA}" : "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-nginx:latest"
   ]
   
   output = ["type=registry"]
