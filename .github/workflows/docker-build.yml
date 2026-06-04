@@ -46,7 +46,6 @@ jobs:
       with:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
-      if: github.event_name != 'pull_request'
 
     - name: Extract metadata
       id: meta
@@ -61,7 +60,7 @@ jobs:
         files: |
           ./docker-bake.hcl
         targets: default
-        push: ${{ github.event_name != 'pull_request' }}
+        push: true
         set: |
           *.args.BUILD_DATE=${{ steps.meta.outputs.BUILD_DATE }}
           *.args.VCS_REF=${{ steps.meta.outputs.SHORT_SHA }}
@@ -71,7 +70,7 @@ jobs:
           REGISTRY: docker.io
           REGISTRY_IMAGE: bprtkop
           GIT_SHA: ${{ github.sha }}
-          TAG: ${{ github.event_name != 'pull_request' && github.ref_name || '' }}
+          TAG: ${{ github.event_name != 'pull_request' && github.ref_name || 'pr-build' }}
 
     - name: Build (AMD64 only for PR testing)
       if: github.event_name == 'pull_request'
