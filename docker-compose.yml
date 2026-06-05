@@ -1,12 +1,10 @@
-version: '3.8'
+version: '2.1'
 
 services:
   cropper:
     # Images générées par docker-bake (multi-platform)
     image: bprtkop/balena-photo-cropper-api:latest
-    build:
-      context: ./cropper
-      dockerfile: Dockerfile
+    build: ./cropper
     container_name: balena-photo-cropper-api
     restart: always
     ports:
@@ -19,19 +17,15 @@ services:
       PYTHONUNBUFFERED: "1"
       LOG_LEVEL: info
     healthcheck:
-      test: ["CMD", "python3", "-c", "import cv2; print('OK')"]
+      test: python3 -c "import cv2; print('OK')"
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
-    networks:
-      - photo-cropper
 
   web:
     image: bprtkop/balena-photo-cropper-web:latest
-    build:
-      context: ./web
-      dockerfile: Dockerfile
+    build: ./web
     container_name: balena-photo-cropper-web
     restart: always
     depends_on:
@@ -48,19 +42,15 @@ services:
       MEMORY_LIMIT: 512M
       MAX_EXECUTION_TIME: 300
     healthcheck:
-      test: ["CMD", "php-fpm", "-t"]
+      test: php-fpm -t
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
-    networks:
-      - photo-cropper
 
   nginx:
     image: bprtkop/balena-photo-cropper-nginx:latest
-    build:
-      context: ./nginx
-      dockerfile: Dockerfile
+    build: ./nginx
     container_name: balena-photo-cropper-nginx
     restart: always
     depends_on:
@@ -77,18 +67,12 @@ services:
       SSL_KEY: ""
       SSL_CRT: ""
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost/"]
+      test: curl -f http://localhost/
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 10s
-    networks:
-      - photo-cropper
 
 volumes:
   cropper_uploads:
   cropper_tmp:
-
-networks:
-  photo-cropper:
-    driver: bridge

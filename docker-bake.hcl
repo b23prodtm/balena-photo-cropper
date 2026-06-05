@@ -1,4 +1,5 @@
 # docker-bake.hcl - Multi-platform builds with GHA cache
+# Structure: ./cropper, ./web, ./nginx (pas services/)
 
 group "default" {
   targets = ["cropper", "web", "nginx"]
@@ -44,6 +45,7 @@ target "common" {
 target "cropper" {
   inherits = ["common"]
   
+  # Context: ./cropper (NOT ./services/cropper/)
   context = "./cropper"
   dockerfile = "Dockerfile"
   
@@ -67,6 +69,7 @@ target "cropper" {
 target "web" {
   inherits = ["common"]
   
+  # Context: ./web (NOT ./services/web/)
   context = "./web"
   dockerfile = "Dockerfile"
   
@@ -92,6 +95,7 @@ target "web" {
 target "nginx" {
   inherits = ["common"]
   
+  # Context: ./nginx (NOT ./services/nginx/)
   context = "./nginx"
   dockerfile = "Dockerfile"
   
