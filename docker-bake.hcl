@@ -1,4 +1,5 @@
 # docker-bake.hcl - Multi-platform builds with GHA cache
+# Structure: ./cropper, ./web, ./nginx (pas services/)
 
 group "default" {
   targets = ["cropper", "web", "nginx"]
@@ -12,17 +13,7 @@ variable "REGISTRY_IMAGE" {
   default = "bprtkop"
 }
 
-variable "TAG" {
-  default = ""
-}
-
-variable "GIT_SHA" {
-  default = ""
-}
-
 target "common" {
-  context = "."
-  
   # Multi-platform support: amd64, arm/v7 (Raspberry Pi 32-bit), arm64 (Pi 4B 64-bit)
   platforms = [
     "linux/amd64",
@@ -44,6 +35,7 @@ target "common" {
 target "cropper" {
   inherits = ["common"]
   
+  # Context: ./cropper (NOT ./services/cropper/)
   context = "./cropper"
   dockerfile = "Dockerfile"
   
@@ -54,8 +46,8 @@ target "cropper" {
   # Multi-tag strategy
   tags = [
     "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-api:latest",
-    TAG != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-api:${replace(TAG, "/", "-")}" : "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-api:v1.2.0",
-    GIT_SHA != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-api:${GIT_SHA}" : "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-api:latest"
+    "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-api:${TAG:-v1.2.0}",
+    "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-api:${GIT_SHA:-latest}"
   ]
   
   output = ["type=registry"]
@@ -67,6 +59,7 @@ target "cropper" {
 target "web" {
   inherits = ["common"]
   
+  # Context: ./web (NOT ./services/web/)
   context = "./web"
   dockerfile = "Dockerfile"
   
@@ -76,8 +69,8 @@ target "web" {
   
   tags = [
     "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-web:latest",
-    TAG != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-web:${replace(TAG, "/", "-")}" : "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-web:v1.2.0",
-    GIT_SHA != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-web:${GIT_SHA}" : "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-web:latest"
+    "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-web:${TAG:-v1.2.0}",
+    "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-web:${GIT_SHA:-latest}"
   ]
   
   output = ["type=registry"]
@@ -92,13 +85,14 @@ target "web" {
 target "nginx" {
   inherits = ["common"]
   
+  # Context: ./nginx (NOT ./services/nginx/)
   context = "./nginx"
   dockerfile = "Dockerfile"
   
   tags = [
     "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-nginx:latest",
-    TAG != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-nginx:${replace(TAG, "/", "-")}" : "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-nginx:v1.2.0",
-    GIT_SHA != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-nginx:${GIT_SHA}" : "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-nginx:latest"
+    "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-nginx:${TAG:-v1.2.0}",
+    "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-nginx:${GIT_SHA:-latest}"
   ]
   
   output = ["type=registry"]

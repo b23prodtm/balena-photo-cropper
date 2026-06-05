@@ -1,5 +1,5 @@
-# cropper/Dockerfile - Python 3.11-slim avec support multi-platform armhf
-# FIX: Using armhf-compatible packages that are available in Debian repos
+# cropper/Dockerfile - Python 3.11-slim avec support multi-platform
+# FIX: System dependencies installed BEFORE pip (fixes libpng16.so.16 error)
 
 FROM python:3.11-slim
 
@@ -7,7 +7,7 @@ WORKDIR /app
 
 # ============================================================================
 # CRITICAL: Install system dependencies BEFORE pip install
-# Using only armhf-compatible packages for arm/v7 architecture
+# This is the KEY to fixing "libpng16.so.16: cannot open shared object file"
 # ============================================================================
 RUN apt-get update && apt-get install -y --no-install-recommends \
     # OpenCV/image processing dependencies
@@ -21,11 +21,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxrender-dev \
     pkg-config \
     \
-    # Image format support (armhf-available packages)
-    libpng-dev \
-    libjpeg-dev \
-    libfreetype6 \
+    # CRITICAL for cv2: PNG, JPEG, WebP support
+    libpng16-16 \
+    libjasper1 \
+    libwebp6 \
+    libwebpmux3 \
     libharfbuzz0b \
+    libfreetype6 \
+    \
+    # Development headers (for wheel building)
+    libpng-dev \
+    libjasper-dev \
     libwebp-dev \
     \
     # Additional tools
