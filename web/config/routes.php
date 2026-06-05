@@ -6,19 +6,22 @@ return function (RouteBuilder $routes): void {
     $routes->setRouteClass(DashedRoute::class);
 
     $routes->scope('/', function (RouteBuilder $builder): void {
-        // Page d'accueil avec section IA + README
+        // Accueil
         $builder->connect('/', ['controller' => 'Pages', 'action' => 'display', 'home']);
 
-        // Interface CropperJS
+        // Uploads + API
         $builder->connect('/cropper', ['controller' => 'Uploads', 'action' => 'cropper']);
-        
-        // Upload + traitement IA
         $builder->connect('/uploads/add', ['controller' => 'Uploads', 'action' => 'add']);
+        $builder->connect('/uploads', ['controller' => 'Uploads', 'action' => 'index']);
+        
+        // API endpoints pour CropperJS
+        $builder->connect('/uploads/upload', ['controller' => 'Uploads', 'action' => 'upload']);
+        $builder->connect('/uploads/save-crop', ['controller' => 'Uploads', 'action' => 'saveCrop']);
+        $builder->connect('/uploads/crop', ['controller' => 'Uploads', 'action' => 'crop']);
 
-        // Legacy : /cropper.php redirige vers /cropper
-        $builder->redirect('/cropper.php', ['controller' => 'Uploads', 'action' => 'cropper'], ['status' => 301]);
+        // Legacy redirect
+        $builder->redirect('/cropper.php', '/cropper', ['status' => 301]);
 
-        // Fallback
         $builder->fallbacks();
     });
 };
