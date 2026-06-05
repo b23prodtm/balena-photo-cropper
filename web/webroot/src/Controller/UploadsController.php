@@ -34,4 +34,9 @@ class UploadsController extends AppController
             return $this->redirect(['action' => 'index']);
         }
     }
+    
+    public function cropper()
+    {
+        // Juste pour afficher la vue
+    }
 }
