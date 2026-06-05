@@ -1,34 +1,24 @@
 <?php
-/**
- * CakePHP3 Routes Configuration
- * File: config/routes.php
- * 
- * Add these route definitions to your routes configuration
- */
+use Cake\Routing\Route\DashedRoute;
+use Cake\Routing\RouteBuilder;
 
-// Cropper interface and API routes
-$routes->scope('/cropper', ['controller' => 'Cropper'], function ($routes) {
-    // Main cropper interface
-    $routes->connect('/', ['action' => 'index']);
-    
-    // API endpoints
-    $routes->connect('/crop', ['action' => 'crop']);
-    $routes->connect('/upload', ['action' => 'upload']);
-    
-    // RESTful API support
-    $routes->resources('Cropper');
-});
+return function (RouteBuilder $routes): void {
+    $routes->setRouteClass(DashedRoute::class);
 
-// Legacy support for /cropper.php (rewrite to /cropper)
-$routes->connect('/cropper.php', ['controller' => 'Cropper', 'action' => 'index']);
+    $routes->scope('/', function (RouteBuilder $builder): void {
+        // Page d'accueil avec section IA + README
+        $builder->connect('/', ['controller' => 'Pages', 'action' => 'display', 'home']);
 
-// Homepage redirect logic
-$routes->connect('/', function($builder) {
-    return [
-        'controller' => 'Pages',
-        'action' => 'home'  // or redirect to cropper: ['controller' => 'Cropper', 'action' => 'index']
-    ];
-});
+        // Interface CropperJS
+        $builder->connect('/cropper', ['controller' => 'Uploads', 'action' => 'cropper']);
+        
+        // Upload + traitement IA
+        $builder->connect('/uploads/add', ['controller' => 'Uploads', 'action' => 'add']);
 
-// Default fallback
-$routes->fallbacks(DashedRoute::class);
+        // Legacy : /cropper.php redirige vers /cropper
+        $builder->redirect('/cropper.php', ['controller' => 'Uploads', 'action' => 'cropper'], ['status' => 301]);
+
+        // Fallback
+        $builder->fallbacks();
+    });
+};
