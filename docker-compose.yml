@@ -1,8 +1,7 @@
-version: '2.1'
+version: '2'
 
 services:
   cropper:
-    # Images générées par docker-bake (multi-platform)
     image: bprtkop/balena-photo-cropper-api:latest
     build: ./cropper
     container_name: balena-photo-cropper-api
@@ -16,12 +15,6 @@ services:
       FLASK_ENV: production
       PYTHONUNBUFFERED: "1"
       LOG_LEVEL: info
-    healthcheck:
-      test: python3 -c "import cv2; print('OK')"
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
 
   web:
     image: bprtkop/balena-photo-cropper-web:latest
@@ -29,24 +22,19 @@ services:
     container_name: balena-photo-cropper-web
     restart: always
     depends_on:
-      cropper:
-        condition: service_healthy
+      - cropper
     ports:
       - "9000:9000"
     volumes:
-      - ./web:/var/www/html
+      -./web:/var/www/html
     environment:
       CROPPER_URL: http://cropper:5000
       UPLOAD_MAX_FILESIZE: 100M
       POST_MAX_SIZE: 120M
       MEMORY_LIMIT: 512M
       MAX_EXECUTION_TIME: 300
-    healthcheck:
-      test: php-fpm -t
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+    # Wait for cropper API before starting php-fpm
+    command: sh -c "./wait-for-it.sh cropper:5000 -t 60 -- php-fpm"
 
   nginx:
     image: bprtkop/balena-photo-cropper-nginx:latest
@@ -54,24 +42,19 @@ services:
     container_name: balena-photo-cropper-nginx
     restart: always
     depends_on:
-      web:
-        condition: service_healthy
+      - web
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/entrypoint.sh:/entrypoint.sh:ro
-      - ./web/webroot:/var/www/html:ro
+      -./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      -./nginx/entrypoint.sh:/entrypoint.sh:ro
+      -./web/webroot:/var/www/html:ro
     environment:
       SSL_KEY: ""
       SSL_CRT: ""
-    healthcheck:
-      test: curl -f http://localhost/
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
+    # Wait for php-fpm before starting nginx
+    command: sh -c "./wait-for-it.sh web:9000 -t 60 -- nginx -g 'daemon off;'"
 
 volumes:
   cropper_uploads:
