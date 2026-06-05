@@ -21,17 +21,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxrender-dev \
     pkg-config \
     \
-    # CRITICAL for cv2: PNG, JPEG, WebP support
-    libpng16-16 \
-    libjasper1 \
-    libwebp6 \
-    libwebpmux3 \
-    libharfbuzz0b \
-    libfreetype6 \
-    \
-    # Development headers (for wheel building)
+    # Image format support (armhf-available packages)
     libpng-dev \
-    libjasper-dev \
+    libjpeg-dev \
+    libfreetype6 \
+    libharfbuzz0b \
     libwebp-dev \
     \
     # Additional tools
