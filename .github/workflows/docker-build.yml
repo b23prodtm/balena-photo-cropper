@@ -1,6 +1,5 @@
 name: Docker Build Multi-Platform
 
-# Déclencher le build sur:
 on:
   pull_request:
     branches: [ main, develop ]
@@ -13,11 +12,13 @@ on:
 env:
   REGISTRY: docker.io
   REGISTRY_IMAGE: bprtkop
+  GIT_SHA: ${{ github.sha }}
+  TAG: ${{ github.ref_name }}
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
+    runs-on: [self-hosted, linux, docker, x64]
+    timeout-minutes: 90
     
     permissions:
       contents: read
@@ -27,17 +28,21 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       with:
-        fetch-depth: 0
+        fetch-depth: ${{ startsWith(github.ref, 'refs/tags/') && '0' || '1' }}
 
     - name: Set up QEMU for multi-arch builds
       uses: docker/setup-qemu-action@v3
       with:
         platforms: linux/amd64,linux/arm/v7,linux/arm64
+        image: tonistiigi/binfmt:master
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
       with:
         platforms: linux/amd64,linux/arm/v7,linux/arm64
+        driver-options: |
+          image=moby/buildkit:master
+          network=host
 
     - name: Login to Docker Hub
       uses: docker/login-action@v3
@@ -48,85 +53,33 @@ jobs:
     - name: Extract metadata
       id: meta
       run: |
-        SHORT_SHA=${GITHUB_SHA:0:7}
-        echo "SHORT_SHA=${SHORT_SHA}" >> $GITHUB_OUTPUT
+        echo "SHORT_SHA=${GIT_SHA:0:7}" >> $GITHUB_OUTPUT
         echo "BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
-        
-        # PR build: Add PR reference
-        if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-          PR_NUMBER=${{ github.event.pull_request.number }}
-          echo "PR_NUMBER=${PR_NUMBER}" >> $GITHUB_OUTPUT
-          echo "TAG_SUFFIX=pr-${PR_NUMBER}" >> $GITHUB_OUTPUT
-        else
-          echo "TAG_SUFFIX=latest" >> $GITHUB_OUTPUT
-        fi
 
-    - name: Build and push with Bake (Full Multi-Platform)
+    - name: Build Multi-Platform
       uses: docker/bake-action@v5
       with:
         workdir: .
-        files: |
-          ./docker-bake.hcl
+        files: ./docker-bake.hcl
         targets: default
         push: ${{ github.event_name != 'pull_request' }}
         set: |
           *.args.BUILD_DATE=${{ steps.meta.outputs.BUILD_DATE }}
           *.args.VCS_REF=${{ steps.meta.outputs.SHORT_SHA }}
           *.cache-from=type=gha
+          *.cache-from=type=local,src=/tmp/buildx-cache
           *.cache-to=type=gha,mode=max
+          *.cache-to=type=local,dest=/tmp/buildx-cache,mode=max
       env:
+        REGISTRY: docker.io
+        REGISTRY_IMAGE: bprtkop
         GIT_SHA: ${{ github.sha }}
-        TAG: ${{ github.ref_name }}
-
-    - name: Build (AMD64 only for PR testing)
-      if: github.event_name == 'pull_request'
-      uses: docker/bake-action@v5
-      with:
-        workdir: .
-        files: |
-          ./docker-bake.hcl
-        targets: amd64-only
-        push: false
-        set: |
-          *.cache-from=type=gha
-          *.cache-to=type=gha,mode=max
+        TAG: ${{ github.event_name != 'pull_request' && github.ref_name || 'pr-build' }}
+        BUILDKIT_PROGRESS: plain
 
     - name: Log build results
       if: always()
       run: |
         echo "Build completed at $(date)"
-        if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-          echo "PR Build: #${{ steps.meta.outputs.PR_NUMBER }}"
-          echo "Platform: linux/amd64 (testing only)"
-          echo "Push: disabled (PR)"
-          echo "Tag suffix: ${{ steps.meta.outputs.TAG_SUFFIX }}"
-        else
-          echo "Platforms: linux/amd64, linux/arm/v7, linux/arm64"
-          echo "Push enabled: Yes"
-          echo "Tag: ${{ github.ref_name }}"
-        fi
-
-    - name: Comment PR with build info
-      if: github.event_name == 'pull_request'
-      uses: actions/github-script@v7
-      with:
-        script: |
-          github.rest.issues.createComment({
-            issue_number: context.issue.number,
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            body: `## ✅ Docker Build Results\n\n**PR:** #${{ steps.meta.outputs.PR_NUMBER }}\n**Commit:** ${{ steps.meta.outputs.SHORT_SHA }}\n**Status:** Build successful (AMD64 testing)\n\nTag reference: \`pr-${{ steps.meta.outputs.PR_NUMBER }}\`\n\nFull multi-platform build will run when merged to main.`
-          })
-
-    - name: Check image health
-      if: github.event_name != 'pull_request'
-      run: |
-        echo "✅ Build and push completed successfully"
-        echo ""
-        echo "Images pushed to Docker Hub:"
-        echo "  - bprtkop/balena-photo-cropper-api:latest"
-        echo "  - bprtkop/balena-photo-cropper-api:${{ github.ref_name }}"
-        echo "  - bprtkop/balena-photo-cropper-web:latest"
-        echo "  - bprtkop/balena-photo-cropper-web:${{ github.ref_name }}"
-        echo "  - bprtkop/balena-photo-cropper-nginx:latest"
-        echo "  - bprtkop/balena-photo-cropper-nginx:${{ github.ref_name }}"
+        echo "Platforms: linux/amd64, linux/arm/v7, linux/arm64"
+        echo "Push enabled: ${{ github.event_name != 'pull_request' }}"
