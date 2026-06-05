@@ -183,6 +183,10 @@ $this->assign('title', 'Accueil');
 <details class="readme-toggle">
     <summary>📖 Documentation complète du projet</summary>
     <article>
-        <?= $readmeHtml?>
+<?php if (!empty($readmeHtml)):?>
+        <div class="readme">
+            <?= $readmeHtml?>
+        </div>
+<?php endif;?>
     </article>
 </details>
