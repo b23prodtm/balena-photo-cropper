@@ -19,9 +19,10 @@ jobs:
     timeout-minutes: 120
     
     permissions:
-      contents: read
+      contents: write
       packages: write
-
+      pull-requests: write
+    
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
