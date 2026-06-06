@@ -32,17 +32,17 @@ jobs:
       matrix:
         platform:
           - name: amd64
-            target: default
+            target: cropper-amd64,web-amd64,nginx-amd64
             runner: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.runner || vars.DEFAULT_RUNNER }}
           - name: arm64
-            target: default
+            target: cropper,web,nginx
             runner: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.runner || vars.DEFAULT_RUNNER }}
           - name: arm-v7
-            target: default
+            target: cropper-rpi,web-rpi,nginx-rpi
             runner: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.runner || vars.DEFAULT_RUNNER }}
       max-parallel: 3
       fail-fast: false
-    
+
     permissions:
       contents: read
       packages: write
