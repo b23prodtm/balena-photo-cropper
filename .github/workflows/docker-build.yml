@@ -81,10 +81,9 @@ jobs:
       with:
         workdir: .
         files: ./docker-bake.hcl
-        targets: default
+        targets: ${{ matrix.platform.target }}
         push: ${{ github.event_name != 'pull_request' }}
         set: |
-          *.platforms=linux/${{ matrix.platform.name }}
           *.args.BUILD_DATE=${{ steps.meta.outputs.BUILD_DATE }}
           *.args.VCS_REF=${{ steps.meta.outputs.SHORT_SHA }}
           *.cache-from=type=gha
