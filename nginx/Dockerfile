@@ -1,6 +1,6 @@
-# services/nginx/Dockerfile - Image Nginx officielle Docker Hub (pas Balena)
+# services/nginx/Dockerfile - Nginx with explicit multi-platform support
 
-FROM nginx:latest
+FROM --platform=$BUILDPLATFORM nginx:1.27-alpine
 
 # Install curl for health checks
 RUN apt-get update && apt-get install -y --no-install-recommends \
