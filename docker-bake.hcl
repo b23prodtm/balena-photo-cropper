@@ -134,6 +134,26 @@ target "nginx-rpi" {
   platforms = ["linux/arm/v7"]
 }
 
+# Build for testing locally (arm64 only, for Raspberry Pi 3-4-5)
+group "rpi64" {
+  targets = ["cropper-rpi64", "web-rpi64", "nginx-rpi64"]
+}
+
+target "cropper-rpi64" {
+  inherits = ["cropper"]
+  platforms = ["linux/arm64"]
+}
+
+target "web-rpi64" {
+  inherits = ["web"]
+  platforms = ["linux/arm64"]
+}
+
+target "nginx-rpi64" {
+  inherits = ["nginx"]
+  platforms = ["linux/arm64"]
+}
+
 # Build for AMD64 only (local development)
 group "amd64-only" {
   targets = ["cropper-amd64", "web-amd64", "nginx-amd64"]
