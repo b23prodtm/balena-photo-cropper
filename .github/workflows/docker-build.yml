@@ -35,7 +35,7 @@ jobs:
             target: cropper-amd64,web-amd64,nginx-amd64
             runner: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.runner || vars.DEFAULT_RUNNER }}
           - name: arm64
-            target: cropper,web,nginx
+            target: cropper-rpi64,web-rpi64,nginx-rpi64
             runner: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.runner || vars.DEFAULT_RUNNER }}
           - name: arm-v7
             target: cropper-rpi,web-rpi,nginx-rpi
