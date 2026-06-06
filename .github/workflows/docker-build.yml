@@ -17,7 +17,6 @@ on:
         options:
           - 'self-hosted'
           - 'ubuntu-latest'
-
 env:
   REGISTRY: docker.io
   REGISTRY_IMAGE: bprtkop
@@ -34,4 +33,4 @@ jobs:
     steps:
       - id: set-matrix
         run: |
-          echo "matrix={\"runner\":[\"${{ env.MATRIX_RUNNER }}\"]}" >> $GITHUB_OUTPUT
+          echo "matrix={\"runner\":[\"${{ vars.MATRIX_RUNNER }}\"]}" >> $GITHUB_OUTPUT
