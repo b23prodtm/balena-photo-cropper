@@ -3,10 +3,8 @@
 FROM --platform=$BUILDPLATFORM nginx:1.27-alpine
 
 # Install curl for health checks
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache \
+    curl
 
 # Copy custom nginx configuration
 COPY conf.d/ /etc/nginx/conf.d/
