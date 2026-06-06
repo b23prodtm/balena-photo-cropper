@@ -27,7 +27,7 @@ env:
 
 jobs:
   determine-runner:
-    runs-on: $DEFAULT_RUNNER
+    runs-on: ${{ vars.DEFAULT_RUNNER }}
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
