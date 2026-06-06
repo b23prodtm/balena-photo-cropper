@@ -14,14 +14,23 @@ env:
   REGISTRY_IMAGE: bprtkop
   GIT_SHA: ${{ github.sha }}
   TAG: ${{ github.ref_name }}
-  MATRIX_RUNNER: '["self-hosted", "ubuntu-latest"]'
+  MATRIX_RUNNER: '["self-hosted"]'
 
 jobs:
+  determine-runner:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - id: set-matrix
+        run: |
+          echo "matrix={\"runner\":${{ env.MATRIX_RUNNER }}}" >> $GITHUB_OUTPUT
+
   build:
+    needs: determine-runner
     runs-on: ${{ matrix.runner }}
     strategy:
-      matrix:
-        runner: ${{ fromJson(env.MATRIX_RUNNER) }}
+      matrix: ${{ fromJson(needs.determine-runner.outputs.matrix) }}
     timeout-minutes: 90
     
     permissions:
