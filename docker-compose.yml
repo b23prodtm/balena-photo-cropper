@@ -1,61 +1,44 @@
-version: '2'
-
+version: '2.1'
 services:
+  nginx:
+    build: ./nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - web
+    mem_limit: 64m
+    mem_reservation: 32m
+    restart: unless-stopped
+    # PR #9: attend que web soit prêt avant de servir
+    command: >
+      sh -c "./wait-for-it.sh web:80 -t 60 -- 
+      nginx -g 'daemon off;'"
+
+  web:
+    build: ./web
+    depends_on:
+      - cropper
+    environment:
+      - PHP_FPM_PM=ondemand
+      - PHP_FPM_MAX_CHILDREN=2
+      - PHP_FPM_MAX_REQUESTS=100
+    mem_limit: 128m
+    mem_reservation: 64m
+    restart: unless-stopped
+    # PR #9: attend que cropper Flask soit ready
+    command: >
+      sh -c "./wait-for-it.sh cropper:5000 -t 120 --
+      php-fpm"
+
   cropper:
-    image: bprtkop/balena-photo-cropper-api:latest
     build: ./cropper
-    container_name: balena-photo-cropper-api
-    restart: always
     ports:
       - "5000:5000"
     volumes:
-      - cropper_uploads:/app/uploads
-      - cropper_tmp:/tmp
-    environment:
-      FLASK_ENV: production
-      PYTHONUNBUFFERED: "1"
-      LOG_LEVEL: info
-
-  web:
-    image: bprtkop/balena-photo-cropper-web:latest
-    build: ./web
-    container_name: balena-photo-cropper-web
-    restart: always
-    depends_on:
-      - cropper
-    ports:
-      - "9000:9000"
-    volumes:
-      -./web:/var/www/html
-    environment:
-      CROPPER_URL: http://cropper:5000
-      UPLOAD_MAX_FILESIZE: 100M
-      POST_MAX_SIZE: 120M
-      MEMORY_LIMIT: 512M
-      MAX_EXECUTION_TIME: 300
-    # Wait for cropper API before starting php-fpm
-    command: sh -c "./wait-for-it.sh cropper:5000 -t 60 -- php-fpm"
-
-  nginx:
-    image: bprtkop/balena-photo-cropper-nginx:latest
-    build: ./nginx
-    container_name: balena-photo-cropper-nginx
-    restart: always
-    depends_on:
-      - web
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      -./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      -./nginx/entrypoint.sh:/entrypoint.sh:ro
-      -./web/webroot:/var/www/html:ro
-    environment:
-      SSL_KEY: ""
-      SSL_CRT: ""
-    # Wait for php-fpm before starting nginx
-    command: sh -c "./wait-for-it.sh web:9000 -t 60 -- nginx -g 'daemon off;'"
+      - 'resin-data:/data'
+    mem_limit: 450m
+    mem_reservation: 200m
+    restart: unless-stopped
 
 volumes:
-  cropper_uploads:
-  cropper_tmp:
+  resin-data:

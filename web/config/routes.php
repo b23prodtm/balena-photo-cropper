@@ -1,34 +1,27 @@
 <?php
-/**
- * CakePHP3 Routes Configuration
- * File: config/routes.php
- * 
- * Add these route definitions to your routes configuration
- */
+use Cake\Routing\Route\DashedRoute;
+use Cake\Routing\RouteBuilder;
 
-// Cropper interface and API routes
-$routes->scope('/cropper', ['controller' => 'Cropper'], function ($routes) {
-    // Main cropper interface
-    $routes->connect('/', ['action' => 'index']);
-    
-    // API endpoints
-    $routes->connect('/crop', ['action' => 'crop']);
-    $routes->connect('/upload', ['action' => 'upload']);
-    
-    // RESTful API support
-    $routes->resources('Cropper');
-});
+return function (RouteBuilder $routes): void {
+    $routes->setRouteClass(DashedRoute::class);
 
-// Legacy support for /cropper.php (rewrite to /cropper)
-$routes->connect('/cropper.php', ['controller' => 'Cropper', 'action' => 'index']);
+    $routes->scope('/', function (RouteBuilder $builder): void {
+        // Accueil
+        $builder->connect('/', ['controller' => 'Pages', 'action' => 'display', 'home']);
 
-// Homepage redirect logic
-$routes->connect('/', function($builder) {
-    return [
-        'controller' => 'Pages',
-        'action' => 'home'  // or redirect to cropper: ['controller' => 'Cropper', 'action' => 'index']
-    ];
-});
+        // Uploads + API
+        $builder->connect('/cropper', ['controller' => 'Uploads', 'action' => 'cropper']);
+        $builder->connect('/uploads/add', ['controller' => 'Uploads', 'action' => 'add']);
+        $builder->connect('/uploads', ['controller' => 'Uploads', 'action' => 'index']);
+        
+        // API endpoints pour CropperJS
+        $builder->connect('/uploads/upload', ['controller' => 'Uploads', 'action' => 'upload']);
+        $builder->connect('/uploads/save-crop', ['controller' => 'Uploads', 'action' => 'saveCrop']);
+        $builder->connect('/uploads/crop', ['controller' => 'Uploads', 'action' => 'crop']);
 
-// Default fallback
-$routes->fallbacks(DashedRoute::class);
+        // Legacy redirect
+        $builder->redirect('/cropper.php', '/cropper', ['status' => 301]);
+
+        $builder->fallbacks();
+    });
+};
