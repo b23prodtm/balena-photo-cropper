@@ -17,6 +17,7 @@ on:
         options:
           - 'self-hosted'
           - 'ubuntu-latest'
+
 env:
   REGISTRY: docker.io
   REGISTRY_IMAGE: bprtkop
@@ -25,11 +26,78 @@ env:
   MATRIX_RUNNER: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.runner || vars.DEFAULT_RUNNER }}
 
 jobs:
-  determine-runner:
-    runs-on: ${{ vars.DEFAULT_RUNNER }}
-    outputs:
-      matrix: ${{ steps.set-matrix.outputs.matrix }}
+  build:
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 90
+    strategy:
+      matrix:
+        platform:
+          - name: amd64
+            target: default
+            runner: ubuntu-latest
+          - name: arm64
+            target: default
+            runner: [self-hosted, linux, docker, arm64]
+          - name: arm-v7
+            target: default
+            runner: [self-hosted, linux, docker, arm-v7]
+      max-parallel: 3
+      fail-fast: false
+    
+    permissions:
+      contents: read
+      packages: write
+
     steps:
-      - id: set-matrix
-        run: |
-          echo "matrix={\"runner\":[\"$MATRIX_RUNNER}\"]" >> $GITHUB_OUTPUT
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: ${{ startsWith(github.ref, 'refs/tags/') && '0' || '1' }}
+
+    - name: Set up QEMU for multi-arch builds
+      uses: docker/setup-qemu-action@v3
+      with:
+        platforms: linux/${{ matrix.platform.name }}
+        image: tonistiigi/binfmt:master
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      with:
+        platforms: linux/${{ matrix.platform.name }}
+
+    - name: Login to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Extract metadata
+      id: meta
+      run: |
+        echo "SHORT_SHA=${GIT_SHA:0:7}" >> $GITHUB_OUTPUT
+        echo "BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
+
+    - name: Build for ${{ matrix.platform.name }}
+      uses: docker/bake-action@v5
+      with:
+        workdir: .
+        files: ./docker-bake.hcl
+        targets: default
+        push: ${{ github.event_name != 'pull_request' }}
+        set: |
+          *.platforms=linux/${{ matrix.platform.name }}
+          *.args.BUILD_DATE=${{ steps.meta.outputs.BUILD_DATE }}
+          *.args.VCS_REF=${{ steps.meta.outputs.SHORT_SHA }}
+          *.cache-from=type=gha
+          *.cache-to=type=gha,mode=max
+      env:
+        REGISTRY: docker.io
+        REGISTRY_IMAGE: bprtkop
+        GIT_SHA: ${{ github.sha }}
+        TAG: ${{ github.event_name != 'pull_request' && github.ref_name || 'pr-build' }}
+        BUILDKIT_PROGRESS: plain
+
+    - name: Log build results
+      if: always()
+      run: |
+        echo "Build for ${{ matrix.platform.name }} completed at $(date)"
