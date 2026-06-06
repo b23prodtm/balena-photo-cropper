@@ -15,8 +15,8 @@ on:
         default: 'self-hosted'
         type: choice
         options:
-          - 'self-hosted'
-          - 'ubuntu-latest'
+          - '[\"self-hosted\"]'
+          - '[\"ubuntu-latest\"]'
 env:
   REGISTRY: docker.io
   REGISTRY_IMAGE: bprtkop
@@ -27,10 +27,10 @@ env:
 
 jobs:
   determine-runner:
-    runs-on: ${{ vars.DEFAULT_RUNNER }}
+    runs-on: $DEFAULT_RUNNER
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
       - id: set-matrix
         run: |
-          echo "matrix={\"runner\":[\"${{ vars.MATRIX_RUNNER }}\"]}" >> $GITHUB_OUTPUT
+          echo "matrix={\"runner\":$MATRIX_RUNNER}" >> $GITHUB_OUTPUT
