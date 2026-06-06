@@ -8,91 +8,30 @@ on:
     tags:
       - 'v*'
   workflow_dispatch:
+    inputs:
+      runner:
+        description: 'Runner to use'
+        required: false
+        default: 'self-hosted'
+        type: choice
+        options:
+          - 'self-hosted'
+          - 'ubuntu-latest'
 
 env:
   REGISTRY: docker.io
   REGISTRY_IMAGE: bprtkop
   GIT_SHA: ${{ github.sha }}
   TAG: ${{ github.ref_name }}
-  MATRIX_RUNNER: '["self-hosted"]'
+  DEFAULT_RUNNER: 'ubuntu-latest'
+  MATRIX_RUNNER: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.runner || vars.DEFAULT_RUNNER }}
 
 jobs:
   determine-runner:
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.DEFAULT_RUNNER }}
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
       - id: set-matrix
         run: |
-          echo "matrix={\"runner\":${{ env.MATRIX_RUNNER }}}" >> $GITHUB_OUTPUT
-
-  build:
-    needs: determine-runner
-    runs-on: ${{ matrix.runner }}
-    strategy:
-      matrix: ${{ fromJson(needs.determine-runner.outputs.matrix) }}
-    timeout-minutes: 90
-    
-    permissions:
-      contents: read
-      packages: write
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: ${{ startsWith(github.ref, 'refs/tags/') && '0' || '1' }}
-
-    - name: Set up QEMU for multi-arch builds
-      uses: docker/setup-qemu-action@v3
-      with:
-        platforms: linux/amd64,linux/arm/v7,linux/arm64
-        image: tonistiigi/binfmt:master
-
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
-      with:
-        platforms: linux/amd64,linux/arm/v7,linux/arm64
-        driver-options: |
-          image=moby/buildkit:master
-          network=host
-
-    - name: Login to Docker Hub
-      uses: docker/login-action@v3
-      with:
-        username: ${{ secrets.DOCKERHUB_USERNAME }}
-        password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-    - name: Extract metadata
-      id: meta
-      run: |
-        echo "SHORT_SHA=${GIT_SHA:0:7}" >> $GITHUB_OUTPUT
-        echo "BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
-
-    - name: Build Multi-Platform
-      uses: docker/bake-action@v5
-      with:
-        workdir: .
-        files: ./docker-bake.hcl
-        targets: default
-        push: ${{ github.event_name != 'pull_request' }}
-        set: |
-          *.args.BUILD_DATE=${{ steps.meta.outputs.BUILD_DATE }}
-          *.args.VCS_REF=${{ steps.meta.outputs.SHORT_SHA }}
-          *.cache-from=type=gha
-          *.cache-from=type=local,src=/tmp/buildx-cache
-          *.cache-to=type=gha,mode=max
-          *.cache-to=type=local,dest=/tmp/buildx-cache,mode=max
-      env:
-        REGISTRY: docker.io
-        REGISTRY_IMAGE: bprtkop
-        GIT_SHA: ${{ github.sha }}
-        TAG: ${{ github.event_name != 'pull_request' && github.ref_name || 'pr-build' }}
-        BUILDKIT_PROGRESS: plain
-
-    - name: Log build results
-      if: always()
-      run: |
-        echo "Build completed at $(date)"
-        echo "Platforms: linux/amd64, linux/arm/v7, linux/arm64"
-        echo "Push enabled: ${{ github.event_name != 'pull_request' }}"
+          echo "matrix={\"runner\":[\"${{ env.MATRIX_RUNNER }}\"]}" >> $GITHUB_OUTPUT
