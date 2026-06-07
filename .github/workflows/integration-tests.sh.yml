@@ -76,7 +76,12 @@ jobs:
         [ -f tests/test_interactive_cropper.py ] && echo "✅ test_interactive_cropper.py found" || echo "❌ Not found"
         [ -f tests/test_cakephp_routes.sh ] && echo "✅ test_cakephp_routes.sh found" || echo "❌ Not found"
         [ -f tests/run_integration_tests.sh ] && echo "✅ run_integration_tests.sh found" || echo "❌ Not found"
-
+        
+    - name: Generate SSL certificates
+      run: |
+        mkdir -p certs
+        openssl req -x509 -newkey rsa:4096 -keyout certs/server.key -out certs/server.crt -days 365 -nodes -subj "/CN=localhost"
+        
     - name: Make test scripts executable
       run: |
         chmod +x tests/run_integration_tests.sh

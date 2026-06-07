@@ -4,6 +4,7 @@ services:
     build: ./nginx
     ports:
       - "8080:80"
+      - "8443:443"
     depends_on:
       - web
     mem_limit: 64m
@@ -13,6 +14,8 @@ services:
     command: >
       sh -c "/wait-for-it.sh web:80 -t 60 -- 
       nginx -g 'daemon off;'"
+    volumes:
+      - ./certs:/etc/nginx/ssl:ro
 
   web:
     build: ./web
@@ -42,3 +45,4 @@ services:
 
 volumes:
   resin-data:
+  certs:
