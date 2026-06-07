@@ -4,7 +4,8 @@ FROM nginx:1.27-alpine
 # Install curl for health checks
 RUN apk add --no-cache \
     curl \
-    bash
+    bash \
+    netcat-openbsd
 
 # Copy custom nginx configuration
 COPY nginx.conf /etc/nginx/nginx.conf
@@ -16,12 +17,12 @@ RUN mkdir -p /var/www/html
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
     CMD curl -f http://localhost/health 2>/dev/null || exit 1
 
-ADD https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh \
- /wait-for-it.sh
+COPY scripts/wait-for-it.sh /wait-for-it.sh
 RUN chmod 755 /wait-for-it.sh
 
+
 # Expose HTTP port
-EXPOSE 80
+EXPOSE 8080
 
 # Start Nginx
 CMD ["nginx", "-g", "daemon off;"]

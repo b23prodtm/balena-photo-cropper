@@ -16,7 +16,8 @@ RUN apk add --no-cache \
     libjpeg-turbo-dev \
     freetype-dev \
     imagemagick-dev \
-    shadow
+    shadow \
+    netcat-openbsd
 
 # PHP extensions (including those needed for CakePHP)
 RUN docker-php-ext-configure gd \
@@ -63,8 +64,8 @@ EXPOSE 9000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD php-fpm -t || exit 1
 
-ADD https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh \
- /wait-for-it.sh
+COPY scripts/wait-for-it.sh /wait-for-it.sh
 RUN chmod 755 /wait-for-it.sh
+
 
 CMD ["php-fpm", "-F"]

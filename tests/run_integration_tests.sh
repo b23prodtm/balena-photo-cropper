@@ -194,8 +194,8 @@ start_services() {
 run_flask_tests() {
     log_section "Running Flask API Tests"
     
-    echo "Running: python3 $TESTS_DIR/test_cropper_flask.py $BASE_URL $IMAGE_DIR"
-    if python3 "$TESTS_DIR/test_cropper_flask.py" "$BASE_URL" "$IMAGE_DIR" 2>&1; then
+    echo "Running: python3 $TESTS_DIR/test_cropper_flask.py $BASE_URL:$PORT $IMAGE_DIR"
+    if python3 "$TESTS_DIR/test_cropper_flask.py" "$BASE_URL:$PORT" "$IMAGE_DIR" 2>&1; then
         log_pass "Flask tests passed"
         return 0
     else
@@ -209,7 +209,7 @@ run_flask_tests() {
 run_cakephp_tests() {
     log_section "Running CakePHP Web Tests"
     
-    if bash "$TESTS_DIR/test_cakephp_routes.sh" "$BASE_URL"; then
+    if bash "$TESTS_DIR/test_cakephp_routes.sh" "$BASE_URL:$PORT"; then
         log_pass "CakePHP tests passed"
         return 0
     else
@@ -246,14 +246,8 @@ show_logs() {
 # Cleanup
 cleanup() {
     log_section "Cleanup"
-    
-    read -p "Stop and remove docker compose services? (y/n) " -n 1 -r
-    echo
-    
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        docker compose -f "$COMPOSE_FILE" down
-        log_pass "Services stopped"
-    fi
+    docker compose -f "$COMPOSE_FILE" down || true
+    log_pass "Services stopped"
 }
 
 # Main
