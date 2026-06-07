@@ -73,7 +73,7 @@ check_requirements() {
     
     local missing=0
     
-    for cmd in python3 docker docker-compose curl; do
+    for cmd in python3 docker curl; do
         if command -v $cmd &> /dev/null; then
             log_pass "$cmd found"
         else
@@ -103,7 +103,7 @@ generate_images() {
     fi
 }
 
-# Start docker-compose
+# Start docker compose
 start_services() {
     log_section "Starting Docker Compose Services"
     
@@ -113,7 +113,7 @@ start_services() {
     fi
     
     log_info "Starting services (timeout: ${TIMEOUT}s)..."
-    docker-compose -f "$COMPOSE_FILE" up -d
+    docker compose -f "$COMPOSE_FILE" up -d
     
     local start_time=$(date +%s)
     while true; do
@@ -122,7 +122,7 @@ start_services() {
         
         if [ $elapsed -gt $TIMEOUT ]; then
             log_fail "Services did not start within ${TIMEOUT}s"
-            docker-compose -f "$COMPOSE_FILE" logs
+            docker compose -f "$COMPOSE_FILE" logs
             return 1
         fi
         
@@ -184,19 +184,19 @@ run_cli_tests() {
 # Show logs
 show_logs() {
     log_section "Service Logs"
-    echo "Recent logs from docker-compose:"
-    docker-compose -f "$COMPOSE_FILE" logs --tail=50
+    echo "Recent logs from docker compose:"
+    docker compose -f "$COMPOSE_FILE" logs --tail=50
 }
 
 # Cleanup
 cleanup() {
     log_section "Cleanup"
     
-    read -p "Stop and remove docker-compose services? (y/n) " -n 1 -r
+    read -p "Stop and remove docker compose services? (y/n) " -n 1 -r
     echo
     
     if [[ $REPLY =~ ^[Yy]$ ]]; then
-        docker-compose -f "$COMPOSE_FILE" down
+        docker compose -f "$COMPOSE_FILE" down
         log_pass "Services stopped"
     fi
 }

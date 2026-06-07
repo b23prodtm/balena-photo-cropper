@@ -50,7 +50,7 @@ test_health() {
         return 0
     else
         log_fail "Cannot connect to $BASE_URL"
-        log_info "Make sure: docker-compose up -d"
+        log_info "Make sure: docker compose up -d"
         return 1
     fi
 }
