@@ -88,6 +88,7 @@ jobs:
         chmod +x tests/test_cakephp_routes.sh
 
     - name: Run integration tests
+      id: integration-tests  # Add an id to capture the step result
       run: |
         bash tests/run_integration_tests.sh
       timeout-minutes: 90
@@ -112,8 +113,8 @@ jobs:
       run: |
         echo "## 🧪 Integration Test Results" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        
-        if [ $? -eq 0 ]; then
+
+        if [ "${{ steps.integration-tests.outcome }}" == "success" ]; then
           echo "✅ **All tests passed!**" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "Tests completed:" >> $GITHUB_STEP_SUMMARY
@@ -127,22 +128,3 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "Please check the logs above and fix issues before deployment." >> $GITHUB_STEP_SUMMARY
         fi
-
-  docker-build:
-    needs: integration-tests
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 1
-
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
-
-    - name: Build Docker images (validation only)
-      run: |
-        echo "✅ Integration tests passed, proceeding with Docker build validation..."
-        docker buildx bake --dry-run || echo "Build validation complete"
