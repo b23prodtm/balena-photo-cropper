@@ -7,6 +7,7 @@
 set -e
 
 BASE_URL="${1:-http://localhost}"
+PORT="${2:-8080}"
 TIMEOUT=10
 
 # Colors
@@ -59,7 +60,7 @@ test_health() {
 test_index() {
     echo -e "\n🏠 Testing /index route..."
     
-    http_code=$(curl -s -o /dev/null -w "%{http_code}" -m $TIMEOUT "$BASE_URL/index")
+    http_code=$(curl -s -o /dev/null -w "%{http_code}" -m $TIMEOUT "$BASE_URL:$PORT/index")
     
     if [ "$http_code" = "200" ] || [ "$http_code" = "301" ] || [ "$http_code" = "302" ]; then
         log_pass "/index route returns $http_code"

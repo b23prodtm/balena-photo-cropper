@@ -19,6 +19,14 @@ RUN apk add --no-cache \
     shadow \
     netcat-openbsd
 
+
+# Copy PHP configuration
+COPY etc/php.ini /usr/local/etc/php/php.ini
+COPY etc/php-fpm.conf /usr/local/etc/php-fpm.d/www.conf
+
+# Install Composer
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir="/usr/local/bin" --filename=composer
+
 # PHP extensions (including those needed for CakePHP)
 RUN docker-php-ext-configure gd \
     --with-freetype \
@@ -31,13 +39,6 @@ RUN docker-php-ext-configure gd \
     pdo \
     pdo_mysql \
     opcache
-
-# Copy PHP configuration
-COPY etc/php.ini /usr/local/etc/php/php.ini
-COPY etc/php-fpm.conf /usr/local/etc/php-fpm.d/www.conf
-
-# Install Composer
-RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
 WORKDIR /var/www/html
 
