@@ -11,7 +11,7 @@ RUN apk add --no-cache \
 COPY nginx.conf /etc/nginx/nginx.conf
 
 # Create web root if not exists
-RUN mkdir -p /var/www/html
+RUN mkdir -p /var/www/html && mkdir -p /etc/nginx/conf.d
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
