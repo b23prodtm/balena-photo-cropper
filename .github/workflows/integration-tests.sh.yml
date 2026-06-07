@@ -88,16 +88,25 @@ jobs:
         chmod +x tests/test_cakephp_routes.sh
 
     - name: Run integration tests
-      id: integration-tests  # Add an id to capture the step result
+      id: integration-tests
       run: |
+        set -e  # Exit on first error
+        set -x  # Print commands for debugging
         bash tests/run_integration_tests.sh
+        TEST_EXIT=$?
+        echo "Integration tests exit code: $TEST_EXIT"
+        exit $TEST_EXIT
       timeout-minutes: 90
 
     - name: Docker compose logs (if failed)
       if: failure()
       run: |
         echo "=== Docker Compose Logs ==="
-        docker compose logs || true
+        docker compose logs web || true
+        docker compose logs cropper || true
+        echo ""
+        echo "=== Test Output ==="
+        [ -f test_output.log ] && cat test_output.log || echo "No test output file found"
         echo ""
         echo "=== Running Containers ==="
         docker ps -a || true
