@@ -23,6 +23,11 @@ use RecursiveIterator;
  * An iterator that can be used as an argument for other iterators that require
  * a RecursiveIterator but do not want children. This iterator will
  * always behave as having no nested items.
+ *
+ * @template TKey
+ * @template TValue
+ * @extends \Cake\Collection\Collection<TKey, TValue>
+ * @implements \RecursiveIterator<TKey, TValue>
  */
 class NoChildrenIterator extends Collection implements RecursiveIterator
 {
@@ -39,7 +44,7 @@ class NoChildrenIterator extends Collection implements RecursiveIterator
     /**
      * Returns a self instance without any elements.
      *
-     * @return \RecursiveIterator
+     * @return \RecursiveIterator<mixed, mixed>
      */
     public function getChildren(): RecursiveIterator
     {

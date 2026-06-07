@@ -22,6 +22,8 @@ use Cake\ORM\Table;
 
 /**
  * Registries for Table objects should implement this interface.
+ *
+ * @extends \Cake\Datasource\Locator\LocatorInterface<\Cake\ORM\Table>
  */
 interface LocatorInterface extends BaseLocatorInterface
 {
@@ -45,7 +47,7 @@ interface LocatorInterface extends BaseLocatorInterface
      * @throws \RuntimeException When you attempt to configure an existing
      *   table instance.
      */
-    public function setConfig($alias, $options = null);
+    public function setConfig(array|string $alias, ?array $options = null);
 
     /**
      * Get a table instance from the registry.
@@ -62,7 +64,6 @@ interface LocatorInterface extends BaseLocatorInterface
      * @param string $alias The alias to set.
      * @param \Cake\ORM\Table $repository The table to set.
      * @return \Cake\ORM\Table
-     * @psalm-suppress MoreSpecificImplementedParamType
      */
     public function set(string $alias, RepositoryInterface $repository): Table;
 }

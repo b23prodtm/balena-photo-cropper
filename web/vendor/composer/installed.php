@@ -3,7 +3,7 @@
         'name' => 'b23prodtm/balena-photo-cropper-web',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => '922943ddacab5bb2f04caea6e4bb97464e19f09a',
+        'reference' => '1a3bb4eca4e491ea9c13e253129011028f845c86',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -13,7 +13,7 @@
         'b23prodtm/balena-photo-cropper-web' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => '922943ddacab5bb2f04caea6e4bb97464e19f09a',
+            'reference' => '1a3bb4eca4e491ea9c13e253129011028f845c86',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
@@ -22,22 +22,22 @@
         'cakephp/cache' => array(
             'dev_requirement' => false,
             'replaced' => array(
-                0 => '4.4.18',
+                0 => '5.3.6',
             ),
         ),
         'cakephp/cakephp' => array(
-            'pretty_version' => '4.4.18',
-            'version' => '4.4.18.0',
-            'reference' => '34b4920bc8c13f8897434003e8aaaa605153d051',
+            'pretty_version' => '5.3.6',
+            'version' => '5.3.6.0',
+            'reference' => 'cdaca8c3b710789e8545bff5a83194a6b19cad46',
             'type' => 'library',
             'install_path' => __DIR__ . '/../cakephp/cakephp',
             'aliases' => array(),
             'dev_requirement' => false,
         ),
         'cakephp/chronos' => array(
-            'pretty_version' => '2.5.2',
-            'version' => '2.5.2.0',
-            'reference' => 'cd4e1ef90d5047e4870e2d47860fd3852195929c',
+            'pretty_version' => '3.5.0',
+            'version' => '3.5.0.0',
+            'reference' => 'e6e777b534244911566face8a5dbdbd7f7bda5a6',
             'type' => 'library',
             'install_path' => __DIR__ . '/../cakephp/chronos',
             'aliases' => array(),
@@ -46,85 +46,79 @@
         'cakephp/collection' => array(
             'dev_requirement' => false,
             'replaced' => array(
-                0 => '4.4.18',
+                0 => '5.3.6',
             ),
         ),
         'cakephp/console' => array(
             'dev_requirement' => false,
             'replaced' => array(
-                0 => '4.4.18',
+                0 => '5.3.6',
             ),
         ),
         'cakephp/core' => array(
             'dev_requirement' => false,
             'replaced' => array(
-                0 => '4.4.18',
+                0 => '5.3.6',
             ),
         ),
         'cakephp/database' => array(
             'dev_requirement' => false,
             'replaced' => array(
-                0 => '4.4.18',
+                0 => '5.3.6',
             ),
         ),
         'cakephp/datasource' => array(
             'dev_requirement' => false,
             'replaced' => array(
-                0 => '4.4.18',
+                0 => '5.3.6',
             ),
         ),
         'cakephp/event' => array(
             'dev_requirement' => false,
             'replaced' => array(
-                0 => '4.4.18',
-            ),
-        ),
-        'cakephp/filesystem' => array(
-            'dev_requirement' => false,
-            'replaced' => array(
-                0 => '4.4.18',
+                0 => '5.3.6',
             ),
         ),
         'cakephp/form' => array(
             'dev_requirement' => false,
             'replaced' => array(
-                0 => '4.4.18',
+                0 => '5.3.6',
             ),
         ),
         'cakephp/http' => array(
             'dev_requirement' => false,
             'replaced' => array(
-                0 => '4.4.18',
+                0 => '5.3.6',
             ),
         ),
         'cakephp/i18n' => array(
             'dev_requirement' => false,
             'replaced' => array(
-                0 => '4.4.18',
+                0 => '5.3.6',
             ),
         ),
         'cakephp/log' => array(
             'dev_requirement' => false,
             'replaced' => array(
-                0 => '4.4.18',
+                0 => '5.3.6',
             ),
         ),
         'cakephp/orm' => array(
             'dev_requirement' => false,
             'replaced' => array(
-                0 => '4.4.18',
+                0 => '5.3.6',
             ),
         ),
         'cakephp/utility' => array(
             'dev_requirement' => false,
             'replaced' => array(
-                0 => '4.4.18',
+                0 => '5.3.6',
             ),
         ),
         'cakephp/validation' => array(
             'dev_requirement' => false,
             'replaced' => array(
-                0 => '4.4.18',
+                0 => '5.3.6',
             ),
         ),
         'composer/ca-bundle' => array(
@@ -137,9 +131,9 @@
             'dev_requirement' => false,
         ),
         'laminas/laminas-diactoros' => array(
-            'pretty_version' => '2.26.0',
-            'version' => '2.26.0.0',
-            'reference' => '6584d44eb8e477e89d453313b858daac6183cddc',
+            'pretty_version' => '3.8.0',
+            'version' => '3.8.0.0',
+            'reference' => '60c182916b2749480895601649563970f3f12ec4',
             'type' => 'library',
             'install_path' => __DIR__ . '/../laminas/laminas-diactoros',
             'aliases' => array(),
@@ -155,9 +149,9 @@
             'dev_requirement' => false,
         ),
         'league/container' => array(
-            'pretty_version' => '4.2.5',
-            'version' => '4.2.5.0',
-            'reference' => 'd3cebb0ff4685ff61c749e54b27db49319e2ec00',
+            'pretty_version' => '5.2.0',
+            'version' => '5.2.0.0',
+            'reference' => '58accbc032f0090a9bd08326f93062c5a658b2c5',
             'type' => 'library',
             'install_path' => __DIR__ . '/../league/container',
             'aliases' => array(),
@@ -259,6 +253,21 @@
             'aliases' => array(),
             'dev_requirement' => true,
         ),
+        'psr/clock' => array(
+            'pretty_version' => '1.0.0',
+            'version' => '1.0.0.0',
+            'reference' => 'e41a24703d4560fd0acb709162f73b8adfc3aa0d',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../psr/clock',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
+        'psr/clock-implementation' => array(
+            'dev_requirement' => false,
+            'provided' => array(
+                0 => '1.0',
+            ),
+        ),
         'psr/container' => array(
             'pretty_version' => '2.0.2',
             'version' => '2.0.2.0',
@@ -272,8 +281,17 @@
             'dev_requirement' => false,
             'provided' => array(
                 0 => '^1.0',
-                1 => '^1.0 || ^2.0',
+                1 => '^2.0',
             ),
+        ),
+        'psr/event-dispatcher' => array(
+            'pretty_version' => '1.0.0',
+            'version' => '1.0.0.0',
+            'reference' => 'dbefd12671e8a14ec7f180cab83036ed26714bb0',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../psr/event-dispatcher',
+            'aliases' => array(),
+            'dev_requirement' => false,
         ),
         'psr/http-client' => array(
             'pretty_version' => '1.0.3',
@@ -302,13 +320,13 @@
         'psr/http-factory-implementation' => array(
             'dev_requirement' => false,
             'provided' => array(
-                0 => '1.0',
+                0 => '^1.0',
             ),
         ),
         'psr/http-message' => array(
-            'pretty_version' => '1.1',
-            'version' => '1.1.0.0',
-            'reference' => 'cb6ce4845ce34a8ad9e68117c10ee90a29919eba',
+            'pretty_version' => '2.0',
+            'version' => '2.0.0.0',
+            'reference' => '402d35bcb92c70c026d1a6a9883f06b2ead23d71',
             'type' => 'library',
             'install_path' => __DIR__ . '/../psr/http-message',
             'aliases' => array(),
@@ -317,7 +335,7 @@
         'psr/http-message-implementation' => array(
             'dev_requirement' => false,
             'provided' => array(
-                0 => '1.0',
+                0 => '^1.1 || ^2.0',
             ),
         ),
         'psr/http-server-handler' => array(
@@ -351,9 +369,9 @@
             ),
         ),
         'psr/log' => array(
-            'pretty_version' => '2.0.0',
-            'version' => '2.0.0.0',
-            'reference' => 'ef29f6d262798707a9edd554e2b82517ef3a9376',
+            'pretty_version' => '3.0.2',
+            'version' => '3.0.2.0',
+            'reference' => 'f16e1d5863e37f8d8c2a01719f5b34baa2b714d3',
             'type' => 'library',
             'install_path' => __DIR__ . '/../psr/log',
             'aliases' => array(),
@@ -362,13 +380,13 @@
         'psr/log-implementation' => array(
             'dev_requirement' => false,
             'provided' => array(
-                0 => '^1.0 || ^2.0',
+                0 => '^3.0',
             ),
         ),
         'psr/simple-cache' => array(
-            'pretty_version' => '2.0.0',
-            'version' => '2.0.0.0',
-            'reference' => '8707bf3cea6f710bf6ef05491234e3ab06f6432a',
+            'pretty_version' => '3.0.0',
+            'version' => '3.0.0.0',
+            'reference' => '764e0b3939f5ca87cb904f570ef9be2d78a07865',
             'type' => 'library',
             'install_path' => __DIR__ . '/../psr/simple-cache',
             'aliases' => array(),
@@ -377,7 +395,7 @@
         'psr/simple-cache-implementation' => array(
             'dev_requirement' => false,
             'provided' => array(
-                0 => '^1.0 || ^2.0',
+                0 => '^3.0',
             ),
         ),
         'sebastian/cli-parser' => array(

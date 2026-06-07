@@ -21,6 +21,7 @@ use Cake\Console\Arguments;
 use Cake\Console\ConsoleIo;
 use Cake\Console\ConsoleOptionParser;
 use Cake\Core\Configure;
+use function Cake\Core\env;
 
 /**
  * built-in Server command
@@ -46,28 +47,43 @@ class ServerCommand extends Command
      *
      * @var string
      */
-    protected $_host = self::DEFAULT_HOST;
+    protected string $_host = self::DEFAULT_HOST;
 
     /**
      * listen port
      *
      * @var int
      */
-    protected $_port = self::DEFAULT_PORT;
+    protected int $_port = self::DEFAULT_PORT;
 
     /**
      * document root
      *
      * @var string
      */
-    protected $_documentRoot = WWW_ROOT;
+    protected string $_documentRoot = WWW_ROOT;
 
     /**
      * ini path
      *
      * @var string
      */
-    protected $_iniPath = '';
+    protected string $_iniPath = '';
+
+    /**
+     * The server type.
+     *
+     * @var string
+     */
+    protected string $server = 'php';
+
+    /**
+     * @inheritDoc
+     */
+    public static function getDescription(): string
+    {
+        return "Start PHP's built-in server or FrankenPHP for CakePHP";
+    }
 
     /**
      * Starts up the Command and displays the welcome message.
@@ -76,7 +92,7 @@ class ServerCommand extends Command
      * @param \Cake\Console\Arguments $args The command arguments.
      * @param \Cake\Console\ConsoleIo $io The console io
      * @return void
-     * @link https://book.cakephp.org/4/en/console-and-shells.html#hook-methods
+     * @link https://book.cakephp.org/5/en/console-commands/commands.html#lifecycle-callbacks
      */
     protected function startup(Arguments $args, ConsoleIo $io): void
     {
@@ -91,6 +107,9 @@ class ServerCommand extends Command
         }
         if ($args->getOption('ini_path')) {
             $this->_iniPath = (string)$args->getOption('ini_path');
+        }
+        if ($args->getOption('frankenphp')) {
+            $this->server = 'frankenphp';
         }
 
         // For Windows
@@ -121,32 +140,74 @@ class ServerCommand extends Command
      *
      * @param \Cake\Console\Arguments $args The command arguments.
      * @param \Cake\Console\ConsoleIo $io The console io
-     * @return int|null The exit code or null for success
+     * @return int The exit code
      */
-    public function execute(Arguments $args, ConsoleIo $io): ?int
+    public function execute(Arguments $args, ConsoleIo $io): int
     {
         $this->startup($args, $io);
-        $phpBinary = (string)env('PHP', 'php');
-        $command = sprintf(
-            '%s -S %s:%d -t %s',
-            $phpBinary,
+
+        $io->out(sprintf(
+            '%s server is running at http://%s:%s/',
+            $this->server,
             $this->_host,
             $this->_port,
-            escapeshellarg($this->_documentRoot)
+        ));
+        $io->out('You can exit with <info>`CTRL-C`</info>');
+
+        return $this->runCommand($this->{$this->server . 'Command'}());
+    }
+
+    /**
+     * Runs the command.
+     *
+     * @param string $command The command to run
+     * @return int The exit code
+     */
+    protected function runCommand(string $command): int
+    {
+        if (system($command) === false) {
+            return static::CODE_ERROR;
+        }
+
+        return static::CODE_SUCCESS;
+    }
+
+    /**
+     * Returns the command to run PHP's built-in server.
+     *
+     * @return string
+     */
+    protected function phpCommand(): string
+    {
+        $command = sprintf(
+            '%s -S %s:%d -t %s',
+            (string)env('PHP', 'php'),
+            $this->_host,
+            $this->_port,
+            escapeshellarg($this->_documentRoot),
         );
 
-        if (!empty($this->_iniPath)) {
+        if ($this->_iniPath) {
             $command = sprintf('%s -c %s', $command, $this->_iniPath);
         }
 
-        $command = sprintf('%s %s', $command, escapeshellarg($this->_documentRoot . '/index.php'));
+        return sprintf('%s %s', $command, escapeshellarg($this->_documentRoot . '/index.php'));
+    }
 
-        $port = ':' . $this->_port;
-        $io->out(sprintf('built-in server is running in http://%s%s/', $this->_host, $port));
-        $io->out('You can exit with <info>`CTRL-C`</info>');
-        system($command);
-
-        return static::CODE_SUCCESS;
+    /**
+     * Returns the command to run frankenphp's server.
+     *
+     * @return string
+     */
+    protected function frankenphpCommand(): string
+    {
+        return sprintf(
+            '%s php-server -a -l %s:%d -r %s',
+            (string)env('FRANKENPHP', 'frankenphp'),
+            $this->_host,
+            $this->_port,
+            escapeshellarg($this->_documentRoot),
+        );
     }
 
     /**
@@ -158,8 +219,8 @@ class ServerCommand extends Command
     public function buildOptionParser(ConsoleOptionParser $parser): ConsoleOptionParser
     {
         $parser->setDescription([
-            'PHP Built-in Server for CakePHP',
-            '<warning>[WARN] Don\'t use this in a production environment</warning>',
+            static::getDescription(),
+            "<warning>[WARN] Don't use this in a production environment</warning>",
         ])->addOption('host', [
             'short' => 'H',
             'help' => 'ServerHost',
@@ -172,6 +233,10 @@ class ServerCommand extends Command
         ])->addOption('document_root', [
             'short' => 'd',
             'help' => 'DocumentRoot',
+        ])->addOption('frankenphp', [
+            'boolean' => true,
+            'short' => 'f',
+            'help' => "Use frankenphp instead of PHP's built-in server",
         ]);
 
         return $parser;

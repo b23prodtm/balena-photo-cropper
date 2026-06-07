@@ -16,16 +16,29 @@ declare(strict_types=1);
  */
 namespace Cake\Cache;
 
+use Cake\Cache\Event\CacheAfterAddEvent;
+use Cake\Cache\Event\CacheBeforeAddEvent;
+use Cake\Cache\Exception\InvalidArgumentException;
 use Cake\Core\InstanceConfigTrait;
+use Cake\Event\EventDispatcherInterface;
+use Cake\Event\EventDispatcherTrait;
 use DateInterval;
 use DateTime;
 use Psr\SimpleCache\CacheInterface;
+use function Cake\Core\triggerWarning;
 
 /**
  * Storage engine for CakePHP caching
+ *
+ * @template TSubject of object
+ * @implements \Cake\Event\EventDispatcherInterface<TSubject>
  */
-abstract class CacheEngine implements CacheInterface, CacheEngineInterface
+abstract class CacheEngine implements CacheInterface, CacheEngineInterface, EventDispatcherInterface
 {
+    /**
+     * @use \Cake\Event\EventDispatcherTrait<TSubject>
+     */
+    use EventDispatcherTrait;
     use InstanceConfigTrait;
 
     /**
@@ -52,7 +65,7 @@ abstract class CacheEngine implements CacheInterface, CacheEngineInterface
      *
      * @var array<string, mixed>
      */
-    protected $_defaultConfig = [
+    protected array $_defaultConfig = [
         'duration' => 3600,
         'groups' => [],
         'prefix' => 'cake_',
@@ -65,7 +78,7 @@ abstract class CacheEngine implements CacheInterface, CacheEngineInterface
      *
      * @var string
      */
-    protected $_groupPrefix = '';
+    protected string $_groupPrefix = '';
 
     /**
      * Initialize the cache engine
@@ -94,13 +107,13 @@ abstract class CacheEngine implements CacheInterface, CacheEngineInterface
     /**
      * Ensure the validity of the given cache key.
      *
-     * @param string $key Key to check.
+     * @param mixed $key Key to check.
      * @return void
-     * @throws \Cake\Cache\InvalidArgumentException When the key is not valid.
+     * @throws \Cake\Cache\Exception\InvalidArgumentException When the key is not valid.
      */
-    protected function ensureValidKey($key): void
+    protected function ensureValidKey(mixed $key): void
     {
-        if (!is_string($key) || strlen($key) === 0) {
+        if (!is_string($key) || $key === '') {
             throw new InvalidArgumentException('A cache key must be a non-empty string.');
         }
     }
@@ -111,17 +124,10 @@ abstract class CacheEngine implements CacheInterface, CacheEngineInterface
      * @param iterable $iterable The iterable to check.
      * @param string $check Whether to check keys or values.
      * @return void
-     * @throws \Cake\Cache\InvalidArgumentException
+     * @throws \Cake\Cache\Exception\InvalidArgumentException
      */
-    protected function ensureValidType($iterable, string $check = self::CHECK_VALUE): void
+    protected function ensureValidType(iterable $iterable, string $check = self::CHECK_VALUE): void
     {
-        if (!is_iterable($iterable)) {
-            throw new InvalidArgumentException(sprintf(
-                'A cache %s must be either an array or a Traversable.',
-                $check === self::CHECK_VALUE ? 'key set' : 'set'
-            ));
-        }
-
         foreach ($iterable as $key => $value) {
             if ($check === self::CHECK_VALUE) {
                 $this->ensureValidKey($value);
@@ -134,13 +140,13 @@ abstract class CacheEngine implements CacheInterface, CacheEngineInterface
     /**
      * Obtains multiple cache items by their unique keys.
      *
-     * @param iterable $keys A list of keys that can obtained in a single operation.
+     * @param iterable<string> $keys A list of keys that can obtained in a single operation.
      * @param mixed $default Default value to return for keys that do not exist.
-     * @return iterable A list of key value pairs. Cache keys that do not exist or are stale will have $default as value.
-     * @throws \Cake\Cache\InvalidArgumentException If $keys is neither an array nor a Traversable,
+     * @return iterable<string, mixed> A list of key value pairs. Cache keys that do not exist or are stale will have $default as value.
+     * @throws \Cake\Cache\Exception\InvalidArgumentException If $keys is neither an array nor a Traversable,
      *   or if any of the $keys are not a legal value.
      */
-    public function getMultiple($keys, $default = null): iterable
+    public function getMultiple(iterable $keys, mixed $default = null): iterable
     {
         $this->ensureValidType($keys);
 
@@ -160,13 +166,14 @@ abstract class CacheEngine implements CacheInterface, CacheEngineInterface
      *   the driver supports TTL then the library may set a default value
      *   for it or let the driver take care of that.
      * @return bool True on success and false on failure.
-     * @throws \Cake\Cache\InvalidArgumentException If $values is neither an array nor a Traversable,
+     * @throws \Cake\Cache\Exception\InvalidArgumentException If $values is neither an array nor a Traversable,
      *   or if any of the $values are not a legal value.
      */
-    public function setMultiple($values, $ttl = null): bool
+    public function setMultiple(iterable $values, DateInterval|int|null $ttl = null): bool
     {
         $this->ensureValidType($values, self::CHECK_KEY);
 
+        $restore = null;
         if ($ttl !== null) {
             $restore = $this->getConfig('duration');
             $this->setConfig('duration', $ttl);
@@ -181,7 +188,7 @@ abstract class CacheEngine implements CacheInterface, CacheEngineInterface
 
             return true;
         } finally {
-            if (isset($restore)) {
+            if ($restore !== null) {
                 $this->setConfig('duration', $restore);
             }
         }
@@ -196,10 +203,10 @@ abstract class CacheEngine implements CacheInterface, CacheEngineInterface
      *
      * @param iterable $keys A list of string-based keys to be deleted.
      * @return bool True if the items were successfully removed. False if there was an error.
-     * @throws \Cake\Cache\InvalidArgumentException If $keys is neither an array nor a Traversable,
+     * @throws \Cake\Cache\Exception\InvalidArgumentException If $keys is neither an array nor a Traversable,
      *   or if any of the $keys are not a legal value.
      */
-    public function deleteMultiple($keys): bool
+    public function deleteMultiple(iterable $keys): bool
     {
         $this->ensureValidType($keys);
 
@@ -223,9 +230,9 @@ abstract class CacheEngine implements CacheInterface, CacheEngineInterface
      *
      * @param string $key The cache item key.
      * @return bool
-     * @throws \Cake\Cache\InvalidArgumentException If the $key string is not a legal value.
+     * @throws \Cake\Cache\Exception\InvalidArgumentException If the $key string is not a legal value.
      */
-    public function has($key): bool
+    public function has(string $key): bool
     {
         return $this->get($key) !== null;
     }
@@ -236,9 +243,9 @@ abstract class CacheEngine implements CacheInterface, CacheEngineInterface
      * @param string $key The unique key of this item in the cache.
      * @param mixed $default Default value to return if the key does not exist.
      * @return mixed The value of the item from the cache, or $default in case of cache miss.
-     * @throws \Cake\Cache\InvalidArgumentException If the $key string is not a legal value.
+     * @throws \Cake\Cache\Exception\InvalidArgumentException If the $key string is not a legal value.
      */
-    abstract public function get($key, $default = null);
+    abstract public function get(string $key, mixed $default = null): mixed;
 
     /**
      * Persists data in the cache, uniquely referenced by the given key with an optional expiration TTL time.
@@ -249,10 +256,10 @@ abstract class CacheEngine implements CacheInterface, CacheEngineInterface
      *   the driver supports TTL then the library may set a default value
      *   for it or let the driver take care of that.
      * @return bool True on success and false on failure.
-     * @throws \Cake\Cache\InvalidArgumentException
+     * @throws \Cake\Cache\Exception\InvalidArgumentException
      *   MUST be thrown if the $key string is not a legal value.
      */
-    abstract public function set($key, $value, $ttl = null): bool;
+    abstract public function set(string $key, mixed $value, DateInterval|int|null $ttl = null): bool;
 
     /**
      * Increment a number under the key and return incremented value
@@ -261,16 +268,16 @@ abstract class CacheEngine implements CacheInterface, CacheEngineInterface
      * @param int $offset How much to add
      * @return int|false New incremented value, false otherwise
      */
-    abstract public function increment(string $key, int $offset = 1);
+    abstract public function increment(string $key, int $offset = 1): int|false;
 
     /**
      * Decrement a number under the key and return decremented value
      *
      * @param string $key Identifier for the data
      * @param int $offset How much to subtract
-     * @return int|false New incremented value, false otherwise
+     * @return int|false New decremented value, false otherwise
      */
-    abstract public function decrement(string $key, int $offset = 1);
+    abstract public function decrement(string $key, int $offset = 1): int|false;
 
     /**
      * Delete a key from the cache
@@ -278,7 +285,7 @@ abstract class CacheEngine implements CacheInterface, CacheEngineInterface
      * @param string $key Identifier for the data
      * @return bool True if the value was successfully deleted, false if it didn't exist or couldn't be removed
      */
-    abstract public function delete($key): bool;
+    abstract public function delete(string $key): bool;
 
     /**
      * Delete all keys from the cache
@@ -297,12 +304,32 @@ abstract class CacheEngine implements CacheInterface, CacheEngineInterface
      * @param mixed $value Data to be cached.
      * @return bool True if the data was successfully cached, false on failure.
      */
-    public function add(string $key, $value): bool
+    public function add(string $key, mixed $value): bool
     {
         $cachedValue = $this->get($key);
+        $prefixedKey = $this->_key($key);
+        $duration = $this->getConfig('duration');
+
+        $this->_eventClass = CacheBeforeAddEvent::class;
+        $this->dispatchEvent(CacheBeforeAddEvent::NAME, [
+            'key' => $prefixedKey,
+            'value' => $value,
+            'ttl' => $duration,
+        ]);
+
         if ($cachedValue === null) {
-            return $this->set($key, $value);
+            $success = $this->set($key, $value);
+            $this->_eventClass = CacheAfterAddEvent::class;
+            $this->dispatchEvent(CacheAfterAddEvent::NAME, [
+                'key' => $prefixedKey, 'value' => $value, 'success' => $success, 'ttl' => $duration,
+            ]);
+
+            return $success;
         }
+        $this->_eventClass = CacheAfterAddEvent::class;
+        $this->dispatchEvent(CacheAfterAddEvent::NAME, [
+            'key' => $prefixedKey, 'value' => $value, 'success' => false, 'ttl' => $duration,
+        ]);
 
         return false;
     }
@@ -337,15 +364,15 @@ abstract class CacheEngine implements CacheInterface, CacheEngineInterface
      *
      * @param string $key the key passed over
      * @return string Prefixed key with potentially unsafe characters replaced.
-     * @throws \Cake\Cache\InvalidArgumentException If key's value is invalid.
+     * @throws \Cake\Cache\Exception\InvalidArgumentException If key's value is invalid.
      */
-    protected function _key($key): string
+    protected function _key(string $key): string
     {
         $this->ensureValidKey($key);
 
         $prefix = '';
         if ($this->_groupPrefix) {
-            $prefix = md5(implode('_', $this->groups()));
+            $prefix = hash('xxh128', implode('_', $this->groups()));
         }
         $key = preg_replace('/[\s]+/', '_', $key);
 
@@ -375,7 +402,7 @@ abstract class CacheEngine implements CacheInterface, CacheEngineInterface
      *   driver's default duration will be used.
      * @return int
      */
-    protected function duration($ttl): int
+    protected function duration(DateInterval|int|null $ttl): int
     {
         if ($ttl === null) {
             return $this->_config['duration'];
@@ -383,12 +410,12 @@ abstract class CacheEngine implements CacheInterface, CacheEngineInterface
         if (is_int($ttl)) {
             return $ttl;
         }
-        if ($ttl instanceof DateInterval) {
-            return (int)DateTime::createFromFormat('U', '0')
-                ->add($ttl)
-                ->format('U');
-        }
 
-        throw new InvalidArgumentException('TTL values must be one of null, int, \DateInterval');
+        /** @var \DateTime $datetime */
+        $datetime = DateTime::createFromFormat('U', '0');
+
+        return (int)$datetime
+            ->add($ttl)
+            ->format('U');
     }
 }

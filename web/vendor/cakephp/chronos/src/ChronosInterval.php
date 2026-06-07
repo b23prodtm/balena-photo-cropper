@@ -8,547 +8,416 @@ declare(strict_types=1);
  * Redistributions of files must retain the above copyright notice.
  *
  * @copyright     Copyright (c) Cake Software Foundation, Inc. (https://cakefoundation.org)
- * @copyright     Copyright (c) Brian Nesbitt <brian@nesbot.com>
  * @link          https://cakephp.org CakePHP(tm) Project
  * @license       https://www.opensource.org/licenses/mit-license.php MIT License
  */
 namespace Cake\Chronos;
 
-use BadMethodCallException;
 use DateInterval;
 use InvalidArgumentException;
+use Stringable;
 
 /**
- * A simple API extension for DateInterval.
- * The implementation provides helpers to handle weeks but only days are saved.
- * Weeks are calculated based on the total days of the current instance.
+ * A wrapper around DateInterval that provides additional convenience methods.
  *
- * @property int $years Total years of the current interval.
- * @property int $months Total months of the current interval.
- * @property int $weeks Total weeks of the current interval calculated from the days.
- * @property int $dayz Total days of the current interval (weeks * 7 + days).
- * @property int $hours Total hours of the current interval.
- * @property int $minutes Total minutes of the current interval.
- * @property int $seconds Total seconds of the current interval.
- * @property int $microseconds Total microseconds of the current interval.
- * @property-read int $dayzExcludeWeeks Total days remaining in the final week of the current instance (days % 7).
- * @property-read int $daysExcludeWeeks alias of dayzExcludeWeeks
- * @method static \Cake\Chronos\ChronosInterval years($years = 1) Create instance specifying a number of years.
- * @method static \Cake\Chronos\ChronosInterval year($years = 1) Alias for years
- * @method static \Cake\Chronos\ChronosInterval months($months = 1) Create instance specifying a number of months.
- * @method static \Cake\Chronos\ChronosInterval month($months = 1) Alias for months
- * @method static \Cake\Chronos\ChronosInterval weeks($weeks = 1) Create instance specifying a number of weeks.
- * @method static \Cake\Chronos\ChronosInterval week($weeks = 1) Alias for weeks
- * @method static \Cake\Chronos\ChronosInterval days($days = 1) Create instance specifying a number of days.
- * @method static \Cake\Chronos\ChronosInterval dayz($days = 1) Alias for days
- * @method static \Cake\Chronos\ChronosInterval day($days = 1) Alias for days
- * @method static \Cake\Chronos\ChronosInterval hours($hours = 1) Create instance specifying a number of hours.
- * @method static \Cake\Chronos\ChronosInterval hour($hours = 1) Alias for hours
- * @method static \Cake\Chronos\ChronosInterval minutes($minutes = 1) Create instance specifying a number of minutes.
- * @method static \Cake\Chronos\ChronosInterval minute($minutes = 1) Alias for minutes
- * @method static \Cake\Chronos\ChronosInterval seconds($seconds = 1) Create instance specifying a number of seconds.
- * @method static \Cake\Chronos\ChronosInterval second($seconds = 1) Alias for seconds
- * @method static \Cake\Chronos\ChronosInterval microseconds($microseconds = 1) Create instance specifying a number of microseconds.
- * @method static \Cake\Chronos\ChronosInterval microsecond($microseconds = 1) Alias for microseconds
+ * This class uses the decorator pattern to wrap a native DateInterval,
+ * providing ISO 8601 duration string formatting and factory methods.
+ *
+ * @property-read int $y Years
+ * @property-read int $m Months
+ * @property-read int $d Days
+ * @property-read int $h Hours
+ * @property-read int $i Minutes
+ * @property-read int $s Seconds
+ * @property-read float $f Microseconds as a fraction of a second
+ * @property-read int $invert 1 if the interval is negative
+ * @property-read int|false $days Total days if created from diff(), false otherwise
+ * @phpstan-consistent-constructor
  */
-class ChronosInterval extends DateInterval
+class ChronosInterval implements Stringable
 {
     /**
-     * @var string
+     * The wrapped DateInterval instance.
      */
-    public const PERIOD_PREFIX = 'P';
-    /**
-     * @var string
-     */
-    public const PERIOD_YEARS = 'Y';
-    /**
-     * @var string
-     */
-    public const PERIOD_MONTHS = 'M';
-    /**
-     * @var string
-     */
-    public const PERIOD_DAYS = 'D';
-    /**
-     * @var string
-     */
-    public const PERIOD_TIME_PREFIX = 'T';
-    /**
-     * @var string
-     */
-    public const PERIOD_HOURS = 'H';
-    /**
-     * @var string
-     */
-    public const PERIOD_MINUTES = 'M';
-    /**
-     * @var string
-     */
-    public const PERIOD_SECONDS = 'S';
-
-    /**
-     * Determine if the interval was created via DateTime:diff() or not.
-     *
-     * @param \DateInterval $interval The interval to check.
-     * @return bool
-     */
-    protected static function wasCreatedFromDiff(DateInterval $interval): bool
-    {
-        return $interval->days !== false;
-    }
+    protected DateInterval $interval;
 
     /**
      * Create a new ChronosInterval instance.
      *
-     * @param int|null $years The year to use.
-     * @param int|null $months The month to use.
-     * @param int|null $weeks The week to use.
-     * @param int|null $days The day to use.
-     * @param int|null $hours The hours to use.
-     * @param int|null $minutes The minutes to use.
-     * @param int|null $seconds The seconds to use.
-     * @param int|null $microseconds The microseconds to use.
+     * @param \DateInterval $interval The interval to wrap.
      */
-    public function __construct(
-        ?int $years = 1,
+    public function __construct(DateInterval $interval)
+    {
+        $this->interval = $interval;
+    }
+
+    /**
+     * Create an interval from a specification string.
+     *
+     * @param string $spec An interval specification (e.g., 'P1Y2M3D').
+     * @return static
+     */
+    public static function create(string $spec): static
+    {
+        return new static(new DateInterval($spec));
+    }
+
+    /**
+     * Create an interval from individual components.
+     *
+     * @param int|null $years Years
+     * @param int|null $months Months
+     * @param int|null $weeks Weeks (converted to days)
+     * @param int|null $days Days
+     * @param int|null $hours Hours
+     * @param int|null $minutes Minutes
+     * @param int|null $seconds Seconds
+     * @param int|null $microseconds Microseconds
+     * @return static
+     */
+    public static function createFromValues(
+        ?int $years = null,
         ?int $months = null,
         ?int $weeks = null,
         ?int $days = null,
         ?int $hours = null,
         ?int $minutes = null,
         ?int $seconds = null,
-        ?int $microseconds = null
-    ) {
-        $spec = static::PERIOD_PREFIX;
-
-        $spec .= $years > 0 ? $years . static::PERIOD_YEARS : '';
-        $spec .= $months > 0 ? $months . static::PERIOD_MONTHS : '';
-
-        $specDays = 0;
-        $specDays += $weeks > 0 ? $weeks * ChronosInterface::DAYS_PER_WEEK : 0;
-        $specDays += $days > 0 ? $days : 0;
-
-        $spec .= $specDays > 0 ? $specDays . static::PERIOD_DAYS : '';
-
-        if ($spec === static::PERIOD_PREFIX) {
-            $spec .= '0' . static::PERIOD_YEARS;
-        }
-
-        if ($hours > 0 || $minutes > 0 || $seconds > 0) {
-            $spec .= static::PERIOD_TIME_PREFIX;
-            $spec .= $hours > 0 ? $hours . static::PERIOD_HOURS : '';
-            $spec .= $minutes > 0 ? $minutes . static::PERIOD_MINUTES : '';
-            $spec .= $seconds > 0 ? $seconds . static::PERIOD_SECONDS : '';
-        }
-
-        parent::__construct($spec);
-
-        if ($microseconds > 0) {
-            $this->f = $microseconds / 1000000;
-        }
-        trigger_error(
-            'Since 2.4 ChronosInterval is deprecated. Use `Chronos::createInterval() instead.`',
-            E_USER_DEPRECATED
+        ?int $microseconds = null,
+    ): static {
+        $interval = Chronos::createInterval(
+            $years,
+            $months,
+            $weeks,
+            $days,
+            $hours,
+            $minutes,
+            $seconds,
+            $microseconds,
         );
+
+        return new static($interval);
     }
 
     /**
-     * Create a new ChronosInterval instance from specific values.
-     * This is an alias for the constructor that allows better fluent
-     * syntax as it allows you to do ChronosInterval::create(1)->fn() rather than
-     * (new ChronosInterval(1))->fn().
+     * Create an interval from a DateInterval instance.
      *
-     * @param int|null $years The year to use.
-     * @param int|null $months The month to use.
-     * @param int|null $weeks The week to use.
-     * @param int|null $days The day to use.
-     * @param int|null $hours The hours to use.
-     * @param int|null $minutes The minutes to use.
-     * @param int|null $seconds The seconds to use.
-     * @param int|null $microseconds The microseconds to use.
+     * @param \DateInterval $interval The interval to wrap.
      * @return static
      */
-    public static function create(
-        ?int $years = 1,
-        ?int $months = null,
-        ?int $weeks = null,
-        ?int $days = null,
-        ?int $hours = null,
-        ?int $minutes = null,
-        ?int $seconds = null,
-        ?int $microseconds = null
-    ): self {
-        return new static($years, $months, $weeks, $days, $hours, $minutes, $seconds, $microseconds);
+    public static function instance(DateInterval $interval): static
+    {
+        return new static($interval);
     }
 
     /**
-     * Provide static helpers to create instances. Allows:
+     * Create an interval from a relative date string.
      *
-     * ```
-     * ChronosInterval::years(3)
-     * // or
-     * ChronosInterval::month(1);
-     * ```
+     * This wraps DateInterval::createFromDateString() which accepts
+     * relative date/time formats like "1 year + 2 days" or "3 months".
      *
-     * Note: This is done using the magic method to allow static and instance methods to
-     *       have the same names.
-     *
-     * @param string $name The property to configure. Accepts singular and plural forms.
-     * @param array $args Contains the value to use.
+     * @param string $datetime A relative date/time string.
      * @return static
+     * @throws \InvalidArgumentException If the string cannot be parsed.
+     * @see https://www.php.net/manual/en/dateinterval.createfromdatestring.php
      */
-    public static function __callStatic(string $name, array $args): self
+    public static function createFromDateString(string $datetime): static
     {
-        $arg = count($args) === 0 ? 1 : $args[0];
-
-        switch ($name) {
-            case 'years':
-            case 'year':
-                return new static($arg);
-
-            case 'months':
-            case 'month':
-                return new static(null, $arg);
-
-            case 'weeks':
-            case 'week':
-                return new static(null, null, $arg);
-
-            case 'days':
-            case 'dayz':
-            case 'day':
-                return new static(null, null, null, $arg);
-
-            case 'hours':
-            case 'hour':
-                return new static(null, null, null, null, $arg);
-
-            case 'minutes':
-            case 'minute':
-                return new static(null, null, null, null, null, $arg);
-
-            case 'seconds':
-            case 'second':
-                return new static(null, null, null, null, null, null, $arg);
-
-            case 'microseconds':
-            case 'microsecond':
-                return new static(null, null, null, null, null, null, null, $arg);
+        $interval = DateInterval::createFromDateString($datetime);
+        if ($interval === false) {
+            throw new InvalidArgumentException('Unable to parse interval string: ' . $datetime);
         }
 
-        throw new BadMethodCallException(sprintf('Cannot create interval with `%s` units', $name));
+        return new static($interval);
     }
 
     /**
-     * Create a ChronosInterval instance from a DateInterval one.  Can not instance
-     * DateInterval objects created from DateTime::diff() as you can't externally
-     * set the $days field.
+     * Get the underlying DateInterval instance.
      *
-     * @param \DateInterval $di The DateInterval instance to copy.
-     * @throws \InvalidArgumentException
-     * @return static
+     * Use this when you need to pass the interval to code that expects
+     * a native DateInterval.
+     *
+     * @return \DateInterval
      */
-    public static function instance(DateInterval $di): self
+    public function toNative(): DateInterval
     {
-        if (static::wasCreatedFromDiff($di)) {
-            throw new InvalidArgumentException(
-                'Can not instance a DateInterval object created from DateTime::diff().'
-            );
-        }
-
-        $instance = new static($di->y, $di->m, 0, $di->d, $di->h, $di->i, $di->s);
-        $instance->f = $di->f;
-        $instance->invert = $di->invert;
-        $instance->days = $di->days;
-
-        return $instance;
+        return $this->interval;
     }
 
     /**
-     * Get a part of the ChronosInterval object
+     * Format the interval as an ISO 8601 duration string.
      *
-     * @param string $name The property to read.
-     * @throws \InvalidArgumentException
-     * @return int
+     * @return string
      */
-    public function __get(string $name)
+    public function toIso8601String(): string
     {
-        switch ($name) {
-            case 'years':
-                return $this->y;
+        $spec = 'P';
 
-            case 'months':
-                return $this->m;
-
-            case 'dayz':
-                return $this->d;
-
-            case 'hours':
-                return $this->h;
-
-            case 'minutes':
-                return $this->i;
-
-            case 'seconds':
-                return $this->s;
-
-            case 'microseconds':
-                return (int)($this->f * 1000000);
-
-            case 'weeks':
-                return (int)floor($this->d / ChronosInterface::DAYS_PER_WEEK);
-
-            case 'daysExcludeWeeks':
-            case 'dayzExcludeWeeks':
-                return $this->dayz % ChronosInterface::DAYS_PER_WEEK;
-
-            default:
-                throw new InvalidArgumentException(sprintf("Unknown getter '%s'", $name));
+        if ($this->interval->y) {
+            $spec .= $this->interval->y . 'Y';
         }
-    }
-
-    /**
-     * Set a part of the ChronosInterval object
-     *
-     * @param string $name The property to augment.
-     * @param int $val The value to change.
-     * @return void
-     * @throws \InvalidArgumentException
-     */
-    public function __set(string $name, $val): void
-    {
-        switch ($name) {
-            case 'years':
-                $this->y = $val;
-                break;
-
-            case 'months':
-                $this->m = $val;
-                break;
-
-            case 'weeks':
-                $val = $val * ChronosInterface::DAYS_PER_WEEK;
-                $this->d = $val;
-                break;
-
-            case 'dayz':
-                $this->d = $val;
-                break;
-
-            case 'hours':
-                $this->h = $val;
-                break;
-
-            case 'minutes':
-                $this->i = $val;
-                break;
-
-            case 'seconds':
-                $this->s = $val;
-                break;
-
-            case 'microseconds':
-                $this->f = $val / 1000000;
-                break;
-
-            case 'invert':
-                $this->invert = $val;
-                break;
+        if ($this->interval->m) {
+            $spec .= $this->interval->m . 'M';
         }
-    }
-
-    /**
-     * Allow setting of weeks and days to be cumulative.
-     *
-     * @param int $weeks Number of weeks to set
-     * @param int $days Number of days to set
-     * @return $this
-     */
-    public function weeksAndDays(int $weeks, int $days)
-    {
-        $this->dayz = ($weeks * ChronosInterface::DAYS_PER_WEEK) + $days;
-
-        return $this;
-    }
-
-    /**
-     * Allow fluent calls on the setters... ChronosInterval::years(3)->months(5)->day().
-     *
-     * Note: This is done using the magic method to allow static and instance methods to
-     *       have the same names.
-     *
-     * @param string $name The property name to augment. Accepts plural forms in addition
-     *   to singular ones.
-     * @param array $args The value to set.
-     * @return $this
-     */
-    public function __call(string $name, array $args)
-    {
-        $arg = count($args) === 0 ? 1 : $args[0];
-
-        switch ($name) {
-            case 'years':
-            case 'year':
-                $this->years = $arg;
-                break;
-
-            case 'months':
-            case 'month':
-                $this->months = $arg;
-                break;
-
-            case 'weeks':
-            case 'week':
-                $this->dayz = $arg * ChronosInterface::DAYS_PER_WEEK;
-                break;
-
-            case 'days':
-            case 'dayz':
-            case 'day':
-                $this->dayz = $arg;
-                break;
-
-            case 'hours':
-            case 'hour':
-                $this->hours = $arg;
-                break;
-
-            case 'minutes':
-            case 'minute':
-                $this->minutes = $arg;
-                break;
-
-            case 'seconds':
-            case 'second':
-                $this->seconds = $arg;
-                break;
-
-            case 'microseconds':
-            case 'microsecond':
-                $this->microseconds = $arg;
-                break;
+        if ($this->interval->d) {
+            $spec .= $this->interval->d . 'D';
         }
 
-        return $this;
-    }
+        if ($this->interval->h || $this->interval->i || $this->interval->s || $this->interval->f) {
+            $spec .= 'T';
 
-    /**
-     * Add the passed interval to the current instance
-     *
-     * @param \DateInterval $interval The interval to add.
-     * @return $this
-     */
-    public function add(DateInterval $interval)
-    {
-        $sign = $interval->invert === 1 ? -1 : 1;
-
-        if (static::wasCreatedFromDiff($interval)) {
-            $this->dayz = $this->dayz + ($interval->days * $sign);
-        } else {
-            $this->years = $this->years + ($interval->y * $sign);
-            $this->months = $this->months + ($interval->m * $sign);
-            $this->dayz = $this->dayz + ($interval->d * $sign);
-            $this->hours = $this->hours + ($interval->h * $sign);
-            $this->minutes = $this->minutes + ($interval->i * $sign);
-            $this->seconds = $this->seconds + ($interval->s * $sign);
-            $this->microseconds = $this->microseconds + (int)($interval->f * 1000000 * $sign);
-        }
-
-        return $this;
-    }
-
-    /**
-     * Returns the ISO 8601 interval string.
-     *
-     * @return string Interval as string representation
-     */
-    public function __toString(): string
-    {
-        // equivalence
-        $oneMinuteInSeconds = 60;
-        $oneHourInSeconds = $oneMinuteInSeconds * 60;
-        $oneDayInSeconds = $oneHourInSeconds * 24;
-        $oneMonthInDays = 365 / 12;
-        $oneMonthInSeconds = $oneDayInSeconds * $oneMonthInDays;
-        $oneYearInSeconds = 12 * $oneMonthInSeconds;
-
-        // convert
-        $ySecs = $this->y * $oneYearInSeconds;
-        $mSecs = $this->m * $oneMonthInSeconds;
-        $dSecs = $this->d * $oneDayInSeconds;
-        $hSecs = $this->h * $oneHourInSeconds;
-        $iSecs = $this->i * $oneMinuteInSeconds;
-        $sSecs = $this->s;
-
-        $totalSecs = $ySecs + $mSecs + $dSecs + $hSecs + $iSecs + $sSecs;
-
-        $y = null;
-        $m = null;
-        $d = null;
-        $h = null;
-        $i = null;
-
-        // years
-        if ($totalSecs >= $oneYearInSeconds) {
-            $y = floor($totalSecs / $oneYearInSeconds);
-            $totalSecs = $totalSecs - $y * $oneYearInSeconds;
-        }
-
-        // months
-        if ($totalSecs >= $oneMonthInSeconds) {
-            $m = floor($totalSecs / $oneMonthInSeconds);
-            $totalSecs = $totalSecs - $m * $oneMonthInSeconds;
-        }
-
-        // days
-        if ($totalSecs >= $oneDayInSeconds) {
-            $d = floor($totalSecs / $oneDayInSeconds);
-            $totalSecs = $totalSecs - $d * $oneDayInSeconds;
-        }
-
-        // hours
-        if ($totalSecs >= $oneHourInSeconds) {
-            $h = floor($totalSecs / $oneHourInSeconds);
-            $totalSecs = $totalSecs - $h * $oneHourInSeconds;
-        }
-
-        // minutes
-        if ($totalSecs >= $oneMinuteInSeconds) {
-            $i = floor($totalSecs / $oneMinuteInSeconds);
-            $totalSecs = $totalSecs - $i * $oneMinuteInSeconds;
-        }
-
-        $s = $totalSecs;
-
-        $date = array_filter([
-            static::PERIOD_YEARS => $y,
-            static::PERIOD_MONTHS => $m,
-            static::PERIOD_DAYS => $d,
-        ]);
-
-        $time = array_filter([
-            static::PERIOD_HOURS => $h,
-            static::PERIOD_MINUTES => $i,
-            static::PERIOD_SECONDS => $s,
-        ]);
-
-        $specString = static::PERIOD_PREFIX;
-
-        foreach ($date as $key => $value) {
-            $specString .= $value . $key;
-        }
-
-        if (count($time) > 0) {
-            $specString .= static::PERIOD_TIME_PREFIX;
-            foreach ($time as $key => $value) {
-                $specString .= $value . $key;
+            if ($this->interval->h) {
+                $spec .= $this->interval->h . 'H';
+            }
+            if ($this->interval->i) {
+                $spec .= $this->interval->i . 'M';
+            }
+            if ($this->interval->s || $this->interval->f) {
+                $seconds = (string)$this->interval->s;
+                if ($this->interval->f) {
+                    $fraction = rtrim(sprintf('%06d', (int)($this->interval->f * 1000000)), '0');
+                    if ($fraction !== '') {
+                        $seconds .= '.' . $fraction;
+                    }
+                }
+                $spec .= $seconds . 'S';
             }
         }
 
-        if ($specString === static::PERIOD_PREFIX) {
-            return 'PT0S';
+        // Handle empty interval
+        if ($spec === 'P') {
+            $spec = 'PT0S';
         }
 
-        return $this->invert === 1 ? '-' . $specString : $specString;
+        return ($this->interval->invert ? '-' : '') . $spec;
+    }
+
+    /**
+     * Format the interval using DateInterval::format().
+     *
+     * @param string $format The format string.
+     * @return string
+     * @see https://www.php.net/manual/en/dateinterval.format.php
+     */
+    public function format(string $format): string
+    {
+        return $this->interval->format($format);
+    }
+
+    /**
+     * Get the total number of seconds in the interval.
+     *
+     * Note: This calculation assumes 30 days per month and 365 days per year,
+     * which is an approximation. For precise calculations, use diff() between
+     * specific dates.
+     *
+     * @return int
+     */
+    public function totalSeconds(): int
+    {
+        $seconds = $this->interval->s;
+        $seconds += $this->interval->i * 60;
+        $seconds += $this->interval->h * 3600;
+        $seconds += $this->interval->d * 86400;
+        $seconds += $this->interval->m * 30 * 86400;
+        $seconds += $this->interval->y * 365 * 86400;
+
+        return $this->interval->invert ? -$seconds : $seconds;
+    }
+
+    /**
+     * Get the total number of days in the interval.
+     *
+     * If the interval was created from a diff(), this returns the exact
+     * total days. Otherwise, it approximates using 30 days per month
+     * and 365 days per year.
+     *
+     * @return int
+     */
+    public function totalDays(): int
+    {
+        if ($this->interval->days !== false) {
+            return $this->interval->invert ? -$this->interval->days : $this->interval->days;
+        }
+
+        $days = $this->interval->d;
+        $days += $this->interval->m * 30;
+        $days += $this->interval->y * 365;
+
+        return $this->interval->invert ? -$days : $days;
+    }
+
+    /**
+     * Check if this interval is negative.
+     *
+     * @return bool
+     */
+    public function isNegative(): bool
+    {
+        return $this->interval->invert === 1;
+    }
+
+    /**
+     * Check if this interval is zero (no duration).
+     *
+     * @return bool
+     */
+    public function isZero(): bool
+    {
+        return $this->interval->y === 0
+            && $this->interval->m === 0
+            && $this->interval->d === 0
+            && $this->interval->h === 0
+            && $this->interval->i === 0
+            && $this->interval->s === 0
+            && $this->interval->f === 0.0;
+    }
+
+    /**
+     * Add another interval to this one.
+     *
+     * Returns a new ChronosInterval with the combined values.
+     * Note: This performs simple addition of each component and does not
+     * normalize overflow (e.g., 70 minutes stays as 70 minutes).
+     *
+     * @param \DateInterval|\Cake\Chronos\ChronosInterval $interval The interval to add.
+     * @return static
+     */
+    public function add(DateInterval|ChronosInterval $interval): static
+    {
+        if ($interval instanceof ChronosInterval) {
+            $interval = $interval->toNative();
+        }
+
+        $result = new DateInterval('P0D');
+        $result->y = $this->interval->y + $interval->y;
+        $result->m = $this->interval->m + $interval->m;
+        $result->d = $this->interval->d + $interval->d;
+        $result->h = $this->interval->h + $interval->h;
+        $result->i = $this->interval->i + $interval->i;
+        $result->s = $this->interval->s + $interval->s;
+        $result->f = $this->interval->f + $interval->f;
+
+        return new static($result);
+    }
+
+    /**
+     * Subtract another interval from this one.
+     *
+     * Returns a new ChronosInterval with the subtracted values.
+     * Note: This performs simple subtraction of each component. If any
+     * component becomes negative, the result may be unexpected.
+     *
+     * @param \DateInterval|\Cake\Chronos\ChronosInterval $interval The interval to subtract.
+     * @return static
+     */
+    public function sub(DateInterval|ChronosInterval $interval): static
+    {
+        if ($interval instanceof ChronosInterval) {
+            $interval = $interval->toNative();
+        }
+
+        $result = new DateInterval('P0D');
+        $result->y = $this->interval->y - $interval->y;
+        $result->m = $this->interval->m - $interval->m;
+        $result->d = $this->interval->d - $interval->d;
+        $result->h = $this->interval->h - $interval->h;
+        $result->i = $this->interval->i - $interval->i;
+        $result->s = $this->interval->s - $interval->s;
+        $result->f = $this->interval->f - $interval->f;
+
+        return new static($result);
+    }
+
+    /**
+     * Format the interval as a strtotime()-compatible string.
+     *
+     * Returns a relative date/time string that can be used with strtotime()
+     * or DateInterval::createFromDateString().
+     *
+     * @return string
+     */
+    public function toDateString(): string
+    {
+        $parts = [];
+
+        if ($this->interval->y) {
+            $parts[] = $this->interval->y . ' ' . ($this->interval->y === 1 ? 'year' : 'years');
+        }
+        if ($this->interval->m) {
+            $parts[] = $this->interval->m . ' ' . ($this->interval->m === 1 ? 'month' : 'months');
+        }
+        if ($this->interval->d) {
+            $parts[] = $this->interval->d . ' ' . ($this->interval->d === 1 ? 'day' : 'days');
+        }
+        if ($this->interval->h) {
+            $parts[] = $this->interval->h . ' ' . ($this->interval->h === 1 ? 'hour' : 'hours');
+        }
+        if ($this->interval->i) {
+            $parts[] = $this->interval->i . ' ' . ($this->interval->i === 1 ? 'minute' : 'minutes');
+        }
+        if ($this->interval->s) {
+            $parts[] = $this->interval->s . ' ' . ($this->interval->s === 1 ? 'second' : 'seconds');
+        }
+
+        if ($parts === []) {
+            return '0 seconds';
+        }
+
+        $result = implode(' ', $parts);
+
+        return $this->interval->invert ? '-' . $result : $result;
+    }
+
+    /**
+     * Return the interval as an ISO 8601 duration string.
+     *
+     * @return string
+     */
+    public function __toString(): string
+    {
+        return $this->toIso8601String();
+    }
+
+    /**
+     * Allow read access to DateInterval properties.
+     *
+     * @param string $name Property name.
+     * @return mixed
+     */
+    public function __get(string $name): mixed
+    {
+        return $this->interval->{$name};
+    }
+
+    /**
+     * Check if a DateInterval property exists.
+     *
+     * @param string $name Property name.
+     * @return bool
+     */
+    public function __isset(string $name): bool
+    {
+        return isset($this->interval->{$name});
+    }
+
+    /**
+     * Debug info.
+     *
+     * @return array<string, mixed>
+     */
+    public function __debugInfo(): array
+    {
+        return [
+            'interval' => $this->toIso8601String(),
+            'years' => $this->interval->y,
+            'months' => $this->interval->m,
+            'days' => $this->interval->d,
+            'hours' => $this->interval->h,
+            'minutes' => $this->interval->i,
+            'seconds' => $this->interval->s,
+            'microseconds' => $this->interval->f,
+            'invert' => $this->interval->invert,
+        ];
     }
 }

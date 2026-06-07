@@ -14,6 +14,7 @@
  * @var string $file
  * @var array<string> $paths
  */
+use function Cake\Core\h;
 
 $this->layout = 'dev_error';
 
@@ -33,7 +34,7 @@ $this->start('subheading');
 <ul>
 <?php
     foreach ($paths as $path):
-        if (strpos($path, CORE_PATH) !== false) {
+        if (str_contains($path, CORE_PATH)) {
             continue;
         }
         echo sprintf('<li>%s%s</li>', h($path), h($file));

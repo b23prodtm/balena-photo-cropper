@@ -20,7 +20,9 @@ use Cake\Core\Configure\Engine\PhpConfig;
 use Cake\Core\Exception\CakeException;
 use Cake\Core\InstanceConfigTrait;
 use Cake\Utility\Hash;
-use RuntimeException;
+use InvalidArgumentException;
+use function Cake\Core\deprecationWarning;
+use function Cake\Core\h;
 
 /**
  * Provides an interface for registering and inserting
@@ -40,10 +42,11 @@ class StringTemplate
      *
      * @var array<string, bool>
      */
-    protected $_compactAttributes = [
+    protected array $_compactAttributes = [
         'allowfullscreen' => true,
         'async' => true,
         'autofocus' => true,
+        'autoload' => true,
         'autoplay' => true,
         'checked' => true,
         'compact' => true,
@@ -89,21 +92,21 @@ class StringTemplate
      *
      * @var array<string, mixed>
      */
-    protected $_defaultConfig = [];
+    protected array $_defaultConfig = [];
 
     /**
      * A stack of template sets that have been stashed temporarily.
      *
      * @var array
      */
-    protected $_configStack = [];
+    protected array $_configStack = [];
 
     /**
      * Contains the list of compiled templates
      *
      * @var array<string, array>
      */
-    protected $_compiled = [];
+    protected array $_compiled = [];
 
     /**
      * Constructor.
@@ -135,7 +138,7 @@ class StringTemplate
      */
     public function pop(): void
     {
-        if (empty($this->_configStack)) {
+        if (!$this->_configStack) {
             return;
         }
         [$this->_config, $this->_compiled] = array_pop($this->_configStack);
@@ -153,7 +156,7 @@ class StringTemplate
      * ]);
      * ```
      *
-     * @param array<string> $templates An associative list of named templates.
+     * @param array<string, string> $templates An associative list of named templates.
      * @return $this
      */
     public function add(array $templates)
@@ -172,20 +175,18 @@ class StringTemplate
      */
     protected function _compileTemplates(array $templates = []): void
     {
-        if (empty($templates)) {
+        if (!$templates) {
             $templates = array_keys($this->_config);
         }
         foreach ($templates as $name) {
             $template = $this->get($name);
             if ($template === null) {
-                $this->_compiled[$name] = [null, null];
-
-                continue;
+                throw new InvalidArgumentException(sprintf('String template `%s` is not valid.', $name));
             }
 
             assert(
                 is_string($template),
-                sprintf('Template for `%s` must be of type `string`, but is `%s`', $name, gettype($template))
+                sprintf('Template for `%s` must be of type `string`, but is `%s`', $name, gettype($template)),
             );
 
             $template = str_replace('%', '%%', $template);
@@ -226,7 +227,7 @@ class StringTemplate
      */
     public function remove(string $name): void
     {
-        $this->setConfig($name, null);
+        $this->deleteConfig($name);
         unset($this->_compiled[$name]);
     }
 
@@ -236,12 +237,12 @@ class StringTemplate
      * @param string $name The template name.
      * @param array<string, mixed> $data The data to insert.
      * @return string Formatted string
-     * @throws \RuntimeException If template not found.
+     * @throws \InvalidArgumentException If template not found.
      */
     public function format(string $name, array $data): string
     {
         if (!isset($this->_compiled[$name])) {
-            throw new RuntimeException("Cannot find template named '$name'.");
+            throw new InvalidArgumentException(sprintf('Cannot find template named `%s`.', $name));
         }
         [$template, $placeholders] = $this->_compiled[$name];
 
@@ -316,17 +317,17 @@ class StringTemplate
      * Works with minimized attributes that have the same value as their name such as 'disabled' and 'checked'
      *
      * @param string $key The name of the attribute to create
-     * @param array<string>|string $value The value of the attribute to create.
+     * @param mixed $value The value of the attribute to create.
      * @param bool $escape Define if the value must be escaped
      * @return string The composed attribute.
      */
-    protected function _formatAttribute(string $key, $value, $escape = true): string
+    protected function _formatAttribute(string $key, mixed $value, bool $escape = true): string
     {
         if (is_array($value)) {
             $value = implode(' ', $value);
         }
         if (is_numeric($key)) {
-            return "$value=\"$value\"";
+            return "{$value}=\"{$value}\"";
         }
         $truthy = [1, '1', true, 'true', $key];
         $isMinimized = isset($this->_compactAttributes[$key]);
@@ -334,7 +335,7 @@ class StringTemplate
             $key = h($key);
         }
         if ($isMinimized && in_array($value, $truthy, true)) {
-            return "$key=\"$key\"";
+            return "{$key}=\"{$key}\"";
         }
         if ($isMinimized) {
             return '';
@@ -344,42 +345,102 @@ class StringTemplate
     }
 
     /**
-     * Adds a class and returns a unique list either in array or space separated
+     * Merges two sets of CSS classes into a unique array.
      *
-     * @param array|string $input The array or string to add the class to
-     * @param array<string>|string $newClass the new class or classes to add
-     * @param string $useIndex if you are inputting an array with an element other than default of 'class'.
-     * @return array<string>|string
+     * Accepts class lists as arrays or space-separated strings and returns
+     * a unique, indexed array of all classes.
+     *
+     * @param array<string>|string $existing The existing class(es).
+     * @param array<string>|string $new The new class(es) to merge.
+     * @return array<string> A unique array of merged classes.
      */
-    public function addClass($input, $newClass, string $useIndex = 'class')
+    public function addClassNames(array|string $existing, array|string $new): array
     {
+        if (is_string($existing)) {
+            $existing = $existing === '' ? [] : explode(' ', $existing);
+        }
+        if (is_string($new)) {
+            $new = $new === '' ? [] : explode(' ', $new);
+        }
+        $remove = [];
+        $add = [];
+        foreach ($new as $key => $value) {
+            if (is_string($key)) {
+                if ($value) {
+                    $add[] = $key;
+                } else {
+                    $remove[] = $key;
+                }
+            } else {
+                $add[] = $value;
+            }
+        }
+        // Remove any classes and then add.
+        $update = array_diff($existing, $remove);
+        $update = array_merge($update, $add);
+
+        return array_values(array_unique($update));
+    }
+
+    /**
+     * Adds CSS classes to an attribute array.
+     *
+     * Merges the provided classes with any existing classes in the specified key
+     * and returns the updated attribute array with unique class values.
+     *
+     * Deprecated: Passing a non-array as first argument is deprecated.
+     *   Pass an attributes array instead.
+     * Deprecated: Returning a non-array value is deprecated.
+     *   The method will only return arrays in the future.
+     *
+     * @param array<string, mixed>|string|null $input The attribute array to add classes to.
+     * @param array<string>|string|false|null $newClass The class(es) to add.
+     * @param string $useIndex The array key to use. Defaults to 'class'.
+     * @return array<string, string>|string|null The updated attribute array.
+     */
+    public function addClass(
+        mixed $input,
+        array|string|false|null $newClass,
+        string $useIndex = 'class',
+    ): array|string|null {
+        if (!is_array($input)) {
+            deprecationWarning(
+                '5.3.0',
+                'Passing a non-array as first argument to `StringTemplate::addClass()` is deprecated. ' .
+                'Pass an attributes array instead.',
+            );
+        }
+
         // NOOP
-        if (empty($newClass)) {
+        if (!$newClass) {
             return $input;
         }
 
-        if (is_array($input)) {
-            $class = Hash::get($input, $useIndex, []);
-        } else {
-            $class = $input;
-            $input = [];
-        }
-
-        // Convert and sanitise the inputs
-        if (!is_array($class)) {
-            if (is_string($class) && !empty($class)) {
-                $class = explode(' ', $class);
+        if (!is_array($input)) {
+            if (is_string($input) && $input !== '') {
+                $class = explode(' ', $input);
             } else {
                 $class = [];
             }
+
+            if (is_string($newClass)) {
+                $newClass = explode(' ', $newClass);
+            }
+
+            $class = array_unique(array_merge($class, $newClass));
+
+            deprecationWarning(
+                '5.3.0',
+                'Returning a non-array value from `StringTemplate::addClass()` is deprecated. ' .
+                'The method will only return arrays in the future.',
+            );
+
+            return Hash::insert([], $useIndex, $class);
         }
 
-        if (is_string($newClass)) {
-            $newClass = explode(' ', $newClass);
-        }
+        $existingClasses = Hash::get($input, $useIndex, []);
+        $mergedClasses = $this->addClassNames($existingClasses, $newClass);
 
-        $class = array_unique(array_merge($class, $newClass));
-
-        return Hash::insert($input, $useIndex, $class);
+        return Hash::insert($input, $useIndex, $mergedClasses);
     }
 }

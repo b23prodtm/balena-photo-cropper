@@ -26,14 +26,13 @@ class MailSentWith extends MailConstraintBase
     /**
      * @var string
      */
-    protected $method;
+    protected string $method;
 
     /**
      * Constructor
      *
      * @param int|null $at At
      * @param string|null $method Method
-     * @return void
      */
     public function __construct(?int $at = null, ?string $method = null)
     {
@@ -50,7 +49,7 @@ class MailSentWith extends MailConstraintBase
      * @param mixed $other Constraint check
      * @return bool
      */
-    public function matches($other): bool
+    public function matches(mixed $other): bool
     {
         $emails = $this->getMessages();
         foreach ($emails as $email) {
@@ -60,7 +59,7 @@ class MailSentWith extends MailConstraintBase
             }
             if (
                 !is_array($other)
-                && in_array($this->method, ['to', 'cc', 'bcc', 'from', 'replyTo', 'sender'])
+                && in_array($this->method, ['to', 'cc', 'bcc', 'from', 'replyTo', 'sender'], true)
                 && array_key_exists($other, $value)
             ) {
                 return true;

@@ -17,6 +17,19 @@ declare(strict_types=1);
 namespace Cake\Cache\Engine;
 
 use Cake\Cache\CacheEngine;
+use Cake\Cache\Event\CacheAfterDecrementEvent;
+use Cake\Cache\Event\CacheAfterDeleteEvent;
+use Cake\Cache\Event\CacheAfterGetEvent;
+use Cake\Cache\Event\CacheAfterIncrementEvent;
+use Cake\Cache\Event\CacheAfterSetEvent;
+use Cake\Cache\Event\CacheBeforeDecrementEvent;
+use Cake\Cache\Event\CacheBeforeDeleteEvent;
+use Cake\Cache\Event\CacheBeforeGetEvent;
+use Cake\Cache\Event\CacheBeforeIncrementEvent;
+use Cake\Cache\Event\CacheBeforeSetEvent;
+use Cake\Cache\Event\CacheClearedEvent;
+use Cake\Cache\Event\CacheGroupClearEvent;
+use DateInterval;
 
 /**
  * Array storage engine for cache.
@@ -27,6 +40,8 @@ use Cake\Cache\CacheEngine;
  * or console tools where you don't want the overhead of interacting
  * with a cache servers, but want the work saving properties a cache
  * provides.
+ *
+ * @extends \Cake\Cache\CacheEngine<\Cake\Cache\Engine\ArrayEngine>
  */
 class ArrayEngine extends CacheEngine
 {
@@ -37,7 +52,7 @@ class ArrayEngine extends CacheEngine
      *
      * @var array<string, array>
      */
-    protected $data = [];
+    protected array $data = [];
 
     /**
      * Write data for key into cache
@@ -49,11 +64,22 @@ class ArrayEngine extends CacheEngine
      *   for it or let the driver take care of that.
      * @return bool True on success and false on failure.
      */
-    public function set($key, $value, $ttl = null): bool
+    public function set(string $key, mixed $value, DateInterval|int|null $ttl = null): bool
     {
         $key = $this->_key($key);
         $expires = time() + $this->duration($ttl);
+
+        $this->_eventClass = CacheBeforeSetEvent::class;
+        $this->dispatchEvent(CacheBeforeSetEvent::NAME, [
+            'key' => $key, 'value' => $value, 'ttl' => $this->duration($ttl),
+        ]);
+
         $this->data[$key] = ['exp' => $expires, 'val' => $value];
+
+        $this->_eventClass = CacheAfterSetEvent::class;
+        $this->dispatchEvent(CacheAfterSetEvent::NAME, [
+            'key' => $key, 'value' => $value, 'success' => true, 'ttl' => $this->duration($ttl),
+        ]);
 
         return true;
     }
@@ -66,10 +92,16 @@ class ArrayEngine extends CacheEngine
      * @return mixed The cached data, or default value if the data doesn't exist, has
      * expired, or if there was an error fetching it.
      */
-    public function get($key, $default = null)
+    public function get(string $key, mixed $default = null): mixed
     {
         $key = $this->_key($key);
+        $this->_eventClass = CacheBeforeGetEvent::class;
+        $this->dispatchEvent(CacheBeforeGetEvent::NAME, ['key' => $key, 'default' => $default]);
+
+        $this->_eventClass = CacheAfterGetEvent::class;
         if (!isset($this->data[$key])) {
+            $this->dispatchEvent(CacheAfterGetEvent::NAME, ['key' => $key, 'value' => null, 'success' => false]);
+
             return $default;
         }
         $data = $this->data[$key];
@@ -78,9 +110,12 @@ class ArrayEngine extends CacheEngine
         $now = time();
         if ($data['exp'] <= $now) {
             unset($this->data[$key]);
+            $this->dispatchEvent(CacheAfterGetEvent::NAME, ['key' => $key, 'value' => null, 'success' => false]);
 
             return $default;
         }
+
+        $this->dispatchEvent(CacheAfterGetEvent::NAME, ['key' => $key, 'value' => $data['val'], 'success' => true]);
 
         return $data['val'];
     }
@@ -92,15 +127,24 @@ class ArrayEngine extends CacheEngine
      * @param int $offset How much to increment
      * @return int|false New incremented value, false otherwise
      */
-    public function increment(string $key, int $offset = 1)
+    public function increment(string $key, int $offset = 1): int|false
     {
         if ($this->get($key) === null) {
             $this->set($key, 0);
         }
         $key = $this->_key($key);
-        $this->data[$key]['val'] += $offset;
+        $this->_eventClass = CacheBeforeIncrementEvent::class;
+        $this->dispatchEvent(CacheBeforeIncrementEvent::NAME, ['key' => $key, 'offset' => $offset]);
 
-        return $this->data[$key]['val'];
+        $this->data[$key]['val'] += $offset;
+        $val = $this->data[$key]['val'];
+
+        $this->_eventClass = CacheAfterIncrementEvent::class;
+        $this->dispatchEvent('Cache.afterIncrement', [
+            'key' => $key, 'offset' => $offset, 'success' => true, 'value' => $val,
+        ]);
+
+        return $val;
     }
 
     /**
@@ -110,13 +154,21 @@ class ArrayEngine extends CacheEngine
      * @param int $offset How much to subtract
      * @return int|false New decremented value, false otherwise
      */
-    public function decrement(string $key, int $offset = 1)
+    public function decrement(string $key, int $offset = 1): int|false
     {
         if ($this->get($key) === null) {
             $this->set($key, 0);
         }
         $key = $this->_key($key);
+        $this->_eventClass = CacheBeforeDecrementEvent::class;
+        $this->dispatchEvent(CacheBeforeDecrementEvent::NAME, ['key' => $key, 'offset' => $offset]);
+
         $this->data[$key]['val'] -= $offset;
+
+        $this->_eventClass = CacheAfterDecrementEvent::class;
+        $this->dispatchEvent(CacheAfterDecrementEvent::NAME, [
+            'key' => $key, 'offset' => $offset, 'success' => true, 'value' => $this->data[$key]['val'],
+        ]);
 
         return $this->data[$key]['val'];
     }
@@ -127,22 +179,30 @@ class ArrayEngine extends CacheEngine
      * @param string $key Identifier for the data
      * @return bool True if the value was successfully deleted, false if it didn't exist or couldn't be removed
      */
-    public function delete($key): bool
+    public function delete(string $key): bool
     {
         $key = $this->_key($key);
+        $this->_eventClass = CacheBeforeDeleteEvent::class;
+        $this->dispatchEvent(CacheBeforeDeleteEvent::NAME, ['key' => $key]);
+
         unset($this->data[$key]);
+
+        $this->_eventClass = CacheAfterDeleteEvent::class;
+        $this->dispatchEvent(CacheAfterDeleteEvent::NAME, ['key' => $key, 'success' => true]);
 
         return true;
     }
 
     /**
-     * Delete all keys from the cache. This will clear every cache config using APC.
+     * Delete all keys from the cache.
      *
-     * @return bool True Returns true.
+     * @return bool True on success.
      */
     public function clear(): bool
     {
         $this->data = [];
+        $this->_eventClass = CacheClearedEvent::class;
+        $this->dispatchEvent(CacheClearedEvent::NAME);
 
         return true;
     }
@@ -159,9 +219,7 @@ class ArrayEngine extends CacheEngine
         $result = [];
         foreach ($this->_config['groups'] as $group) {
             $key = $this->_config['prefix'] . $group;
-            if (!isset($this->data[$key])) {
-                $this->data[$key] = ['exp' => PHP_INT_MAX, 'val' => 1];
-            }
+            $this->data[$key] ??= ['exp' => PHP_INT_MAX, 'val' => 1];
             $value = $this->data[$key]['val'];
             $result[] = $group . $value;
         }
@@ -182,6 +240,8 @@ class ArrayEngine extends CacheEngine
         if (isset($this->data[$key])) {
             $this->data[$key]['val'] += 1;
         }
+        $this->_eventClass = CacheGroupClearEvent::class;
+        $this->dispatchEvent(CacheGroupClearEvent::NAME, ['group' => $group]);
 
         return true;
     }

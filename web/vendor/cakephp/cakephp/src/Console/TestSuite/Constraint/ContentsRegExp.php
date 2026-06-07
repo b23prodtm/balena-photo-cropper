@@ -28,7 +28,7 @@ class ContentsRegExp extends ContentsBase
      * @param mixed $other Expected
      * @return bool
      */
-    public function matches($other): bool
+    public function matches(mixed $other): bool
     {
         return preg_match($other, $this->contents) > 0;
     }
@@ -47,8 +47,23 @@ class ContentsRegExp extends ContentsBase
      * @param mixed $other Expected
      * @return string
      */
-    public function failureDescription($other): string
+    public function failureDescription(mixed $other): string
     {
         return '`' . $other . '` ' . $this->toString();
     }
+
+    /**
+     * @inheritDoc
+     */
+    protected function additionalFailureDescription(mixed $other): string
+    {
+        return sprintf("actual result:\n%s", $this->contents);
+    }
 }
+
+// phpcs:disable
+class_alias(
+    'Cake\Console\TestSuite\Constraint\ContentsRegExp',
+    'Cake\TestSuite\Constraint\Console\ContentsRegExp'
+);
+// phpcs:enable

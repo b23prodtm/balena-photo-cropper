@@ -27,7 +27,7 @@ namespace Cake\Http\Exception;
  * ```
  *
  * Additional headers can also be provided in the constructor, or
- * using the addHeaders() method.
+ * using the setHeaders() method.
  */
 class RedirectException extends HttpException
 {
@@ -36,7 +36,7 @@ class RedirectException extends HttpException
      *
      * @param string $target The URL to redirect to.
      * @param int $code The exception code that will be used as a HTTP status code
-     * @param array $headers The headers that should be sent in the unauthorized challenge response.
+     * @param array<non-empty-string, array<string>|string> $headers The headers that should be sent in the unauthorized challenge response.
      */
     public function __construct(string $target, int $code = 302, array $headers = [])
     {
@@ -45,40 +45,5 @@ class RedirectException extends HttpException
         foreach ($headers as $key => $value) {
             $this->setHeader($key, (array)$value);
         }
-    }
-
-    /**
-     * Add headers to be included in the response generated from this exception
-     *
-     * @param array $headers An array of `header => value` to append to the exception.
-     *  If a header already exists, the new values will be appended to the existing ones.
-     * @return $this
-     * @deprecated 4.2.0 Use `setHeaders()` instead.
-     */
-    public function addHeaders(array $headers)
-    {
-        deprecationWarning('RedirectException::addHeaders() is deprecated, use setHeaders() instead.');
-
-        foreach ($headers as $key => $value) {
-            $this->headers[$key][] = $value;
-        }
-
-        return $this;
-    }
-
-    /**
-     * Remove a header from the exception.
-     *
-     * @param string $key The header to remove.
-     * @return $this
-     * @deprecated 4.2.0 Use `setHeaders()` instead.
-     */
-    public function removeHeader(string $key)
-    {
-        deprecationWarning('RedirectException::removeHeader() is deprecated, use setHeaders() instead.');
-
-        unset($this->headers[$key]);
-
-        return $this;
     }
 }

@@ -1,4 +1,4 @@
-FROM php:8.3-fpm-alpine
+FROM php:8.4-fpm-alpine
 
 # Install dependencies for MariaDB, GD, etc.
 RUN apk add --no-cache \
@@ -28,7 +28,7 @@ RUN apk add --no-cache \
     bash \
     curl \
     netcat-openbsd \
-    php83-intl \
+    php84-intl \
     imagemagick-dev \
     shadow
 
@@ -44,7 +44,7 @@ RUN curl -sS https://getcomposer.org/installer | php -- \
 # --- SECURE SETUP ---
 # 1. Create project in /var/www/cakephp (NOT document root)
 WORKDIR /var/www
-RUN composer create-project --prefer-dist cakephp/app:^4.0 cakephp && \
+RUN composer create-project --prefer-dist cakephp/app:^5.0 cakephp && \
     # 2. Fix permissions (FPM runs as www-data)
     chown -R www-data:www-data /var/www/cakephp && \
     chmod -R 775 /var/www/cakephp/tmp && \

@@ -21,9 +21,12 @@ use Cake\Core\Exception\CakeException;
 use Cake\Routing\Asset;
 use Cake\Routing\Router;
 use Cake\View\Helper;
+use function Cake\Core\h;
 
 /**
  * UrlHelper class for generating URLs.
+ *
+ * @extends \Cake\View\Helper<\Cake\View\View>
  */
 class UrlHelper extends Helper
 {
@@ -32,17 +35,16 @@ class UrlHelper extends Helper
      *
      * @var array<string, mixed>
      */
-    protected $_defaultConfig = [
+    protected array $_defaultConfig = [
         'assetUrlClassName' => Asset::class,
     ];
 
     /**
      * Asset URL engine class name
      *
-     * @var string
-     * @psalm-var class-string<\Cake\Routing\Asset>
+     * @var class-string<\Cake\Routing\Asset>
      */
-    protected $_assetUrlClassName;
+    protected string $_assetUrlClassName;
 
     /**
      * Check proper configuration
@@ -55,10 +57,10 @@ class UrlHelper extends Helper
         parent::initialize($config);
         $engineClassConfig = $this->getConfig('assetUrlClassName');
 
-        /** @psalm-var class-string<\Cake\Routing\Asset>|null $engineClass */
+        /** @var class-string<\Cake\Routing\Asset>|null $engineClass */
         $engineClass = App::className($engineClassConfig, 'Routing');
         if ($engineClass === null) {
-            throw new CakeException(sprintf('Class for %s could not be found', $engineClassConfig));
+            throw new CakeException(sprintf('Class for `%s` could not be found.', $engineClassConfig));
         }
 
         $this->_assetUrlClassName = $engineClass;
@@ -76,10 +78,10 @@ class UrlHelper extends Helper
      * @param array|string|null $url Either a relative string URL like `/products/view/23` or
      *    an array of URL parameters. Using an array for URLs will allow you to leverage
      *    the reverse routing features of CakePHP.
-     * @param array<string, mixed> $options Array of options.
+     * @param array{fullBase?: bool, escape?: bool} $options Array of options.
      * @return string Full translated URL with base path.
      */
-    public function build($url = null, array $options = []): string
+    public function build(array|string|null $url = null, array $options = []): string
     {
         $defaults = [
             'fullBase' => false,
@@ -89,8 +91,7 @@ class UrlHelper extends Helper
 
         $url = Router::url($url, $options['fullBase']);
         if ($options['escape']) {
-            /** @var string $url */
-            $url = h($url);
+            return (string)h($url);
         }
 
         return $url;
@@ -108,7 +109,7 @@ class UrlHelper extends Helper
      * @param string $path Cake-relative route path.
      * @param array $params An array specifying any additional parameters.
      *   Can be also any special parameters supported by `Router::url()`.
-     * @param array<string, mixed> $options Array of options.
+     * @param array{fullBase?: bool, escape?: bool} $options Array of options.
      * @return string Full translated URL with base path.
      * @see \Cake\Routing\Router::pathUrl()
      */
@@ -226,10 +227,10 @@ class UrlHelper extends Helper
      * a timestamp will be added.
      *
      * @param string $path The file path to timestamp, the path must be inside `App.wwwRoot` in Configure.
-     * @param string|bool $timestamp If set will overrule the value of `Asset.timestamp` in Configure.
+     * @param string|bool|null $timestamp If set will overrule the value of `Asset.timestamp` in Configure.
      * @return string Path with a timestamp added, or not.
      */
-    public function assetTimestamp(string $path, $timestamp = null): string
+    public function assetTimestamp(string $path, string|bool|null $timestamp = null): string
     {
         return h($this->_assetUrlClassName::assetTimestamp($path, $timestamp));
     }

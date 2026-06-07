@@ -18,6 +18,7 @@ namespace Cake\View\Widget;
 
 use Cake\View\Form\ContextInterface;
 use Cake\View\StringTemplate;
+use function Cake\Core\h;
 
 /**
  * Button input class
@@ -33,7 +34,7 @@ class ButtonWidget implements WidgetInterface
      *
      * @var \Cake\View\StringTemplate
      */
-    protected $_templates;
+    protected StringTemplate $_templates;
 
     /**
      * Constructor.

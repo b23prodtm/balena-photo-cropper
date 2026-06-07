@@ -23,6 +23,9 @@ use Traversable;
 /**
  * A type of collection that is aware of nested items and exposes methods to
  * check or retrieve them
+ *
+ * @extends \Cake\Collection\Collection<mixed, mixed>
+ * @implements \RecursiveIterator<mixed, mixed>
  */
 class NestIterator extends Collection implements RecursiveIterator
 {
@@ -38,9 +41,9 @@ class NestIterator extends Collection implements RecursiveIterator
      *
      * @param iterable $items Collection items.
      * @param callable|string $nestKey the property that contains the nested items
-     * If a callable is passed, it should return the childrens for the passed item
+     * If a callable is passed, it should return the children for the passed item
      */
-    public function __construct(iterable $items, $nestKey)
+    public function __construct(iterable $items, callable|string $nestKey)
     {
         parent::__construct($items);
         $this->_nestKey = $nestKey;
@@ -49,7 +52,7 @@ class NestIterator extends Collection implements RecursiveIterator
     /**
      * Returns a traversable containing the children for the current item
      *
-     * @return \RecursiveIterator
+     * @return \RecursiveIterator<mixed, mixed>
      */
     public function getChildren(): RecursiveIterator
     {
@@ -70,7 +73,7 @@ class NestIterator extends Collection implements RecursiveIterator
         $children = $property($this->current());
 
         if (is_array($children)) {
-            return !empty($children);
+            return $children !== [];
         }
 
         return $children instanceof Traversable;

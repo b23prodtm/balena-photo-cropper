@@ -42,8 +42,9 @@ class DependentDeleteHelper
             return true;
         }
         $table = $association->getTarget();
-        /** @psalm-suppress InvalidArgument */
-        $foreignKey = array_map([$association, 'aliasField'], (array)$association->getForeignKey());
+        /** @var callable $callable */
+        $callable = $association->aliasField(...);
+        $foreignKey = array_map($callable, (array)$association->getForeignKey());
         $bindingKey = (array)$association->getBindingKey();
         $bindingValue = $entity->extract($bindingKey);
         if (in_array(null, $bindingValue, true)) {
@@ -52,7 +53,8 @@ class DependentDeleteHelper
         $conditions = array_combine($foreignKey, $bindingValue);
 
         if ($association->getCascadeCallbacks()) {
-            foreach ($association->find()->where($conditions)->all()->toList() as $related) {
+            /** @var \Cake\Datasource\EntityInterface $related */
+            foreach ($association->find()->where($conditions)->toArray() as $related) {
                 $success = $table->delete($related, $options);
                 if (!$success) {
                     return false;

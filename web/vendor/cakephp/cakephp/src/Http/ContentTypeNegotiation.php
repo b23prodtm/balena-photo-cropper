@@ -6,7 +6,7 @@ namespace Cake\Http;
 use Psr\Http\Message\RequestInterface;
 
 /**
- * Negotiates the prefered content type from what the application
+ * Negotiates the preferred content type from what the application
  * provides and what the request has in its Accept header.
  */
 class ContentTypeNegotiation
@@ -51,37 +51,7 @@ class ContentTypeNegotiation
      */
     protected function parseQualifiers(string $header): array
     {
-        $accept = [];
-        if (!$header) {
-            return $accept;
-        }
-        $headers = explode(',', $header);
-        foreach (array_filter($headers) as $value) {
-            $prefValue = '1.0';
-            $value = trim($value);
-
-            $semiPos = strpos($value, ';');
-            if ($semiPos !== false) {
-                $params = explode(';', $value);
-                $value = trim($params[0]);
-                foreach ($params as $param) {
-                    $qPos = strpos($param, 'q=');
-                    if ($qPos !== false) {
-                        $prefValue = substr($param, $qPos + 2);
-                    }
-                }
-            }
-
-            if (!isset($accept[$prefValue])) {
-                $accept[$prefValue] = [];
-            }
-            if ($prefValue) {
-                $accept[$prefValue][] = $value;
-            }
-        }
-        krsort($accept);
-
-        return $accept;
+        return HeaderUtility::parseAccept($header);
     }
 
     /**
@@ -95,16 +65,16 @@ class ContentTypeNegotiation
      *
      * @param \Psr\Http\Message\RequestInterface $request The request to use.
      * @param array<string> $choices The supported content type choices.
-     * @return string|null The prefered type or null if there is no match with choices or if the
+     * @return string|null The preferred type or null if there is no match with choices or if the
      *   request had no Accept header.
      */
     public function preferredType(RequestInterface $request, array $choices = []): ?string
     {
         $parsed = $this->parseAccept($request);
-        if (empty($parsed)) {
+        if (!$parsed) {
             return null;
         }
-        if (empty($choices)) {
+        if (!$choices) {
             $preferred = array_shift($parsed);
 
             return $preferred[0];

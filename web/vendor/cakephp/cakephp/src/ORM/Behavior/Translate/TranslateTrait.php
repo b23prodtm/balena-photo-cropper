@@ -21,6 +21,8 @@ use Cake\Datasource\EntityInterface;
 /**
  * Contains a translation method aimed to help managing multiple translations
  * for an entity.
+ *
+ * @require-implements \Cake\Datasource\EntityInterface
  */
 trait TranslateTrait
 {
@@ -39,10 +41,10 @@ trait TranslateTrait
             return $this;
         }
 
-        $i18n = $this->get('_translations');
+        $i18n = $this->has('_translations') ? $this->get('_translations') : null;
         $created = false;
 
-        if (empty($i18n)) {
+        if (!$i18n) {
             $i18n = [];
             $created = true;
         }

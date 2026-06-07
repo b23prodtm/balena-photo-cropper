@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Laminas\Diactoros\Response;
 
+use JsonException;
 use Laminas\Diactoros\Exception;
 use Laminas\Diactoros\Response;
 use Laminas\Diactoros\Stream;
@@ -11,15 +12,13 @@ use Laminas\Diactoros\Stream;
 use function is_object;
 use function is_resource;
 use function json_encode;
-use function json_last_error;
-use function json_last_error_msg;
 use function sprintf;
 
-use const JSON_ERROR_NONE;
 use const JSON_HEX_AMP;
 use const JSON_HEX_APOS;
 use const JSON_HEX_QUOT;
 use const JSON_HEX_TAG;
+use const JSON_THROW_ON_ERROR;
 use const JSON_UNESCAPED_SLASHES;
 
 /**
@@ -61,7 +60,7 @@ class JsonResponse extends Response
      *
      * @param mixed $data Data to convert to JSON.
      * @param int $status Integer status code for the response; 200 by default.
-     * @param array $headers Array of headers to use at initialization.
+     * @param array<non-empty-string, string|string[]> $headers Array of headers to use at initialization.
      * @param int $encodingOptions JSON encoding options to use.
      * @throws Exception\InvalidArgumentException If unable to encode the $data to JSON.
      */
@@ -128,20 +127,15 @@ class JsonResponse extends Response
             throw new Exception\InvalidArgumentException('Cannot JSON encode resources');
         }
 
-        // Clear json_last_error()
-        json_encode(null);
-
-        $json = json_encode($data, $encodingOptions);
-
-        if (JSON_ERROR_NONE !== json_last_error()) {
+        try {
+            return json_encode($data, $encodingOptions | JSON_THROW_ON_ERROR);
+        } catch (JsonException $e) {
             throw new Exception\InvalidArgumentException(sprintf(
                 'Unable to encode data to JSON in %s: %s',
                 self::class,
-                json_last_error_msg()
-            ));
+                $e->getMessage()
+            ), 0, $e);
         }
-
-        return $json;
     }
 
     private function setPayload(mixed $data): void

@@ -16,11 +16,17 @@ declare(strict_types=1);
 namespace Cake\Core\TestSuite;
 
 use Cake\Core\Configure;
+use Cake\Core\ConsoleApplicationInterface;
 use Cake\Core\ContainerInterface;
+use Cake\Core\HttpApplicationInterface;
+use Cake\Core\PluginApplicationInterface;
+use Cake\Event\EventDispatcherInterface;
 use Cake\Event\EventInterface;
+use Cake\Routing\Router;
 use Closure;
 use League\Container\Exception\NotFoundException;
 use LogicException;
+use PHPUnit\Framework\Attributes\After;
 
 /**
  * A set of methods used for defining container services
@@ -35,32 +41,30 @@ trait ContainerStubTrait
     /**
      * The customized application class name.
      *
-     * @psalm-var class-string<\Cake\Core\HttpApplicationInterface>|class-string<\Cake\Core\ConsoleApplicationInterface>|null
-     * @var string|null
+     * @var class-string<\Cake\Core\HttpApplicationInterface>|class-string<\Cake\Core\ConsoleApplicationInterface>|null
      */
-    protected $_appClass;
+    protected ?string $_appClass = null;
 
     /**
      * The customized application constructor arguments.
      *
      * @var array|null
      */
-    protected $_appArgs;
+    protected ?array $_appArgs = null;
 
     /**
      * The collection of container services.
      *
-     * @var array
+     * @var array<string, mixed>
      */
-    private $containerServices = [];
+    private array $containerServices = [];
 
     /**
      * Configure the application class to use in integration tests.
      *
-     * @param string $class The application class name.
+     * @param class-string<\Cake\Core\HttpApplicationInterface>|class-string<\Cake\Core\ConsoleApplicationInterface> $class The application class name.
      * @param array|null $constructorArgs The constructor arguments for your application class.
      * @return void
-     * @psalm-param class-string<\Cake\Core\HttpApplicationInterface>|class-string<\Cake\Core\ConsoleApplicationInterface> $class
      */
     public function configApplication(string $class, ?array $constructorArgs): void
     {
@@ -75,22 +79,36 @@ trait ContainerStubTrait
      *
      * @return \Cake\Core\HttpApplicationInterface|\Cake\Core\ConsoleApplicationInterface
      */
-    protected function createApp()
+    protected function createApp(): HttpApplicationInterface|ConsoleApplicationInterface
     {
+        if (class_exists(Router::class)) {
+            Router::resetRoutes();
+        }
+
         if ($this->_appClass) {
             $appClass = $this->_appClass;
         } else {
-            /** @psalm-var class-string<\Cake\Http\BaseApplication> */
+            /** @var class-string<\Cake\Core\HttpApplicationInterface>|class-string<\Cake\Core\ConsoleApplicationInterface> $appClass */
             $appClass = Configure::read('App.namespace') . '\Application';
         }
         if (!class_exists($appClass)) {
-            throw new LogicException("Cannot load `{$appClass}` for use in integration testing.");
+            throw new LogicException(sprintf('Cannot load `%s` for use in integration testing.', $appClass));
         }
         $appArgs = $this->_appArgs ?: [CONFIG];
 
         $app = new $appClass(...$appArgs);
-        if (!empty($this->containerServices) && method_exists($app, 'getEventManager')) {
+        if ($this->containerServices && $app instanceof EventDispatcherInterface) {
             $app->getEventManager()->on('Application.buildContainer', [$this, 'modifyContainer']);
+        }
+
+        if ($app instanceof PluginApplicationInterface) {
+            foreach ($this->appPluginsToLoad as $pluginName => $config) {
+                if (is_array($config)) {
+                    $app->addPlugin($pluginName, $config);
+                } else {
+                    $app->addPlugin($config);
+                }
+            }
         }
 
         return $app;
@@ -136,18 +154,18 @@ trait ContainerStubTrait
      *
      * @param \Cake\Event\EventInterface $event The event
      * @param \Cake\Core\ContainerInterface $container The container to wrap.
-     * @return \Cake\Core\ContainerInterface|null
+     * @return void
      */
-    public function modifyContainer(EventInterface $event, ContainerInterface $container): ?ContainerInterface
+    public function modifyContainer(EventInterface $event, ContainerInterface $container): void
     {
-        if (empty($this->containerServices)) {
-            return null;
+        if (!$this->containerServices) {
+            return;
         }
         foreach ($this->containerServices as $key => $factory) {
             if ($container->has($key)) {
                 try {
                     $container->extend($key)->setConcrete($factory);
-                } catch (NotFoundException $e) {
+                } catch (NotFoundException) {
                     $container->add($key, $factory);
                 }
             } else {
@@ -155,16 +173,16 @@ trait ContainerStubTrait
             }
         }
 
-        return $container;
+        $event->setResult($container);
     }
 
     /**
      * Clears any mocks that were defined and cleans
      * up application class configuration.
      *
-     * @after
      * @return void
      */
+    #[After]
     public function cleanupContainer(): void
     {
         $this->_appArgs = null;
@@ -172,3 +190,10 @@ trait ContainerStubTrait
         $this->containerServices = [];
     }
 }
+
+// phpcs:disable
+class_alias(
+    'Cake\Core\TestSuite\ContainerStubTrait',
+    'Cake\TestSuite\ContainerStubTrait'
+);
+// phpcs:enable

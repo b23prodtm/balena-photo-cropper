@@ -26,16 +26,51 @@ use Cake\Core\Configure;
 class VersionCommand extends Command
 {
     /**
+     * @inheritDoc
+     */
+    public static function getDescription(): string
+    {
+        return 'Show the CakePHP version.';
+    }
+
+    /**
      * Print out the version of CakePHP in use.
      *
      * @param \Cake\Console\Arguments $args The command arguments.
      * @param \Cake\Console\ConsoleIo $io The console io
-     * @return int
+     * @return int|null
      */
     public function execute(Arguments $args, ConsoleIo $io): ?int
     {
-        $io->out(Configure::version());
+        $version = Configure::version();
+        $io->out($version);
+
+        if ($args->getOption('verbose')) {
+            $this->outputVerbose($io, $version);
+        }
 
         return static::CODE_SUCCESS;
+    }
+
+    /**
+     * Output verbose version information.
+     *
+     * @param \Cake\Console\ConsoleIo $io The console io
+     * @param string $version The CakePHP version
+     * @return void
+     */
+    protected function outputVerbose(ConsoleIo $io, string $version): void
+    {
+        $io->out();
+
+        // Show release link for stable and RC versions, but not dev
+        if (!str_contains($version, '-dev')) {
+            $io->out(sprintf(
+                '<info>Release:</info> https://github.com/cakephp/cakephp/releases/tag/%s',
+                $version,
+            ));
+        }
+
+        $io->out(sprintf('<info>PHP:</info> %s (%s)', PHP_VERSION, PHP_SAPI));
     }
 }

@@ -15,6 +15,8 @@ declare(strict_types=1);
  */
 namespace Cake\TestSuite\Constraint\Response;
 
+use Psr\Http\Message\ResponseInterface;
+
 /**
  * CookieSet
  *
@@ -25,7 +27,7 @@ class CookieSet extends ResponseBase
     /**
      * @var \Cake\Http\Response
      */
-    protected $response;
+    protected ResponseInterface $response;
 
     /**
      * Checks assertion
@@ -33,9 +35,9 @@ class CookieSet extends ResponseBase
      * @param mixed $other Expected content
      * @return bool
      */
-    public function matches($other): bool
+    public function matches(mixed $other): bool
     {
-        $cookie = $this->response->getCookie($other);
+        $cookie = $this->readCookie($other);
 
         return $cookie !== null && $cookie['value'] !== '';
     }

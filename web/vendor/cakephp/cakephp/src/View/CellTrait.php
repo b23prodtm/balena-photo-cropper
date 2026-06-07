@@ -19,6 +19,7 @@ namespace Cake\View;
 use Cake\Core\App;
 use Cake\Utility\Inflector;
 use Cake\View\Exception\MissingCellException;
+use function Cake\Core\pluginSplit;
 
 /**
  * Provides cell() method for usage in Controller and View classes.
@@ -52,7 +53,7 @@ trait CellTrait
      * @param array $data Additional arguments for cell method. e.g.:
      *    `cell('TagCloud::smallList', ['a1' => 'v1', 'a2' => 'v2'])` maps to `View\Cell\TagCloud::smallList(v1, v2)`
      * @param array<string, mixed> $options Options for Cell's constructor
-     * @return \Cake\View\Cell The cell instance
+     * @return \Cake\View\Cell<\Cake\View\View> The cell instance
      * @throws \Cake\View\Exception\MissingCellException If Cell class was not found.
      */
     protected function cell(string $cell, array $data = [], array $options = []): Cell
@@ -72,9 +73,6 @@ trait CellTrait
             throw new MissingCellException(['className' => $pluginAndCell . 'Cell']);
         }
 
-        if (!empty($data)) {
-            $data = array_values($data);
-        }
         $options = ['action' => $action, 'args' => $data] + $options;
 
         return $this->_createCell($className, $action, $plugin, $options);
@@ -87,31 +85,32 @@ trait CellTrait
      * @param string $action The action name.
      * @param string|null $plugin The plugin name.
      * @param array<string, mixed> $options The constructor options for the cell.
-     * @return \Cake\View\Cell
+     * @return \Cake\View\Cell<\Cake\View\View>
      */
     protected function _createCell(string $className, string $action, ?string $plugin, array $options): Cell
     {
-        /** @var \Cake\View\Cell $instance */
+        if ($plugin) {
+            $options['plugin'] = $plugin;
+        }
+
+        /** @var \Cake\View\Cell<\Cake\View\View> $instance */
         $instance = new $className($this->request, $this->response, $this->getEventManager(), $options);
 
         $builder = $instance->viewBuilder();
         $builder->setTemplate(Inflector::underscore($action));
 
-        if (!empty($plugin)) {
+        if ($plugin) {
             $builder->setPlugin($plugin);
-        }
-        if (!empty($this->helpers)) {
-            $builder->addHelpers($this->helpers);
         }
 
         if ($this instanceof View) {
-            if (!empty($this->theme)) {
+            $builder->addHelpers($this->helpers);
+
+            if ($this->theme) {
                 $builder->setTheme($this->theme);
             }
 
-            $class = static::class;
-            $builder->setClassName($class);
-            $instance->viewBuilder()->setClassName($class);
+            $builder->setClassName(static::class);
 
             return $instance;
         }

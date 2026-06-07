@@ -17,6 +17,7 @@ declare(strict_types=1);
 namespace Cake\Console;
 
 use Cake\Console\Exception\ConsoleException;
+use Cake\Core\Exception\CakeException;
 
 /**
  * Object wrapper for interacting with stdin
@@ -39,7 +40,7 @@ class ConsoleInput
      *
      * @var bool
      */
-    protected $_canReadline;
+    protected bool $_canReadline;
 
     /**
      * Constructor
@@ -49,7 +50,24 @@ class ConsoleInput
     public function __construct(string $handle = 'php://stdin')
     {
         $this->_canReadline = (extension_loaded('readline') && $handle === 'php://stdin');
-        $this->_input = fopen($handle, 'rb');
+        $input = fopen($handle, 'rb');
+        if ($input === false) {
+            throw new CakeException(sprintf('Cannot open handle `%s`', $handle));
+        }
+
+        $this->_input = $input;
+    }
+
+    /**
+     * Destruct and free resources
+     */
+    public function __destruct()
+    {
+        // @phpstan-ignore isset.property (property may not be set if constructor throws)
+        if (isset($this->_input) && is_resource($this->_input)) {
+            fclose($this->_input);
+        }
+        unset($this->_input);
     }
 
     /**

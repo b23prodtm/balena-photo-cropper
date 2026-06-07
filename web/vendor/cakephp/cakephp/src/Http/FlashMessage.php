@@ -18,6 +18,7 @@ namespace Cake\Http;
 
 use Cake\Core\InstanceConfigTrait;
 use Throwable;
+use function Cake\Core\pluginSplit;
 
 /**
  * The FlashMessage class provides a way for you to write a flash variable
@@ -32,7 +33,7 @@ class FlashMessage
      *
      * @var array<string, mixed>
      */
-    protected $_defaultConfig = [
+    protected array $_defaultConfig = [
         'key' => 'flash',
         'element' => 'default',
         'plugin' => null,
@@ -44,7 +45,7 @@ class FlashMessage
     /**
      * @var \Cake\Http\Session
      */
-    protected $session;
+    protected Session $session;
 
     /**
      * Constructor
@@ -80,7 +81,7 @@ class FlashMessage
      * @return void
      * @see FlashMessage::$_defaultConfig For default values for the options.
      */
-    public function set($message, array $options = []): void
+    public function set(string $message, array $options = []): void
     {
         $options += (array)$this->getConfig();
 
@@ -138,8 +139,8 @@ class FlashMessage
      */
     public function setExceptionMessage(Throwable $exception, array $options = []): void
     {
-        $options['element'] = $options['element'] ?? 'error';
-        $options['params']['code'] = $options['params']['code'] ?? $exception->getCode();
+        $options['element'] ??= 'error';
+        $options['params']['code'] ??= $exception->getCode();
 
         $message = $exception->getMessage();
         $this->set($message, $options);
@@ -173,7 +174,7 @@ class FlashMessage
     }
 
     /**
-     * Set an success message.
+     * Set a success message.
      *
      * The `'element'` option will be set to  `'error'`.
      *

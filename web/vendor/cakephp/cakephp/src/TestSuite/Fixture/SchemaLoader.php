@@ -15,6 +15,8 @@ declare(strict_types=1);
  */
 namespace Cake\TestSuite\Fixture;
 
+use Cake\Core\Exception\CakeException;
+use Cake\Database\Connection;
 use Cake\Database\Schema\TableSchema;
 use Cake\Datasource\ConnectionManager;
 use Cake\TestSuite\ConnectionHelper;
@@ -34,19 +36,6 @@ use InvalidArgumentException;
 class SchemaLoader
 {
     /**
-     * @var \Cake\TestSuite\ConnectionHelper
-     */
-    protected $helper;
-
-    /**
-     * Constructor.
-     */
-    public function __construct()
-    {
-        $this->helper = new ConnectionHelper();
-    }
-
-    /**
      * Load and apply schema sql file, or an array of files.
      *
      * @param array<string>|string $paths Schema files to load
@@ -56,10 +45,10 @@ class SchemaLoader
      * @return void
      */
     public function loadSqlFiles(
-        $paths,
+        array|string $paths,
         string $connectionName = 'test',
         bool $dropTables = true,
-        bool $truncateTables = false
+        bool $truncateTables = false,
     ): void {
         $files = (array)$paths;
 
@@ -69,35 +58,84 @@ class SchemaLoader
         }
 
         if ($dropTables) {
-            $this->helper->dropTables($connectionName);
+            ConnectionHelper::dropTables($connectionName);
         }
 
         /** @var \Cake\Database\Connection $connection */
         $connection = ConnectionManager::get($connectionName);
         foreach ($files as $file) {
             if (!file_exists($file)) {
-                throw new InvalidArgumentException("Unable to load SQL file `$file`.");
+                throw new InvalidArgumentException(sprintf('Unable to load SQL file `%s`.', $file));
             }
             $sql = file_get_contents($file);
+            if ($sql === false) {
+                throw new CakeException(sprintf('Cannot read file content of `%s`', $file));
+            }
 
             // Use the underlying PDO connection so we can avoid prepared statements
             // which don't support multiple queries in postgres.
-            $driver = $connection->getDriver();
-            $driver->getConnection()->exec($sql);
+            $driver = $connection->getWriteDriver();
+            $driver->exec($sql);
         }
 
         if ($truncateTables) {
-            $this->helper->truncateTables($connectionName);
+            ConnectionHelper::truncateTables($connectionName);
         }
     }
 
     /**
-     * Load and apply CakePHP-specific schema file.
+     * Load and apply CakePHP schema file.
+     *
+     * This method will process the array returned by `$file` and treat
+     * the contents as a list of table schema.
+     *
+     * An example table is:
+     *
+     * ```
+     * return [
+     *   'articles' => [
+     *      'columns' => [
+     *          'id' => [
+     *              'type' => 'integer',
+     *          ],
+     *          'author_id' => [
+     *              'type' => 'integer',
+     *              'null' => true,
+     *          ],
+     *          'title' => [
+     *              'type' => 'string',
+     *              'null' => true,
+     *          ],
+     *          'body' => 'text',
+     *          'published' => [
+     *              'type' => 'string',
+     *              'length' => 1,
+     *              'default' => 'N',
+     *          ],
+     *      ],
+     *      'constraints' => [
+     *          'primary' => [
+     *              'type' => 'primary',
+     *              'columns' => [
+     *                  'id',
+     *              ],
+     *          ],
+     *      ],
+     *   ],
+     * ];
+     * ```
+     *
+     * This schema format can be useful for plugins that want to include
+     * tables to test against but don't need to include production
+     * ready schema via migrations. Applications should favor using migrations
+     * or SQL dump files over this format for ease of maintenance.
+     *
+     * A more complete example can be found in `tests/schema.php`.
      *
      * @param string $file Schema file
      * @param string $connectionName Connection name
+     * @throws \InvalidArgumentException For missing table name(s).
      * @return void
-     * @internal
      */
     public function loadInternalFile(string $file, string $connectionName = 'test'): void
     {
@@ -106,14 +144,24 @@ class SchemaLoader
             return;
         }
 
-        $this->helper->dropTables($connectionName);
+        ConnectionHelper::dropTables($connectionName);
 
         $tables = include $file;
 
+        /**
+         * @var \Cake\Database\Connection $connection
+         */
         $connection = ConnectionManager::get($connectionName);
-        $connection->disableConstraints(function ($connection) use ($tables) {
-            foreach ($tables as $table) {
-                $schema = new TableSchema($table['table'], $table['columns']);
+        $connection->disableConstraints(function (Connection $connection) use ($tables): void {
+            foreach ($tables as $tableName => $table) {
+                $name = $table['table'] ?? $tableName;
+                if (!is_string($name)) {
+                    throw new InvalidArgumentException(
+                        sprintf('`%s` is not a valid table name. Either use a string key for the table definition'
+                            . "(`'articles' => [...]`) or define the `table` key in the table definition.", $name),
+                    );
+                }
+                $schema = new TableSchema($name, $table['columns']);
                 if (isset($table['indexes'])) {
                     foreach ($table['indexes'] as $key => $index) {
                         $schema->addIndex($key, $index);

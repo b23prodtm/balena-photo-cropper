@@ -20,6 +20,7 @@ use Cake\Console\Arguments;
 use Cake\Console\ConsoleIo;
 use Cake\Console\ConsoleOptionParser;
 use Cake\Core\App;
+use Cake\Core\Exception\CakeException;
 use Cake\Core\Plugin;
 use Cake\Utility\Inflector;
 use DirectoryIterator;
@@ -38,6 +39,14 @@ class I18nInitCommand extends Command
     }
 
     /**
+     * @inheritDoc
+     */
+    public static function getDescription(): string
+    {
+        return 'Initialize a language PO file from the POT file.';
+    }
+
+    /**
      * Execute the command
      *
      * @param \Cake\Console\Arguments $args The command arguments.
@@ -51,12 +60,12 @@ class I18nInitCommand extends Command
             $language = $io->ask('Please specify language code, e.g. `en`, `eng`, `en_US` etc.');
         }
         if (strlen($language) < 2) {
-            $io->err('Invalid language code. Valid is `en`, `eng`, `en_US` etc.');
+            $io->error('Invalid language code. Valid is `en`, `eng`, `en_US` etc.');
 
             return static::CODE_ERROR;
         }
 
-        $paths = App::path('locales');
+        $paths = array_values(App::path('locales'));
         if ($args->hasOption('plugin')) {
             $plugin = Inflector::camelize((string)$args->getOption('plugin'));
             $paths = [Plugin::path($plugin) . 'resources' . DIRECTORY_SEPARATOR . 'locales' . DIRECTORY_SEPARATOR];
@@ -66,20 +75,24 @@ class I18nInitCommand extends Command
         $sourceFolder = rtrim($response, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
         $targetFolder = $sourceFolder . $language . DIRECTORY_SEPARATOR;
         if (!is_dir($targetFolder)) {
-            mkdir($targetFolder, 0775, true);
+            mkdir($targetFolder, 0777 ^ umask(), true);
         }
 
         $count = 0;
         $iterator = new DirectoryIterator($sourceFolder);
-        foreach ($iterator as $fileinfo) {
-            if (!$fileinfo->isFile()) {
+        foreach ($iterator as $fileInfo) {
+            if (!$fileInfo->isFile()) {
                 continue;
             }
-            $filename = $fileinfo->getFilename();
-            $newFilename = $fileinfo->getBasename('.pot');
+            $filename = $fileInfo->getFilename();
+            $newFilename = $fileInfo->getBasename('.pot');
             $newFilename .= '.po';
 
-            $io->createFile($targetFolder . $newFilename, file_get_contents($sourceFolder . $filename));
+            $content = file_get_contents($sourceFolder . $filename);
+            if ($content === false) {
+                throw new CakeException(sprintf('Cannot read file content of `%s`', $sourceFolder . $filename));
+            }
+            $io->createFile($targetFolder . $newFilename, $content);
             $count++;
         }
 
@@ -96,7 +109,7 @@ class I18nInitCommand extends Command
      */
     public function buildOptionParser(ConsoleOptionParser $parser): ConsoleOptionParser
     {
-        $parser->setDescription('Initialize a language PO file from the POT file')
+        $parser->setDescription(static::getDescription())
            ->addOption('plugin', [
                'help' => 'The plugin to create a PO file in.',
                'short' => 'p',

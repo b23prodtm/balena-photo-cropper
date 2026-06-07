@@ -24,6 +24,7 @@ use Cake\Http\ServerRequestFactory;
 use Cake\Routing\Router;
 use Cake\Routing\RoutingApplicationInterface;
 use Psr\Http\Message\ResponseInterface;
+use function Cake\Core\deprecationWarning;
 
 /**
  * Dispatches a request capturing the response for integration
@@ -38,7 +39,7 @@ class MiddlewareDispatcher
      *
      * @var \Cake\Core\HttpApplicationInterface
      */
-    protected $app;
+    protected HttpApplicationInterface $app;
 
     /**
      * Constructor
@@ -55,11 +56,17 @@ class MiddlewareDispatcher
      *
      * @param array|string $url The URL array/string to resolve.
      * @return string
+     * @deprecated 5.1.0 Use IntegrationTestTrait::resolveUrl() instead.
      */
-    public function resolveUrl($url): string
+    public function resolveUrl(array|string $url): string
     {
+        deprecationWarning(
+            '5.1.0',
+            'MiddlewareDispatcher::resolveUrl() is deprecated. Use IntegrationTestTrait::resolveUrl() instead.',
+        );
+
         // If we need to resolve a Route URL but there are no routes, load routes.
-        if (is_array($url) && count(Router::getRouteCollection()->routes()) === 0) {
+        if (is_array($url) && Router::getRouteCollection()->routes() === []) {
             return $this->resolveRoute($url);
         }
 
@@ -71,9 +78,15 @@ class MiddlewareDispatcher
      *
      * @param array $url The url to resolve
      * @return string
+     * @deprecated 5.1.0 Use IntegrationTestTrait::resolveRouter() instead.
      */
     protected function resolveRoute(array $url): string
     {
+        deprecationWarning(
+            '5.1.0',
+            'MiddlewareDispatcher::resolveRoute() is deprecated. Use IntegrationTestTrait::resolveRoute() instead.',
+        );
+
         // Simulate application bootstrap and route loading.
         // We need both to ensure plugins are loaded.
         $this->app->bootstrap();
@@ -109,9 +122,9 @@ class MiddlewareDispatcher
         }
         $environment = array_merge(
             array_merge($_SERVER, ['REQUEST_URI' => $spec['url']]),
-            $spec['environment']
+            $spec['environment'],
         );
-        if (strpos($environment['PHP_SELF'], 'phpunit') !== false) {
+        if (str_contains($environment['PHP_SELF'], 'phpunit')) {
             $environment['PHP_SELF'] = '/';
         }
         $request = ServerRequestFactory::fromGlobals(
@@ -119,7 +132,7 @@ class MiddlewareDispatcher
             $spec['query'],
             $spec['post'],
             $spec['cookies'],
-            $spec['files']
+            $spec['files'],
         );
 
         return $request

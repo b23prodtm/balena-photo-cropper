@@ -19,11 +19,15 @@ namespace Cake\Collection\Iterator;
 use ArrayIterator;
 use Cake\Collection\Collection;
 use Cake\Collection\CollectionInterface;
+use Iterator;
 use Traversable;
 
 /**
  * Creates an iterator from another iterator that will modify each of the values
  * by converting them using a callback function.
+ *
+ * @template TKey
+ * @extends \Cake\Collection\Collection<TKey, mixed>
  */
 class ReplaceIterator extends Collection
 {
@@ -39,7 +43,7 @@ class ReplaceIterator extends Collection
      *
      * @var \Traversable
      */
-    protected $_innerIterator;
+    protected Traversable $_innerIterator;
 
     /**
      * Creates an iterator from another iterator that will modify each of the values
@@ -49,7 +53,7 @@ class ReplaceIterator extends Collection
      * in the current iteration, the key of the element and the passed $items iterator
      * as arguments, in that order.
      *
-     * @param iterable $items The items to be filtered.
+     * @param iterable<TKey, mixed> $items The items to be filtered.
      * @param callable $callback Callback.
      */
     public function __construct(iterable $items, callable $callback)
@@ -65,18 +69,15 @@ class ReplaceIterator extends Collection
      *
      * @return mixed
      */
-    #[\ReturnTypeWillChange]
-    public function current()
+    public function current(): mixed
     {
-        $callback = $this->_callback;
-
-        return $callback(parent::current(), $this->key(), $this->_innerIterator);
+        return ($this->_callback)(parent::current(), $this->key(), $this->_innerIterator);
     }
 
     /**
      * @inheritDoc
      */
-    public function unwrap(): Traversable
+    public function unwrap(): Iterator
     {
         $iterator = $this->_innerIterator;
 
@@ -84,7 +85,7 @@ class ReplaceIterator extends Collection
             $iterator = $iterator->unwrap();
         }
 
-        if (get_class($iterator) !== ArrayIterator::class) {
+        if ($iterator::class !== ArrayIterator::class) {
             return $this;
         }
 

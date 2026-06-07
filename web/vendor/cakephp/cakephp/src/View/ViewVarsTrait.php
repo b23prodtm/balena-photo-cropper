@@ -22,6 +22,9 @@ use Cake\Event\EventDispatcherInterface;
  *
  * Once collected context data can be passed to another object.
  * This is done in Controller, TemplateTask and View for example.
+ *
+ * @property \Cake\Http\ServerRequest|null $request The request being handled.
+ * @property \Cake\Http\Response|null $response The response being built.
  */
 trait ViewVarsTrait
 {
@@ -30,7 +33,7 @@ trait ViewVarsTrait
      *
      * @var \Cake\View\ViewBuilder|null
      */
-    protected $_viewBuilder;
+    protected ?ViewBuilder $_viewBuilder = null;
 
     /**
      * Get the view builder being used.
@@ -39,11 +42,7 @@ trait ViewVarsTrait
      */
     public function viewBuilder(): ViewBuilder
     {
-        if (!isset($this->_viewBuilder)) {
-            $this->_viewBuilder = new ViewBuilder();
-        }
-
-        return $this->_viewBuilder;
+        return $this->_viewBuilder ??= new ViewBuilder();
     }
 
     /**
@@ -67,12 +66,10 @@ trait ViewVarsTrait
             }
         }
 
-        /** @psalm-suppress RedundantPropertyInitializationCheck */
         return $builder->build(
-            [],
             $this->request ?? null,
             $this->response ?? null,
-            $this instanceof EventDispatcherInterface ? $this->getEventManager() : null
+            $this instanceof EventDispatcherInterface ? $this->getEventManager() : null,
         );
     }
 
@@ -84,7 +81,7 @@ trait ViewVarsTrait
      *   Unused if $name is an associative array, otherwise serves as the values to $name's keys.
      * @return $this
      */
-    public function set($name, $value = null)
+    public function set(array|string $name, mixed $value = null)
     {
         if (is_array($name)) {
             if (is_array($value)) {

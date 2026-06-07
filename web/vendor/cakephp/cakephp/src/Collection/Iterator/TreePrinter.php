@@ -24,9 +24,15 @@ use RecursiveIteratorIterator;
 /**
  * Iterator for flattening elements in a tree structure while adding some
  * visual markers for their relative position in the tree
+ *
+ * @template TKey
+ * @template TValue
+ * @template-extends \RecursiveIteratorIterator<\RecursiveIterator<TKey, TValue>>
+ * @implements \Cake\Collection\CollectionInterface<TKey, string>
  */
 class TreePrinter extends RecursiveIteratorIterator implements CollectionInterface
 {
+    /** @use \Cake\Collection\CollectionTrait<TKey, string> */
     use CollectionTrait;
 
     /**
@@ -48,19 +54,19 @@ class TreePrinter extends RecursiveIteratorIterator implements CollectionInterfa
      *
      * @var mixed
      */
-    protected $_current;
+    protected mixed $_current = null;
 
     /**
      * The string to use for prefixing the values according to their depth in the tree.
      *
      * @var string
      */
-    protected $_spacer;
+    protected string $_spacer;
 
     /**
      * Constructor
      *
-     * @param \RecursiveIterator $items The iterator to flatten.
+     * @param \RecursiveIterator<mixed, mixed> $items The iterator to flatten.
      * @param callable|string $valuePath The property to extract or a callable to return
      * the display value.
      * @param callable|string $keyPath The property to use as iteration key or a
@@ -68,13 +74,14 @@ class TreePrinter extends RecursiveIteratorIterator implements CollectionInterfa
      * @param string $spacer The string to use for prefixing the values according to
      * their depth in the tree.
      * @param int $mode Iterator mode.
+     * @phpstan-param \RecursiveIteratorIterator::LEAVES_ONLY|\RecursiveIteratorIterator::SELF_FIRST|\RecursiveIteratorIterator::CHILD_FIRST $mode
      */
     public function __construct(
         RecursiveIterator $items,
-        $valuePath,
-        $keyPath,
+        callable|string $valuePath,
+        callable|string $keyPath,
         string $spacer,
-        int $mode = RecursiveIteratorIterator::SELF_FIRST
+        int $mode = RecursiveIteratorIterator::SELF_FIRST,
     ) {
         parent::__construct($items, $mode);
         $this->_value = $this->_propertyExtractor($valuePath);
@@ -87,8 +94,7 @@ class TreePrinter extends RecursiveIteratorIterator implements CollectionInterfa
      *
      * @return mixed
      */
-    #[\ReturnTypeWillChange]
-    public function key()
+    public function key(): mixed
     {
         $extractor = $this->_key;
 
@@ -125,7 +131,7 @@ class TreePrinter extends RecursiveIteratorIterator implements CollectionInterfa
      *
      * @return mixed
      */
-    protected function _fetchCurrent()
+    protected function _fetchCurrent(): mixed
     {
         if ($this->_current !== null) {
             return $this->_current;

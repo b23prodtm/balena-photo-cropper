@@ -32,7 +32,7 @@ class Entity implements EntityInterface, InvalidPropertyInterface
      * Initializes the internal properties of this entity out of the
      * keys in an array. The following list of options can be used:
      *
-     * - useSetters: whether use internal setters for properties or not
+     * - useSetters: whether to use internal setters for properties or not
      * - markClean: whether to mark all properties as clean after setting them
      * - markNew: whether this instance has not yet been persisted
      * - guard: whether to prevent inaccessible properties from being set (default: false)
@@ -57,7 +57,7 @@ class Entity implements EntityInterface, InvalidPropertyInterface
             'source' => null,
         ];
 
-        if (!empty($options['source'])) {
+        if ($options['source'] !== null) {
             $this->setSource($options['source']);
         }
 
@@ -65,14 +65,18 @@ class Entity implements EntityInterface, InvalidPropertyInterface
             $this->setNew($options['markNew']);
         }
 
-        if (!empty($properties) && $options['markClean'] && !$options['useSetters']) {
-            $this->_fields = $properties;
+        if ($properties) {
+            //Remember the original field names here.
+            $this->setOriginalField(array_keys($properties));
 
-            return;
-        }
+            if ($options['markClean'] && !$options['useSetters']) {
+                $this->_fields = $properties;
 
-        if (!empty($properties)) {
-            $this->set($properties, [
+                return;
+            }
+
+            $this->patch($properties, [
+                'asOriginal' => true,
                 'setter' => $options['useSetters'],
                 'guard' => $options['guard'],
             ]);

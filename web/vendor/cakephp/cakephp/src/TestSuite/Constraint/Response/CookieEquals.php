@@ -16,6 +16,7 @@ declare(strict_types=1);
 namespace Cake\TestSuite\Constraint\Response;
 
 use Cake\Http\Response;
+use Psr\Http\Message\ResponseInterface;
 
 /**
  * CookieEquals
@@ -27,12 +28,12 @@ class CookieEquals extends ResponseBase
     /**
      * @var \Cake\Http\Response
      */
-    protected $response;
+    protected ResponseInterface $response;
 
     /**
      * @var string
      */
-    protected $cookieName;
+    protected string $cookieName;
 
     /**
      * Constructor.
@@ -53,9 +54,9 @@ class CookieEquals extends ResponseBase
      * @param mixed $other Expected content
      * @return bool
      */
-    public function matches($other): bool
+    public function matches(mixed $other): bool
     {
-        $cookie = $this->response->getCookie($this->cookieName);
+        $cookie = $this->readCookie($this->cookieName);
 
         return $cookie !== null && $cookie['value'] === $other;
     }
@@ -67,6 +68,6 @@ class CookieEquals extends ResponseBase
      */
     public function toString(): string
     {
-        return sprintf('is in cookie \'%s\'', $this->cookieName);
+        return sprintf("is in cookie '%s'", $this->cookieName);
     }
 }

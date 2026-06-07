@@ -16,47 +16,50 @@ declare(strict_types=1);
  */
 namespace Cake\Datasource\Locator;
 
+use Cake\Core\Exception\CakeException;
 use Cake\Datasource\RepositoryInterface;
-use RuntimeException;
 
 /**
  * Provides an abstract registry/factory for repository objects.
+ *
+ * @template TRepo of \Cake\Datasource\RepositoryInterface
+ * @implements \Cake\Datasource\Locator\LocatorInterface<TRepo>
  */
 abstract class AbstractLocator implements LocatorInterface
 {
     /**
      * Instances that belong to the registry.
      *
-     * @var array<string, \Cake\Datasource\RepositoryInterface>
+     * @var array<string, TRepo>
      */
-    protected $instances = [];
+    protected array $instances = [];
 
     /**
      * Contains a list of options that were passed to get() method.
      *
      * @var array<string, array>
      */
-    protected $options = [];
+    protected array $options = [];
 
     /**
      * {@inheritDoc}
      *
      * @param string $alias The alias name you want to get.
      * @param array<string, mixed> $options The options you want to build the table with.
-     * @return \Cake\Datasource\RepositoryInterface
-     * @throws \RuntimeException When trying to get alias for which instance
+     * @return TRepo
+     * @throws \Cake\Core\Exception\CakeException When trying to get alias for which instance
      *   has already been created with different options.
      */
-    public function get(string $alias, array $options = [])
+    public function get(string $alias, array $options = []): RepositoryInterface
     {
         $storeOptions = $options;
         unset($storeOptions['allowFallbackClass']);
 
         if (isset($this->instances[$alias])) {
-            if (!empty($storeOptions) && isset($this->options[$alias]) && $this->options[$alias] !== $storeOptions) {
-                throw new RuntimeException(sprintf(
-                    'You cannot configure "%s", it already exists in the registry.',
-                    $alias
+            if ($storeOptions && isset($this->options[$alias]) && $this->options[$alias] !== $storeOptions) {
+                throw new CakeException(sprintf(
+                    'You cannot configure `%s`, it already exists in the registry.',
+                    $alias,
                 ));
             }
 
@@ -73,14 +76,14 @@ abstract class AbstractLocator implements LocatorInterface
      *
      * @param string $alias Repository alias.
      * @param array<string, mixed> $options The options you want to build the instance with.
-     * @return \Cake\Datasource\RepositoryInterface
+     * @return TRepo
      */
-    abstract protected function createInstance(string $alias, array $options);
+    abstract protected function createInstance(string $alias, array $options): RepositoryInterface;
 
     /**
      * @inheritDoc
      */
-    public function set(string $alias, RepositoryInterface $repository)
+    public function set(string $alias, RepositoryInterface $repository): RepositoryInterface
     {
         return $this->instances[$alias] = $repository;
     }
@@ -100,7 +103,7 @@ abstract class AbstractLocator implements LocatorInterface
     {
         unset(
             $this->instances[$alias],
-            $this->options[$alias]
+            $this->options[$alias],
         );
     }
 

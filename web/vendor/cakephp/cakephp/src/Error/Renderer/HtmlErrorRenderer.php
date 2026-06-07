@@ -19,6 +19,7 @@ namespace Cake\Error\Renderer;
 use Cake\Error\Debugger;
 use Cake\Error\ErrorRendererInterface;
 use Cake\Error\PhpError;
+use function Cake\Core\h;
 
 /**
  * Interactive HTML error rendering with a stack trace.
@@ -56,7 +57,7 @@ class HtmlErrorRenderer implements ErrorRendererInterface
         $errorMessage = sprintf(
             '<b>%s</b> (%s)',
             h(ucfirst($error->getLabel())),
-            h($error->getCode())
+            h($error->getCode()),
         );
         $toggle = $this->renderToggle($errorMessage, $id, 'trace');
         $codeToggle = $this->renderToggle('Code', $id, 'code');

@@ -17,10 +17,12 @@ declare(strict_types=1);
 namespace Cake\I18n;
 
 use Cake\Cache\Cache;
+use Cake\Cache\Exception\InvalidArgumentException;
 use Cake\I18n\Exception\I18nException;
 use Cake\I18n\Formatter\IcuFormatter;
 use Cake\I18n\Formatter\SprintfFormatter;
 use Locale;
+use function Cake\Core\deprecationWarning;
 
 /**
  * I18n handles translation of Text and time format strings.
@@ -39,18 +41,18 @@ class I18n
      *
      * @var \Cake\I18n\TranslatorRegistry|null
      */
-    protected static $_collection;
+    protected static ?TranslatorRegistry $_collection = null;
 
     /**
      * The environment default locale
      *
      * @var string|null
      */
-    protected static $_defaultLocale;
+    protected static ?string $_defaultLocale = null;
 
     /**
      * Returns the translators collection instance. It can be used
-     * for getting specific translators based of their name and locale
+     * for getting specific translators based on their name and locale
      * or to configure some aspect of future translations that are not yet constructed.
      *
      * @return \Cake\I18n\TranslatorRegistry The translator collection.
@@ -67,11 +69,20 @@ class I18n
                 'default' => IcuFormatter::class,
                 'sprintf' => SprintfFormatter::class,
             ]),
-            static::getLocale()
+            static::getLocale(),
         );
 
         if (class_exists(Cache::class)) {
-            static::$_collection->setCacher(Cache::pool('_cake_core_'));
+            try {
+                $pool = Cache::pool('_cake_translations_');
+            } catch (InvalidArgumentException) {
+                $pool = Cache::pool('_cake_core_');
+                deprecationWarning(
+                    '5.1.0',
+                    'Cache config `_cake_core_` is deprecated. Use `_cake_translations_` instead',
+                );
+            }
+            static::$_collection->setCacher($pool);
         }
 
         return static::$_collection;
@@ -140,6 +151,7 @@ class I18n
     {
         $translators = static::translators();
 
+        $currentLocale = null;
         if ($locale) {
             $currentLocale = $translators->getLocale();
             $translators->setLocale($locale);
@@ -148,12 +160,12 @@ class I18n
         $translator = $translators->get($name);
         if ($translator === null) {
             throw new I18nException(sprintf(
-                'Translator for domain "%s" could not be found.',
-                $name
+                'Translator for domain `%s` could not be found.',
+                $name,
             ));
         }
 
-        if (isset($currentLocale)) {
+        if ($currentLocale !== null) {
             $translators->setLocale($currentLocale);
         }
 
@@ -168,7 +180,7 @@ class I18n
      *
      * Registering loaders is useful when you need to lazily use translations in multiple
      * different locales for the same domain, and don't want to use the built-in
-     * translation service based of `gettext` files.
+     * translation service based on `gettext` files.
      *
      * Loader objects will receive two arguments: The domain name that needs to be
      * built, and the locale that is requested. These objects can assemble the messages
@@ -225,7 +237,7 @@ class I18n
     }
 
     /**
-     * Will return the currently configure locale as stored in the
+     * Will return the currently configured locale as stored in the
      * `intl.default_locale` PHP setting.
      *
      * @return string The name of the default locale.
@@ -253,11 +265,7 @@ class I18n
      */
     public static function getDefaultLocale(): string
     {
-        if (static::$_defaultLocale === null) {
-            static::$_defaultLocale = Locale::getDefault() ?: static::DEFAULT_LOCALE;
-        }
-
-        return static::$_defaultLocale;
+        return static::$_defaultLocale ??= Locale::getDefault() ?: static::DEFAULT_LOCALE;
     }
 
     /**

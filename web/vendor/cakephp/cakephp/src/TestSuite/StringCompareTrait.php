@@ -16,11 +16,15 @@ declare(strict_types=1);
  */
 namespace Cake\TestSuite;
 
+use function Cake\Core\env;
+
 /**
  * Compare a string to the contents of a file
  *
  * Implementing objects are expected to modify the `$_compareBasePath` property
  * before use.
+ *
+ * @require-extends \Cake\TestSuite\TestCase
  */
 trait StringCompareTrait
 {
@@ -31,7 +35,7 @@ trait StringCompareTrait
      *
      * @var string
      */
-    protected $_compareBasePath = '';
+    protected string $_compareBasePath = '';
 
     /**
      * Update comparisons to match test changes
@@ -40,10 +44,15 @@ trait StringCompareTrait
      *
      * @var bool
      */
-    protected $_updateComparisons;
+    protected bool $_updateComparisons;
 
     /**
      * Compare the result to the contents of the file
+     *
+     * Set UPDATE_TEST_COMPARISON_FILES=1 in your environment
+     * to have this assertion *overwrite* comparison files. This
+     * is useful when you intentionally make a behavior change and
+     * want a quick way to capture the baseline output.
      *
      * @param string $path partial path to test comparison file
      * @param string $result test result as a string
@@ -55,9 +64,7 @@ trait StringCompareTrait
             $path = $this->_compareBasePath . $path;
         }
 
-        if ($this->_updateComparisons === null) {
-            $this->_updateComparisons = env('UPDATE_TEST_COMPARISON_FILES');
-        }
+        $this->_updateComparisons ??= (bool)env('UPDATE_TEST_COMPARISON_FILES');
 
         if ($this->_updateComparisons) {
             file_put_contents($path, $result);

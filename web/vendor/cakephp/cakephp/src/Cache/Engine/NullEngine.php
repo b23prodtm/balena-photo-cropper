@@ -17,11 +17,14 @@ declare(strict_types=1);
 namespace Cake\Cache\Engine;
 
 use Cake\Cache\CacheEngine;
+use DateInterval;
 
 /**
  * Null cache engine, all operations appear to work, but do nothing.
  *
  * This is used internally for when Cache::disable() has been called.
+ *
+ * @extends \Cake\Cache\CacheEngine<\Cake\Cache\Engine\NullEngine>
  */
 class NullEngine extends CacheEngine
 {
@@ -36,7 +39,7 @@ class NullEngine extends CacheEngine
     /**
      * @inheritDoc
      */
-    public function set($key, $value, $ttl = null): bool
+    public function set(string $key, mixed $value, DateInterval|int|null $ttl = null): bool
     {
         return true;
     }
@@ -44,7 +47,7 @@ class NullEngine extends CacheEngine
     /**
      * @inheritDoc
      */
-    public function setMultiple($values, $ttl = null): bool
+    public function setMultiple(iterable $values, DateInterval|int|null $ttl = null): bool
     {
         return true;
     }
@@ -52,7 +55,7 @@ class NullEngine extends CacheEngine
     /**
      * @inheritDoc
      */
-    public function get($key, $default = null)
+    public function get(string $key, mixed $default = null): mixed
     {
         return $default;
     }
@@ -60,15 +63,21 @@ class NullEngine extends CacheEngine
     /**
      * @inheritDoc
      */
-    public function getMultiple($keys, $default = null): iterable
+    public function getMultiple(iterable $keys, mixed $default = null): iterable
     {
-        return [];
+        $result = [];
+
+        foreach ($keys as $key) {
+            $result[$key] = $default;
+        }
+
+        return $result;
     }
 
     /**
      * @inheritDoc
      */
-    public function increment(string $key, int $offset = 1)
+    public function increment(string $key, int $offset = 1): int|false
     {
         return 1;
     }
@@ -76,7 +85,7 @@ class NullEngine extends CacheEngine
     /**
      * @inheritDoc
      */
-    public function decrement(string $key, int $offset = 1)
+    public function decrement(string $key, int $offset = 1): int|false
     {
         return 0;
     }
@@ -84,7 +93,7 @@ class NullEngine extends CacheEngine
     /**
      * @inheritDoc
      */
-    public function delete($key): bool
+    public function delete(string $key): bool
     {
         return true;
     }
@@ -92,7 +101,7 @@ class NullEngine extends CacheEngine
     /**
      * @inheritDoc
      */
-    public function deleteMultiple($keys): bool
+    public function deleteMultiple(iterable $keys): bool
     {
         return true;
     }

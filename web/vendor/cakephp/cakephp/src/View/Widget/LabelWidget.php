@@ -18,6 +18,7 @@ namespace Cake\View\Widget;
 
 use Cake\View\Form\ContextInterface;
 use Cake\View\StringTemplate;
+use function Cake\Core\h;
 
 /**
  * Form 'widget' for creating labels.
@@ -32,14 +33,14 @@ class LabelWidget implements WidgetInterface
      *
      * @var \Cake\View\StringTemplate
      */
-    protected $_templates;
+    protected StringTemplate $_templates;
 
     /**
      * The template to use.
      *
      * @var string
      */
-    protected $_labelTemplate = 'label';
+    protected string $_labelTemplate = 'label';
 
     /**
      * Constructor.

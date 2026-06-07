@@ -12,17 +12,20 @@
  * @since         4.3.0
  * @license       https://opensource.org/licenses/mit-license.php MIT License
  * @var string $action
+ * @var string $controller
+ * @var string $class
  */
 use Cake\Core\Configure;
 use Cake\Core\Plugin;
 use Cake\Utility\Inflector;
+use function Cake\Core\h;
 
 $namespace = Configure::read('App.namespace');
 if (!empty($plugin)) {
     $namespace = str_replace('/', '\\', $plugin);
 }
 $prefixNs = '';
-$prefix = $prefix ?? '';
+$prefix ??= '';
 if ($prefix) {
     $prefix = array_map('Cake\Utility\Inflector::camelize', explode('/', $prefix));
     $prefixNs = '\\' . implode('\\', $prefix);
@@ -40,7 +43,7 @@ if (empty($plugin)) {
 
 $this->layout = 'dev_error';
 
-$this->assign('title', sprintf('Invalid Parameter', h($class)));
+$this->assign('title', sprintf('Invalid Parameter `%s`', h($class)));
 $this->assign(
     'subheading',
     sprintf('<strong>Error</strong> The passed parameter or parameter type is invalid in <em>%s::%s()</em>', h($class), h($action))

@@ -3,7 +3,7 @@
     "type": "project",
     "require": {
         "php": ">=8.3",
-        "cakephp/cakephp": "4.4.*"
+        "cakephp/cakephp": "5.*"
     },
     "require-dev": {
         "phpunit/phpunit": "^10.0"

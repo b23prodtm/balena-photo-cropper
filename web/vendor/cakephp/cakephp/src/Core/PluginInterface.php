@@ -21,8 +21,7 @@ use Cake\Routing\RouteBuilder;
 /**
  * Plugin Interface
  *
- * @method void services(\Cake\Core\ContainerInterface $container) Register plugin services to
- *   the application's container
+ * @method \Cake\Event\EventManagerInterface events(\Cake\Event\EventManagerInterface $eventManager)
  */
 interface PluginInterface
 {
@@ -31,7 +30,7 @@ interface PluginInterface
      *
      * @var array<string>
      */
-    public const VALID_HOOKS = ['bootstrap', 'console', 'middleware', 'routes', 'services'];
+    public const VALID_HOOKS = ['bootstrap', 'console', 'middleware', 'routes', 'services', 'events'];
 
     /**
      * Get the name of this plugin.
@@ -77,7 +76,7 @@ interface PluginInterface
      * The host application is provided as an argument. This allows you to load additional
      * plugin dependencies, or attach events.
      *
-     * @param \Cake\Core\PluginApplicationInterface $app The host application
+     * @param \Cake\Core\PluginApplicationInterface<mixed> $app The host application
      * @return void
      */
     public function bootstrap(PluginApplicationInterface $app): void;
@@ -108,6 +107,14 @@ interface PluginInterface
      * @return void
      */
     public function routes(RouteBuilder $routes): void;
+
+    /**
+     * Register plugin services to the application's container
+     *
+     * @param \Cake\Core\ContainerInterface $container Container instance.
+     * @return void
+     */
+    public function services(ContainerInterface $container): void;
 
     /**
      * Disables the named hook

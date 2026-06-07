@@ -17,10 +17,11 @@ declare(strict_types=1);
 namespace Cake\I18n;
 
 use Cake\Core\App;
+use Cake\Core\Exception\CakeException;
 use Cake\Core\Plugin;
 use Cake\Utility\Inflector;
 use Locale;
-use RuntimeException;
+use function Cake\Core\pluginSplit;
 
 /**
  * A generic translations package factory that will load translations files
@@ -35,27 +36,34 @@ class MessagesFileLoader
      *
      * @var string
      */
-    protected $_name;
+    protected string $_name;
+
+    /**
+     * The package (domain) plugin
+     *
+     * @var string|null
+     */
+    protected ?string $_plugin = null;
 
     /**
      * The locale to load for the given package.
      *
      * @var string
      */
-    protected $_locale;
+    protected string $_locale;
 
     /**
      * The extension name.
      *
      * @var string
      */
-    protected $_extension;
+    protected string $_extension;
 
     /**
      * Creates a translation file loader. The file to be loaded corresponds to
      * the following rules:
      *
-     * - The locale is a folder under the `Locale` directory, a fallback will be
+     * - The locale is a folder under the `resources/locales/` directory, a fallback will be
      *   used if the folder is not found.
      * - The $name corresponds to the file name to load
      * - If there is a loaded plugin with the underscored version of $name, the
@@ -82,6 +90,8 @@ class MessagesFileLoader
      * ```
      * $loader = new MessagesFileLoader('my_plugin', 'fr_FR', 'mo');
      * $package = $loader();
+     *
+     * Vendor prefixed plugins are expected to use `my_prefix_my_plugin` syntax.
      * ```
      *
      * @param string $name The name (domain) of the translations package.
@@ -93,6 +103,13 @@ class MessagesFileLoader
     public function __construct(string $name, string $locale, string $extension = 'po')
     {
         $this->_name = $name;
+        // If space is not added after slash, the character after it remains lowercased
+        $pluginName = Inflector::camelize(str_replace('/', '/ ', $this->_name));
+        if (strpos($this->_name, '.')) {
+            [$this->_plugin, $this->_name] = pluginSplit($pluginName);
+        } elseif (Plugin::isLoaded($pluginName)) {
+            $this->_plugin = $pluginName;
+        }
         $this->_locale = $locale;
         $this->_extension = $extension;
     }
@@ -102,40 +119,27 @@ class MessagesFileLoader
      * package containing the messages loaded from the file.
      *
      * @return \Cake\I18n\Package|false
-     * @throws \RuntimeException if no file parser class could be found for the specified
+     * @throws \Cake\Core\Exception\CakeException if no file parser class could be found for the specified
      * file extension.
      */
-    public function __invoke()
+    public function __invoke(): Package|false
     {
         $folders = $this->translationsFolders();
-        $ext = $this->_extension;
-        $file = false;
-
-        $fileName = $this->_name;
-        $pos = strpos($fileName, '/');
-        if ($pos !== false) {
-            $fileName = substr($fileName, $pos + 1);
-        }
-        foreach ($folders as $folder) {
-            $path = $folder . $fileName . ".$ext";
-            if (is_file($path)) {
-                $file = $path;
-                break;
-            }
-        }
-
+        $file = $this->translationFile($folders, $this->_name, $this->_extension);
         if (!$file) {
             return false;
         }
 
-        $name = ucfirst($ext);
+        $name = ucfirst($this->_extension);
         $class = App::className($name, 'I18n\Parser', 'FileParser');
 
         if (!$class) {
-            throw new RuntimeException(sprintf('Could not find class %s', "{$name}FileParser"));
+            throw new CakeException(sprintf('Could not find class `%s`.', "{$name}FileParser"));
         }
 
-        $messages = (new $class())->parse($file);
+        /** @var \Cake\I18n\Parser\MoFileParser|\Cake\I18n\Parser\PoFileParser $object */
+        $object = new $class();
+        $messages = $object->parse($file);
         $package = new Package('default');
         $package->setMessages($messages);
 
@@ -153,15 +157,27 @@ class MessagesFileLoader
         $locale = Locale::parseLocale($this->_locale) + ['region' => null];
 
         $folders = [
-            implode('_', [$locale['language'], $locale['region']]),
             $locale['language'],
+            // gettext compatible paths, see https://www.php.net/manual/en/function.gettext.php
+            $locale['language'] . DIRECTORY_SEPARATOR . 'LC_MESSAGES',
         ];
+        if ($locale['region']) {
+            $languageRegion = implode('_', [$locale['language'], $locale['region']]);
+            $folders[] = $languageRegion;
+            // gettext compatible paths, see https://www.php.net/manual/en/function.gettext.php
+            $folders[] = $languageRegion . DIRECTORY_SEPARATOR . 'LC_MESSAGES';
+        }
 
         $searchPaths = [];
 
         $localePaths = App::path('locales');
-        if (empty($localePaths) && defined('APP')) {
-            $localePaths[] = ROOT . 'resources' . DIRECTORY_SEPARATOR . 'locales' . DIRECTORY_SEPARATOR;
+        if (!$localePaths && defined('ROOT')) {
+            $localePaths[] = ROOT . DIRECTORY_SEPARATOR
+                . 'resources' . DIRECTORY_SEPARATOR
+                . 'locales' . DIRECTORY_SEPARATOR;
+        }
+        if ($this->_plugin && Plugin::isLoaded($this->_plugin)) {
+            $localePaths[] = App::path('locales', $this->_plugin)[0];
         }
         foreach ($localePaths as $path) {
             foreach ($folders as $folder) {
@@ -169,15 +185,29 @@ class MessagesFileLoader
             }
         }
 
-        // If space is not added after slash, the character after it remains lowercased
-        $pluginName = Inflector::camelize(str_replace('/', '/ ', $this->_name));
-        if (Plugin::isLoaded($pluginName)) {
-            $basePath = App::path('locales', $pluginName)[0];
-            foreach ($folders as $folder) {
-                $searchPaths[] = $basePath . $folder . DIRECTORY_SEPARATOR;
+        return $searchPaths;
+    }
+
+    /**
+     * @param array<string> $folders Folders
+     * @param string $name File name
+     * @param string $ext File extension
+     * @return string|null File if found
+     */
+    protected function translationFile(array $folders, string $name, string $ext): ?string
+    {
+        $file = null;
+
+        $name = str_replace('/', '_', $name);
+
+        foreach ($folders as $folder) {
+            $path = "{$folder}{$name}.{$ext}";
+            if (is_file($path)) {
+                $file = $path;
+                break;
             }
         }
 
-        return $searchPaths;
+        return $file;
     }
 }

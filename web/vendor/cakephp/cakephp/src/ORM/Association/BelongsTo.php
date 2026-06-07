@@ -16,20 +16,22 @@ declare(strict_types=1);
  */
 namespace Cake\ORM\Association;
 
-use Cake\Database\Expression\IdentifierExpression;
 use Cake\Datasource\EntityInterface;
 use Cake\ORM\Association;
 use Cake\ORM\Association\Loader\SelectLoader;
 use Cake\ORM\Table;
 use Cake\Utility\Inflector;
 use Closure;
-use RuntimeException;
+use function Cake\Core\pluginSplit;
 
 /**
  * Represents an 1 - N relationship where the source side of the relation is
  * related to only one record in the target table.
  *
  * An example of a BelongsTo association would be Article belongs to Author.
+ *
+ * @template T of \Cake\ORM\Table
+ * @mixin T
  */
 class BelongsTo extends Association
 {
@@ -38,23 +40,31 @@ class BelongsTo extends Association
      *
      * @var array<string>
      */
-    protected $_validStrategies = [
+    protected array $_validStrategies = [
         self::STRATEGY_JOIN,
         self::STRATEGY_SELECT,
     ];
 
     /**
-     * Gets the name of the field representing the foreign key to the target table.
-     *
-     * @return array<string>|string
+     * @inheritDoc
      */
-    public function getForeignKey()
+    public function getForeignKey(): array|string|false
     {
-        if ($this->_foreignKey === null) {
-            $this->_foreignKey = $this->_modelKey($this->getTarget()->getAlias());
-        }
+        return $this->_foreignKey ??= $this->_modelKey($this->getTarget()->getAlias());
+    }
 
-        return $this->_foreignKey;
+    /**
+     * Sets the name of the field representing the foreign key to the target table.
+     *
+     * @param array<string>|string|false $key the key or keys to be used to link both tables together, if set to `false`
+     *  no join conditions will be generated automatically.
+     * @return $this
+     */
+    public function setForeignKey(array|string|false $key)
+    {
+        $this->_foreignKey = $key;
+
+        return $this;
     }
 
     /**
@@ -118,10 +128,10 @@ class BelongsTo extends Association
      * the saved entity
      * @see \Cake\ORM\Table::save()
      */
-    public function saveAssociated(EntityInterface $entity, array $options = [])
+    public function saveAssociated(EntityInterface $entity, array $options = []): EntityInterface|false
     {
         $targetEntity = $entity->get($this->getProperty());
-        if (empty($targetEntity) || !($targetEntity instanceof EntityInterface)) {
+        if (!$targetEntity instanceof EntityInterface) {
             return $entity;
         }
 
@@ -131,54 +141,21 @@ class BelongsTo extends Association
             return false;
         }
 
+        /** @var array<string> $foreignKeys */
+        $foreignKeys = (array)$this->getForeignKey();
         $properties = array_combine(
-            (array)$this->getForeignKey(),
-            $targetEntity->extract((array)$this->getBindingKey())
+            $foreignKeys,
+            $targetEntity->extract((array)$this->getBindingKey()),
         );
-        $entity->set($properties, ['guard' => false]);
+
+        // @phpstan-ignore function.alreadyNarrowedType (patch method available on EntityInterface)
+        if (method_exists($entity, 'patch')) {
+            $entity = $entity->patch($properties, ['guard' => false]);
+        } else {
+            $entity->set($properties, ['guard' => false]);
+        }
 
         return $entity;
-    }
-
-    /**
-     * Returns a single or multiple conditions to be appended to the generated join
-     * clause for getting the results on the target table.
-     *
-     * @param array<string, mixed> $options list of options passed to attachTo method
-     * @return array<\Cake\Database\Expression\IdentifierExpression>
-     * @throws \RuntimeException if the number of columns in the foreignKey do not
-     * match the number of columns in the target table primaryKey
-     */
-    protected function _joinCondition(array $options): array
-    {
-        $conditions = [];
-        $tAlias = $this->_name;
-        $sAlias = $this->_sourceTable->getAlias();
-        $foreignKey = (array)$options['foreignKey'];
-        $bindingKey = (array)$this->getBindingKey();
-
-        if (count($foreignKey) !== count($bindingKey)) {
-            if (empty($bindingKey)) {
-                $msg = 'The "%s" table does not define a primary key. Please set one.';
-                throw new RuntimeException(sprintf($msg, $this->getTarget()->getTable()));
-            }
-
-            $msg = 'Cannot match provided foreignKey for "%s", got "(%s)" but expected foreign key for "(%s)"';
-            throw new RuntimeException(sprintf(
-                $msg,
-                $this->_name,
-                implode(', ', $foreignKey),
-                implode(', ', $bindingKey)
-            ));
-        }
-
-        foreach ($foreignKey as $k => $f) {
-            $field = sprintf('%s.%s', $tAlias, $bindingKey[$k]);
-            $value = new IdentifierExpression(sprintf('%s.%s', $sAlias, $f));
-            $conditions[$field] = $value;
-        }
-
-        return $conditions;
     }
 
     /**
@@ -194,7 +171,7 @@ class BelongsTo extends Association
             'bindingKey' => $this->getBindingKey(),
             'strategy' => $this->getStrategy(),
             'associationType' => $this->type(),
-            'finder' => [$this, 'find'],
+            'finder' => $this->find(...),
         ]);
 
         return $loader->buildEagerLoader($options);

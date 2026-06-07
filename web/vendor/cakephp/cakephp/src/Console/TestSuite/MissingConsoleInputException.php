@@ -28,12 +28,15 @@ class MissingConsoleInputException extends RuntimeException
      * @param string $question The question text.
      * @return void
      */
-    public function setQuestion($question)
+    public function setQuestion(string $question): void
     {
         $this->message .= "\nThe question asked was: " . $question;
     }
 }
 
 // phpcs:disable
-class_alias(MissingConsoleInputException::class, 'Cake\TestSuite\Stub\MissingConsoleInputException');
+class_alias(
+    'Cake\Console\TestSuite\MissingConsoleInputException',
+    'Cake\TestSuite\Stub\MissingConsoleInputException'
+);
 // phpcs:enable

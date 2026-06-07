@@ -34,15 +34,16 @@ class QueryCompiler
      *
      * @var array<string, string>
      */
-    protected $_templates = [
+    protected array $_templates = [
         'delete' => 'DELETE',
         'where' => ' WHERE %s',
-        'group' => ' GROUP BY %s ',
-        'having' => ' HAVING %s ',
+        'group' => ' GROUP BY %s',
+        'having' => ' HAVING %s',
         'order' => ' %s',
         'limit' => ' LIMIT %s',
         'offset' => ' OFFSET %s',
         'epilog' => ' %s',
+        'comment' => '/* %s */ ',
     ];
 
     /**
@@ -50,9 +51,9 @@ class QueryCompiler
      *
      * @var array<string>
      */
-    protected $_selectParts = [
-        'with', 'select', 'from', 'join', 'where', 'group', 'having', 'window', 'order',
-        'limit', 'offset', 'union', 'epilog',
+    protected array $_selectParts = [
+        'comment', 'with', 'select', 'from', 'join', 'where', 'group', 'having', 'window', 'order',
+        'limit', 'offset', 'union', 'epilog', 'intersect',
     ];
 
     /**
@@ -60,37 +61,29 @@ class QueryCompiler
      *
      * @var array<string>
      */
-    protected $_updateParts = ['with', 'update', 'set', 'where', 'epilog'];
+    protected array $_updateParts = ['comment', 'with', 'update', 'set', 'where', 'epilog'];
 
     /**
      * The list of query clauses to traverse for generating a DELETE statement
      *
      * @var array<string>
      */
-    protected $_deleteParts = ['with', 'delete', 'modifier', 'from', 'where', 'epilog'];
+    protected array $_deleteParts = ['comment', 'with', 'delete', 'optimizerHint', 'modifier', 'from', 'where',
+        'epilog'];
 
     /**
      * The list of query clauses to traverse for generating an INSERT statement
      *
      * @var array<string>
      */
-    protected $_insertParts = ['with', 'insert', 'values', 'epilog'];
-
-    /**
-     * Indicate whether this query dialect supports ordered unions.
-     *
-     * Overridden in subclasses.
-     *
-     * @var bool
-     */
-    protected $_orderedUnion = true;
+    protected array $_insertParts = ['comment', 'with', 'insert', 'values', 'epilog'];
 
     /**
      * Indicate whether aliases in SELECT clause need to be always quoted.
      *
      * @var bool
      */
-    protected $_quotedSelectAliases = false;
+    protected bool $_quotedSelectAliases = false;
 
     /**
      * Returns the SQL representation of the provided query after generating
@@ -106,15 +99,17 @@ class QueryCompiler
         $type = $query->type();
         $query->traverseParts(
             $this->_sqlCompiler($sql, $query, $binder),
-            $this->{"_{$type}Parts"}
+            $this->{"_{$type}Parts"},
         );
 
         // Propagate bound parameters from sub-queries if the
-        // placeholders can be found in the SQL statement.
+        // placeholders can be found in the SQL statement. Only
+        // add new placeholders, as sub-queries may have been executed already.
         if ($query->getValueBinder() !== $binder) {
+            $existing = $binder->bindings();
             foreach ($query->getValueBinder()->bindings() as $binding) {
                 $placeholder = ':' . $binding['placeholder'];
-                if (preg_match('/' . $placeholder . '(?:\W|$)/', $sql) > 0) {
+                if (!isset($existing[$placeholder]) && preg_match('/' . $placeholder . '(?:\W|$)/', $sql) > 0) {
                     $binder->bind($placeholder, $binding['value'], $binding['type']);
                 }
             }
@@ -124,7 +119,7 @@ class QueryCompiler
     }
 
     /**
-     * Returns a callable object that can be used to compile a SQL string representation
+     * Returns a closure that can be used to compile a SQL string representation
      * of this query.
      *
      * @param string $sql initial sql string to append to
@@ -134,10 +129,10 @@ class QueryCompiler
      */
     protected function _sqlCompiler(string &$sql, Query $query, ValueBinder $binder): Closure
     {
-        return function ($part, $partName) use (&$sql, $query, $binder) {
+        return function ($part, $partName) use (&$sql, $query, $binder): void {
             if (
                 $part === null ||
-                (is_array($part) && empty($part)) ||
+                ($part === []) ||
                 ($part instanceof Countable && count($part) === 0)
             ) {
                 return;
@@ -152,7 +147,6 @@ class QueryCompiler
 
                 return;
             }
-
             $sql .= $this->{'_build' . $partName . 'Part'}($part, $query, $binder);
         };
     }
@@ -162,7 +156,7 @@ class QueryCompiler
      * it constructs the CTE definitions list and generates the `RECURSIVE`
      * keyword when required.
      *
-     * @param array $parts List of CTEs to be transformed to string
+     * @param array<\Cake\Database\Expression\CommonTableExpression> $parts List of CTEs to be transformed to string
      * @param \Cake\Database\Query $query The query that is being compiled
      * @param \Cake\Database\ValueBinder $binder Value binder used to generate parameter placeholder
      * @return string
@@ -194,20 +188,24 @@ class QueryCompiler
      */
     protected function _buildSelectPart(array $parts, Query $query, ValueBinder $binder): string
     {
-        $select = 'SELECT%s %s%s';
-        if ($this->_orderedUnion && $query->clause('union')) {
-            $select = '(SELECT%s %s%s';
+        $driver = $query->getDriver();
+        $select = 'SELECT%s%s %s%s';
+        if (
+            ($query->clause('union') || $query->clause('intersect')) &&
+            $driver->supports(DriverFeatureEnum::SET_OPERATIONS_ORDER_BY)
+        ) {
+            $select = '(SELECT%s%s %s%s';
         }
-        $distinct = $query->clause('distinct');
+
+        $hint = $this->_buildOptimizerHintPart($query->clause('optimizerHint'), $query, $binder);
         $modifiers = $this->_buildModifierPart($query->clause('modifier'), $query, $binder);
 
-        $driver = $query->getConnection()->getDriver();
         $quoteIdentifiers = $driver->isAutoQuotingEnabled() || $this->_quotedSelectAliases;
         $normalized = [];
         $parts = $this->_stringifyExpressions($parts, $binder);
         foreach ($parts as $k => $p) {
             if (!is_numeric($k)) {
-                $p = $p . ' AS ';
+                $p .= ' AS ';
                 if ($quoteIdentifiers) {
                     $p .= $driver->quoteIdentifier($k);
                 } else {
@@ -217,16 +215,15 @@ class QueryCompiler
             $normalized[] = $p;
         }
 
+        $distinct = $query->clause('distinct');
         if ($distinct === true) {
             $distinct = 'DISTINCT ';
-        }
-
-        if (is_array($distinct)) {
+        } elseif (is_array($distinct)) {
             $distinct = $this->_stringifyExpressions($distinct, $binder);
             $distinct = sprintf('DISTINCT ON (%s) ', implode(', ', $distinct));
         }
 
-        return sprintf($select, $modifiers, $distinct, implode(', ', $normalized));
+        return sprintf($select, $hint, $modifiers, $distinct, implode(', ', $normalized));
     }
 
     /**
@@ -273,7 +270,7 @@ class QueryCompiler
                 throw new DatabaseException(sprintf(
                     'Could not compile join clause for alias `%s`. No table was specified. ' .
                     'Use the `table` key to define a table.',
-                    $join['alias']
+                    $join['alias'],
                 ));
             }
             if ($join['table'] instanceof ExpressionInterface) {
@@ -308,7 +305,11 @@ class QueryCompiler
     {
         $windows = [];
         foreach ($parts as $window) {
-            $windows[] = $window['name']->sql($binder) . ' AS (' . $window['window']->sql($binder) . ')';
+            /** @var \Cake\Database\Expression\IdentifierExpression $expr */
+            $expr = $window['name'];
+            /** @var \Cake\Database\Expression\IdentifierExpression $windowExpr */
+            $windowExpr = $window['window'];
+            $windows[] = $expr->sql($binder) . ' AS (' . $windowExpr->sql($binder) . ')';
         }
 
         return ' WINDOW ' . implode(', ', $windows);
@@ -317,7 +318,7 @@ class QueryCompiler
     /**
      * Helper function to generate SQL for SET expressions.
      *
-     * @param array $parts List of keys & values to set.
+     * @param array $parts List of keys and values to set.
      * @param \Cake\Database\Query $query The query that is being compiled
      * @param \Cake\Database\ValueBinder $binder Value binder used to generate parameter placeholder
      * @return string
@@ -329,13 +330,70 @@ class QueryCompiler
             if ($part instanceof ExpressionInterface) {
                 $part = $part->sql($binder);
             }
-            if ($part[0] === '(') {
+            if (str_starts_with($part, '(')) {
                 $part = substr($part, 1, -1);
             }
             $set[] = $part;
         }
 
         return ' SET ' . implode('', $set);
+    }
+
+    /**
+     * Builds the SQL string for all the `operation` clauses in this query, when dealing
+     * with query objects it will also transform them using their configured SQL
+     * dialect.
+     *
+     * @param string $operation
+     * @param array $parts
+     * @param \Cake\Database\Query $query
+     * @param \Cake\Database\ValueBinder $binder
+     * @return string
+     */
+    protected function _buildSetOperationPart(
+        string $operation,
+        array $parts,
+        Query $query,
+        ValueBinder $binder,
+    ): string {
+        $setOperationsOrderBy = $query
+            ->getConnection()
+            ->getDriver($query->getConnectionRole())
+            ->supports(DriverFeatureEnum::SET_OPERATIONS_ORDER_BY);
+
+        $parts = array_map(function (array $p) use ($binder, $setOperationsOrderBy) {
+            /** @var \Cake\Database\Expression\IdentifierExpression $expr */
+            $expr = $p['query'];
+            $p['query'] = $expr->sql($binder);
+            $p['query'] = str_starts_with($p['query'], '(') ? trim($p['query'], '()') : $p['query'];
+            $prefix = $p['all'] ? 'ALL ' : '';
+            if ($setOperationsOrderBy) {
+                return "{$prefix}({$p['query']})";
+            }
+
+            return $prefix . $p['query'];
+        }, $parts);
+
+        if ($setOperationsOrderBy) {
+            return sprintf(")\n{$operation} %s", implode("\n{$operation} ", $parts));
+        }
+
+        return sprintf("\n{$operation} %s", implode("\n{$operation} ", $parts));
+    }
+
+    /**
+     * Builds the SQL string for all the INTERSECT clauses in this query, when dealing
+     * with query objects it will also transform them using their configured SQL
+     * dialect.
+     *
+     * @param array $parts list of queries to be operated with INTERSECT
+     * @param \Cake\Database\Query $query The query that is being compiled
+     * @param \Cake\Database\ValueBinder $binder Value binder used to generate parameter placeholder
+     * @return string
+     */
+    protected function _buildIntersectPart(array $parts, Query $query, ValueBinder $binder): string
+    {
+        return $this->_buildSetOperationPart('INTERSECT', $parts, $query, $binder);
     }
 
     /**
@@ -350,22 +408,7 @@ class QueryCompiler
      */
     protected function _buildUnionPart(array $parts, Query $query, ValueBinder $binder): string
     {
-        $parts = array_map(function ($p) use ($binder) {
-            $p['query'] = $p['query']->sql($binder);
-            $p['query'] = $p['query'][0] === '(' ? trim($p['query'], '()') : $p['query'];
-            $prefix = $p['all'] ? 'ALL ' : '';
-            if ($this->_orderedUnion) {
-                return "{$prefix}({$p['query']})";
-            }
-
-            return $prefix . $p['query'];
-        }, $parts);
-
-        if ($this->_orderedUnion) {
-            return sprintf(")\nUNION %s", implode("\nUNION ", $parts));
-        }
-
-        return sprintf("\nUNION %s", implode("\nUNION ", $parts));
+        return $this->_buildSetOperationPart('UNION', $parts, $query, $binder);
     }
 
     /**
@@ -381,14 +424,15 @@ class QueryCompiler
         if (!isset($parts[0])) {
             throw new DatabaseException(
                 'Could not compile insert query. No table was specified. ' .
-                'Use `into()` to define a table.'
+                'Use `into()` to define a table.',
             );
         }
         $table = $parts[0];
         $columns = $this->_stringifyExpressions($parts[1], $binder);
+        $hint = $this->_buildOptimizerHintPart($query->clause('optimizerHint'), $query, $binder);
         $modifiers = $this->_buildModifierPart($query->clause('modifier'), $query, $binder);
 
-        return sprintf('INSERT%s INTO %s (%s)', $modifiers, $table, implode(', ', $columns));
+        return sprintf('INSERT%s%s INTO %s (%s)', $hint, $modifiers, $table, implode(', ', $columns));
     }
 
     /**
@@ -415,9 +459,27 @@ class QueryCompiler
     protected function _buildUpdatePart(array $parts, Query $query, ValueBinder $binder): string
     {
         $table = $this->_stringifyExpressions($parts, $binder);
+        $hint = $this->_buildOptimizerHintPart($query->clause('optimizerHint'), $query, $binder);
         $modifiers = $this->_buildModifierPart($query->clause('modifier'), $query, $binder);
 
-        return sprintf('UPDATE%s %s', $modifiers, implode(',', $table));
+        return sprintf('UPDATE%s%s %s', $hint, $modifiers, implode(',', $table));
+    }
+
+    /**
+     * Builds the optimizer hint comment part.
+     *
+     * @param list<string> $parts The optmizer hints
+     * @param \Cake\Database\Query $query The query that is being compiled
+     * @param \Cake\Database\ValueBinder $binder Value binder used to generate parameter placeholder
+     * @return string Optimizer hint comment
+     */
+    protected function _buildOptimizerHintPart(array $parts, Query $query, ValueBinder $binder): string
+    {
+        if ($parts === [] || !$query->getDriver()->supports(DriverFeatureEnum::OPTIMIZER_HINT_COMMENT)) {
+            return '';
+        }
+
+        return sprintf(' /*+ %s */', implode(' ', $parts));
     }
 
     /**

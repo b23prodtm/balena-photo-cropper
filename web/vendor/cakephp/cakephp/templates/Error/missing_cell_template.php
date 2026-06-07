@@ -15,6 +15,8 @@
  * @var string $file
  * @var array<string> $paths
  */
+use function Cake\Core\h;
+
 $this->layout = 'dev_error';
 
 $this->assign('templateName', 'missing_cell_view.php');
@@ -33,7 +35,7 @@ $this->start('file');
 <ul>
 <?php
     foreach ($paths as $path) :
-        if (strpos($path, CORE_PATH) !== false) {
+        if (str_contains($path, CORE_PATH)) {
             continue;
         }
         echo sprintf('<li>%sCell/%s/%s</li>', h($path), h($name), h($file));

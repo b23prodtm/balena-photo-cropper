@@ -20,6 +20,10 @@ use Cake\Datasource\SchemaInterface;
 
 /**
  * An interface used by database TableSchema objects.
+ *
+ * @method \Cake\Database\Schema\Column column(string $name)
+ * @method \Cake\Database\Schema\Index index(string $name)
+ * @method \Cake\Database\Schema\Constraint constraint(string $name)
  */
 interface TableSchemaInterface extends SchemaInterface
 {
@@ -66,6 +70,15 @@ interface TableSchemaInterface extends SchemaInterface
     public const TYPE_TIME = 'time';
 
     /**
+     * Year column type
+     *
+     * Currently only implemented in MySQL
+     *
+     * @var string
+     */
+    public const TYPE_YEAR = 'year';
+
+    /**
      * Timestamp column type
      *
      * @var string
@@ -87,6 +100,13 @@ interface TableSchemaInterface extends SchemaInterface
     public const TYPE_TIMESTAMP_TIMEZONE = 'timestamptimezone';
 
     /**
+     * Datetime interval. Only implemented in postgres.
+     *
+     * @var string
+     */
+    public const TYPE_INTERVAL = 'interval';
+
+    /**
      * JSON column type
      *
      * @var string
@@ -106,6 +126,15 @@ interface TableSchemaInterface extends SchemaInterface
      * @var string
      */
     public const TYPE_CHAR = 'char';
+
+    /**
+     * Case-insensitive text column type.
+     *
+     * Only implemented in postgres
+     *
+     * @var string
+     */
+    public const TYPE_CITEXT = 'citext';
 
     /**
      * Text column type
@@ -171,6 +200,83 @@ interface TableSchemaInterface extends SchemaInterface
     public const TYPE_UUID = 'uuid';
 
     /**
+     * Native UUID column type
+     *
+     * @var string
+     */
+    public const TYPE_NATIVE_UUID = 'nativeuuid';
+
+    /**
+     * Geometry column type
+     *
+     * @var string
+     */
+    public const TYPE_GEOMETRY = 'geometry';
+
+    /**
+     * Point column type
+     *
+     * @var string
+     */
+    public const TYPE_POINT = 'point';
+
+    /**
+     * Linestring column type
+     *
+     * @var string
+     */
+    public const TYPE_LINESTRING = 'linestring';
+
+    /**
+     * Polgon column type
+     *
+     * @var string
+     */
+    public const TYPE_POLYGON = 'polygon';
+
+    /**
+     * INET type. Only implemented in postgres.
+     *
+     * @var string
+     */
+    public const TYPE_INET = 'inet';
+
+    /**
+     * CIDR type. Only implemented in postgres.
+     *
+     * @var string
+     */
+    public const TYPE_CIDR = 'cidr';
+
+    /**
+     * Macaddr type. Only implemented in postgres.
+     *
+     * @var string
+     */
+    public const TYPE_MACADDR = 'macaddr';
+
+    /**
+     * Bit type.
+     *
+     * Currently only implemented in MySQL.
+     *
+     * @var string
+     */
+    public const TYPE_BIT = 'bit';
+
+    /**
+     * Geospatial column types
+     *
+     * @var array
+     */
+    public const GEOSPATIAL_TYPES = [
+        self::TYPE_GEOMETRY,
+        self::TYPE_POINT,
+        self::TYPE_LINESTRING,
+        self::TYPE_POLYGON,
+    ];
+
+    /**
      * Check whether a table has an autoIncrement column defined.
      *
      * @return bool
@@ -217,7 +323,7 @@ interface TableSchemaInterface extends SchemaInterface
      * @return $this
      * @throws \Cake\Database\Exception\DatabaseException
      */
-    public function addIndex(string $name, $attrs);
+    public function addIndex(string $name, array|string $attrs);
 
     /**
      * Read information about an index based on name.
@@ -238,7 +344,7 @@ interface TableSchemaInterface extends SchemaInterface
      * Add a constraint.
      *
      * Used to add constraints to a table. For example primary keys, unique
-     * keys and foreign keys.
+     * keys, check constraints and foreign keys.
      *
      * ### Attributes
      *
@@ -247,6 +353,7 @@ interface TableSchemaInterface extends SchemaInterface
      * - `references` The table, column a foreign key references.
      * - `update` The behavior on update. Options are 'restrict', 'setNull', 'cascade', 'noAction'.
      * - `delete` The behavior on delete. Options are 'restrict', 'setNull', 'cascade', 'noAction'.
+     * - `expression` The SQL expression for check constraints.
      *
      * The default for 'update' & 'delete' is 'cascade'.
      *
@@ -256,7 +363,7 @@ interface TableSchemaInterface extends SchemaInterface
      * @return $this
      * @throws \Cake\Database\Exception\DatabaseException
      */
-    public function addConstraint(string $name, $attrs);
+    public function addConstraint(string $name, array|string $attrs);
 
     /**
      * Read information about a constraint based on name.

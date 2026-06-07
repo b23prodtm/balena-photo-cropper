@@ -38,7 +38,17 @@ class StubConsoleOutput extends ConsoleOutput
      *
      * @var array<string>
      */
-    protected $_out = [];
+    protected array $_out = [];
+
+    /**
+     * Constructor
+     */
+    public function __construct()
+    {
+        // Don't call parent on purpose as it opens php://stdin which doesn't
+        // always exist in RunInSeparateProcess tests.
+        $this->_outputAs = self::PLAIN;
+    }
 
     /**
      * Write output to the buffer.
@@ -47,7 +57,7 @@ class StubConsoleOutput extends ConsoleOutput
      * @param int $newlines Number of newlines to append
      * @return int
      */
-    public function write($message, int $newlines = 1): int
+    public function write(array|string $message, int $newlines = 1): int
     {
         foreach ((array)$message as $line) {
             $this->_out[] = $line;
@@ -73,6 +83,16 @@ class StubConsoleOutput extends ConsoleOutput
     }
 
     /**
+     * Clear buffered output
+     *
+     * @return void
+     */
+    public function clear(): void
+    {
+        $this->_out = [];
+    }
+
+    /**
      * Get the output as a string
      *
      * @return string
@@ -82,3 +102,10 @@ class StubConsoleOutput extends ConsoleOutput
         return implode("\n", $this->_out);
     }
 }
+
+// phpcs:disable
+class_alias(
+    'Cake\Console\TestSuite\StubConsoleOutput',
+    'Cake\TestSuite\Stub\ConsoleOutput'
+);
+// phpcs:enable

@@ -26,9 +26,5 @@ class DatabaseException extends CakeException
     /**
      * @inheritDoc
      */
-    protected $_messageTemplate = '%s';
+    protected string $_messageTemplate = '%s';
 }
-
-// phpcs:disable
-class_exists('Cake\Database\Exception');
-// phpcs:enable

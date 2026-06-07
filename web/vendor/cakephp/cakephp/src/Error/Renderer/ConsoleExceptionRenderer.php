@@ -19,6 +19,9 @@ namespace Cake\Error\Renderer;
 use Cake\Console\ConsoleOutput;
 use Cake\Core\Configure;
 use Cake\Core\Exception\CakeException;
+use Cake\Error\Debugger;
+use Cake\Error\ExceptionRendererInterface;
+use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Throwable;
 
@@ -26,26 +29,23 @@ use Throwable;
  * Plain text exception rendering with a stack trace.
  *
  * Useful in CI or plain text environments.
- *
- * @todo 5.0 Implement \Cake\Error\ExceptionRendererInterface. This implementation can't implement
- *  the concrete interface because the return types are not compatible.
  */
-class ConsoleExceptionRenderer
+class ConsoleExceptionRenderer implements ExceptionRendererInterface
 {
     /**
      * @var \Throwable
      */
-    private $error;
+    private Throwable $error;
 
     /**
      * @var \Cake\Console\ConsoleOutput
      */
-    private $output;
+    private ConsoleOutput $output;
 
     /**
      * @var bool
      */
-    private $trace;
+    private bool $trace;
 
     /**
      * Constructor.
@@ -66,7 +66,7 @@ class ConsoleExceptionRenderer
      *
      * @return \Psr\Http\Message\ResponseInterface|string
      */
-    public function render()
+    public function render(): ResponseInterface|string
     {
         $exceptions = [$this->error];
         $previous = $this->error->getPrevious();
@@ -76,29 +76,30 @@ class ConsoleExceptionRenderer
         }
         $out = [];
         foreach ($exceptions as $i => $error) {
-            $out = array_merge($out, $this->renderException($error, $i));
+            $parent = $i > 0 ? $exceptions[$i - 1] : null;
+            $out = array_merge($out, $this->renderException($error, $parent));
         }
 
-        return join("\n", $out);
+        return implode("\n", $out);
     }
 
     /**
      * Render an individual exception
      *
      * @param \Throwable $exception The exception to render.
-     * @param int $index Exception index in the chain
+     * @param \Throwable|null $parent The Exception index in the chain
      * @return array
      */
-    protected function renderException(Throwable $exception, int $index): array
+    protected function renderException(Throwable $exception, ?Throwable $parent): array
     {
         $out = [
             sprintf(
                 '<error>%s[%s] %s</error> in %s on line %s',
-                $index > 0 ? 'Caused by ' : '',
-                get_class($exception),
+                $parent ? 'Caused by ' : '',
+                $exception::class,
                 $exception->getMessage(),
                 $exception->getFile(),
-                $exception->getLine()
+                $exception->getLine(),
             ),
         ];
 
@@ -114,10 +115,11 @@ class ConsoleExceptionRenderer
         }
 
         if ($this->trace) {
+            $stacktrace = Debugger::getUniqueFrames($exception, $parent);
             $out[] = '';
             $out[] = '<info>Stack Trace:</info>';
             $out[] = '';
-            $out[] = $exception->getTraceAsString();
+            $out[] = Debugger::formatTrace($stacktrace, ['format' => 'text']);
             $out[] = '';
         }
 
@@ -127,11 +129,13 @@ class ConsoleExceptionRenderer
     /**
      * Write output to the output stream
      *
-     * @param string $output The output to print.
+     * @param \Psr\Http\Message\ResponseInterface|string $output The output to print.
      * @return void
      */
-    public function write($output): void
+    public function write(ResponseInterface|string $output): void
     {
-        $this->output->write($output);
+        if (is_string($output)) {
+            $this->output->write($output);
+        }
     }
 }

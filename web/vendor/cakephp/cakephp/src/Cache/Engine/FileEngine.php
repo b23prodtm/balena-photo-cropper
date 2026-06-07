@@ -17,7 +17,16 @@ declare(strict_types=1);
 namespace Cake\Cache\Engine;
 
 use Cake\Cache\CacheEngine;
+use Cake\Cache\Event\CacheAfterDeleteEvent;
+use Cake\Cache\Event\CacheAfterGetEvent;
+use Cake\Cache\Event\CacheAfterSetEvent;
+use Cake\Cache\Event\CacheBeforeDeleteEvent;
+use Cake\Cache\Event\CacheBeforeGetEvent;
+use Cake\Cache\Event\CacheBeforeSetEvent;
+use Cake\Cache\Event\CacheClearedEvent;
+use Cake\Cache\Event\CacheGroupClearEvent;
 use CallbackFilterIterator;
+use DateInterval;
 use Exception;
 use FilesystemIterator;
 use LogicException;
@@ -32,15 +41,17 @@ use SplFileObject;
  * engine available, or have content which is not performance sensitive.
  *
  * You can configure a FileEngine cache, using Cache::config()
+ *
+ * @extends \Cake\Cache\CacheEngine<\Cake\Cache\Engine\FileEngine>
  */
 class FileEngine extends CacheEngine
 {
     /**
      * Instance of SplFileObject class
      *
-     * @var \SplFileObject|null
+     * @var \SplFileObject
      */
-    protected $_File;
+    protected SplFileObject $_File;
 
     /**
      * The default config used unless overridden by runtime configuration
@@ -50,19 +61,20 @@ class FileEngine extends CacheEngine
      *    handy for deleting a complete group from cache.
      * - `lock` Used by FileCache. Should files be locked before writing to them?
      * - `mask` The mask used for created files
-     * - `path` Path to where cachefiles should be saved. Defaults to system's temp dir.
+     * - `dirMask` The mask used for created folders
+     * - `path` Path to where cache files should be saved. Defaults to system's temp dir.
      * - `prefix` Prepended to all entries. Good for when you need to share a keyspace
      *    with either another cache config or another application.
-     *    cache::gc from ever being called automatically.
      * - `serialize` Should cache objects be serialized first.
      *
      * @var array<string, mixed>
      */
-    protected $_defaultConfig = [
+    protected array $_defaultConfig = [
         'duration' => 3600,
         'groups' => [],
         'lock' => true,
         'mask' => 0664,
+        'dirMask' => 0777,
         'path' => null,
         'prefix' => 'cake_',
         'serialize' => true,
@@ -73,7 +85,7 @@ class FileEngine extends CacheEngine
      *
      * @var bool
      */
-    protected $_init = true;
+    protected bool $_init = true;
 
     /**
      * Initialize File Cache Engine
@@ -87,9 +99,7 @@ class FileEngine extends CacheEngine
     {
         parent::init($config);
 
-        if ($this->_config['path'] === null) {
-            $this->_config['path'] = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'cake_cache' . DIRECTORY_SEPARATOR;
-        }
+        $this->_config['path'] ??= sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'cake_cache' . DIRECTORY_SEPARATOR;
         if (substr($this->_config['path'], -1) !== DIRECTORY_SEPARATOR) {
             $this->_config['path'] .= DIRECTORY_SEPARATOR;
         }
@@ -110,31 +120,38 @@ class FileEngine extends CacheEngine
      *   for it or let the driver take care of that.
      * @return bool True on success and false on failure.
      */
-    public function set($key, $value, $ttl = null): bool
+    public function set(string $key, mixed $value, DateInterval|int|null $ttl = null): bool
     {
         if ($value === '' || !$this->_init) {
             return false;
         }
 
+        $duration = $this->duration($ttl);
         $key = $this->_key($key);
+        $this->_eventClass = CacheBeforeSetEvent::class;
+        $this->dispatchEvent(CacheBeforeSetEvent::NAME, ['key' => $key, 'value' => $value, 'ttl' => $duration]);
 
+        $this->_eventClass = CacheAfterSetEvent::class;
         if ($this->_setKey($key, true) === false) {
+            $this->dispatchEvent(CacheAfterSetEvent::NAME, [
+                'key' => $key, 'value' => $value, 'success' => false, 'ttl' => $duration,
+            ]);
+
             return false;
         }
 
+        $origValue = $value;
         if (!empty($this->_config['serialize'])) {
             $value = serialize($value);
         }
 
-        $expires = time() + $this->duration($ttl);
-        $contents = implode([$expires, PHP_EOL, $value, PHP_EOL]);
+        $expires = time() + $duration;
+        $contents = implode('', [$expires, PHP_EOL, $value, PHP_EOL]);
 
         if ($this->_config['lock']) {
-            /** @psalm-suppress PossiblyNullReference */
             $this->_File->flock(LOCK_EX);
         }
 
-        /** @psalm-suppress PossiblyNullReference */
         $this->_File->rewind();
         $success = $this->_File->ftruncate(0) &&
             $this->_File->fwrite($contents) &&
@@ -143,7 +160,11 @@ class FileEngine extends CacheEngine
         if ($this->_config['lock']) {
             $this->_File->flock(LOCK_UN);
         }
-        $this->_File = null;
+        unset($this->_File);
+
+        $this->dispatchEvent(CacheAfterSetEvent::NAME, [
+            'key' => $key, 'value' => $origValue, 'success' => $success, 'ttl' => $duration,
+        ]);
 
         return $success;
     }
@@ -156,29 +177,32 @@ class FileEngine extends CacheEngine
      * @return mixed The cached data, or default value if the data doesn't exist, has
      *   expired, or if there was an error fetching it
      */
-    public function get($key, $default = null)
+    public function get(string $key, mixed $default = null): mixed
     {
         $key = $this->_key($key);
+        $this->_eventClass = CacheBeforeGetEvent::class;
+        $this->dispatchEvent(CacheBeforeGetEvent::NAME, ['key' => $key, 'default' => $default]);
 
+        $this->_eventClass = CacheAfterGetEvent::class;
         if (!$this->_init || $this->_setKey($key) === false) {
+            $this->dispatchEvent(CacheAfterGetEvent::NAME, ['key' => $key, 'value' => null, 'success' => false]);
+
             return $default;
         }
 
         if ($this->_config['lock']) {
-            /** @psalm-suppress PossiblyNullReference */
             $this->_File->flock(LOCK_SH);
         }
 
-        /** @psalm-suppress PossiblyNullReference */
         $this->_File->rewind();
         $time = time();
-        /** @psalm-suppress RiskyCast */
         $cachetime = (int)$this->_File->current();
 
         if ($cachetime < $time) {
             if ($this->_config['lock']) {
                 $this->_File->flock(LOCK_UN);
             }
+            $this->dispatchEvent(CacheAfterGetEvent::NAME, ['key' => $key, 'value' => null, 'success' => false]);
 
             return $default;
         }
@@ -186,7 +210,6 @@ class FileEngine extends CacheEngine
         $data = '';
         $this->_File->next();
         while ($this->_File->valid()) {
-            /** @psalm-suppress PossiblyInvalidOperand */
             $data .= $this->_File->current();
             $this->_File->next();
         }
@@ -199,7 +222,12 @@ class FileEngine extends CacheEngine
 
         if ($data !== '' && !empty($this->_config['serialize'])) {
             $data = unserialize($data);
+            $this->dispatchEvent(CacheAfterGetEvent::NAME, ['key' => $key, 'value' => $data, 'success' => true]);
+
+            return $data;
         }
+
+        $this->dispatchEvent(CacheAfterGetEvent::NAME, ['key' => $key, 'value' => $data, 'success' => true]);
 
         return $data;
     }
@@ -211,21 +239,29 @@ class FileEngine extends CacheEngine
      * @return bool True if the value was successfully deleted, false if it didn't
      *   exist or couldn't be removed
      */
-    public function delete($key): bool
+    public function delete(string $key): bool
     {
         $key = $this->_key($key);
+        $this->_eventClass = CacheBeforeDeleteEvent::class;
+        $this->dispatchEvent(CacheBeforeDeleteEvent::NAME, ['key' => $key]);
 
+        $this->_eventClass = CacheAfterDeleteEvent::class;
         if ($this->_setKey($key) === false || !$this->_init) {
+            $this->dispatchEvent(CacheAfterDeleteEvent::NAME, ['key' => $key, 'success' => false]);
+
             return false;
         }
 
-        /** @psalm-suppress PossiblyNullReference */
         $path = $this->_File->getRealPath();
-        $this->_File = null;
+        unset($this->_File);
 
         if ($path === false) {
+            $this->dispatchEvent(CacheAfterDeleteEvent::NAME, ['key' => $key, 'success' => false]);
+
             return false;
         }
+
+        $this->dispatchEvent(CacheAfterDeleteEvent::NAME, ['key' => $key, 'success' => true]);
 
         // phpcs:disable
         return @unlink($path);
@@ -242,21 +278,21 @@ class FileEngine extends CacheEngine
         if (!$this->_init) {
             return false;
         }
-        $this->_File = null;
+        unset($this->_File);
 
         $this->_clearDirectory($this->_config['path']);
 
         $directory = new RecursiveDirectoryIterator(
             $this->_config['path'],
-            FilesystemIterator::SKIP_DOTS
+            FilesystemIterator::SKIP_DOTS,
         );
-        $contents = new RecursiveIteratorIterator(
+        /** @var iterable<\SplFileInfo> $iterator */
+        $iterator = new RecursiveIteratorIterator(
             $directory,
-            RecursiveIteratorIterator::SELF_FIRST
+            RecursiveIteratorIterator::SELF_FIRST,
         );
         $cleared = [];
-        /** @var \SplFileInfo $fileInfo */
-        foreach ($contents as $fileInfo) {
+        foreach ($iterator as $fileInfo) {
             if ($fileInfo->isFile()) {
                 unset($fileInfo);
                 continue;
@@ -280,7 +316,9 @@ class FileEngine extends CacheEngine
 
         // unsetting iterators helps releasing possible locks in certain environments,
         // which could otherwise make `rmdir()` fail
-        unset($directory, $contents);
+        unset($directory, $iterator);
+        $this->_eventClass = CacheClearedEvent::class;
+        $this->dispatchEvent(CacheClearedEvent::NAME);
 
         return true;
     }
@@ -311,7 +349,7 @@ class FileEngine extends CacheEngine
 
             try {
                 $file = new SplFileObject($path . $entry, 'r');
-            } catch (Exception $e) {
+            } catch (Exception) {
                 continue;
             }
 
@@ -319,9 +357,11 @@ class FileEngine extends CacheEngine
                 $filePath = $file->getRealPath();
                 unset($file);
 
-                // phpcs:disable
-                @unlink($filePath);
-                // phpcs:enable
+                if ($filePath !== false) {
+                    // phpcs:disable
+                    @unlink($filePath);
+                    // phpcs:enable
+                }
             }
         }
 
@@ -336,7 +376,7 @@ class FileEngine extends CacheEngine
      * @return int|false
      * @throws \LogicException
      */
-    public function decrement(string $key, int $offset = 1)
+    public function decrement(string $key, int $offset = 1): int|false
     {
         throw new LogicException('Files cannot be atomically decremented.');
     }
@@ -349,7 +389,7 @@ class FileEngine extends CacheEngine
      * @return int|false
      * @throws \LogicException
      */
-    public function increment(string $key, int $offset = 1)
+    public function increment(string $key, int $offset = 1): int|false
     {
         throw new LogicException('Files cannot be atomically incremented.');
     }
@@ -371,7 +411,7 @@ class FileEngine extends CacheEngine
         $dir = $this->_config['path'] . $groups;
 
         if (!is_dir($dir)) {
-            mkdir($dir, 0775, true);
+            mkdir($dir, $this->_config['dirMask'] ^ umask(), true);
         }
 
         $path = new SplFileInfo($dir . $key);
@@ -380,7 +420,7 @@ class FileEngine extends CacheEngine
             return false;
         }
         if (
-            empty($this->_File) ||
+            !isset($this->_File) ||
             $this->_File->getBasename() !== $key ||
             $this->_File->valid() === false
         ) {
@@ -396,9 +436,9 @@ class FileEngine extends CacheEngine
 
             if (!$exists && !chmod($this->_File->getPathname(), (int)$this->_config['mask'])) {
                 trigger_error(sprintf(
-                    'Could not apply permission mask "%s" on cache file "%s"',
+                    'Could not apply permission mask `%s` on cache file `%s`',
+                    $this->_config['mask'],
                     $this->_File->getPathname(),
-                    $this->_config['mask']
                 ), E_USER_WARNING);
             }
         }
@@ -418,7 +458,7 @@ class FileEngine extends CacheEngine
         $success = true;
         if (!is_dir($path)) {
             // phpcs:disable
-            $success = @mkdir($path, 0775, true);
+            $success = @mkdir($path, $this->_config['dirMask'] ^ umask(), true);
             // phpcs:enable
         }
 
@@ -427,7 +467,7 @@ class FileEngine extends CacheEngine
             $this->_init = false;
             trigger_error(sprintf(
                 '%s is not writable',
-                $this->_config['path']
+                $this->_config['path'],
             ), E_USER_WARNING);
         }
 
@@ -437,7 +477,7 @@ class FileEngine extends CacheEngine
     /**
      * @inheritDoc
      */
-    protected function _key($key): string
+    protected function _key(string $key): string
     {
         $key = parent::_key($key);
 
@@ -452,15 +492,16 @@ class FileEngine extends CacheEngine
      */
     public function clearGroup(string $group): bool
     {
-        $this->_File = null;
+        unset($this->_File);
 
         $prefix = (string)$this->_config['prefix'];
 
         $directoryIterator = new RecursiveDirectoryIterator($this->_config['path']);
         $contents = new RecursiveIteratorIterator(
             $directoryIterator,
-            RecursiveIteratorIterator::CHILD_FIRST
+            RecursiveIteratorIterator::CHILD_FIRST,
         );
+        /** @var iterable<\SplFileInfo> $filtered */
         $filtered = new CallbackFilterIterator(
             $contents,
             function (SplFileInfo $current) use ($group, $prefix) {
@@ -468,19 +509,16 @@ class FileEngine extends CacheEngine
                     return false;
                 }
 
-                $hasPrefix = $prefix === ''
-                    || strpos($current->getBasename(), $prefix) === 0;
+                $hasPrefix = $prefix === '' || str_starts_with($current->getBasename(), $prefix);
                 if ($hasPrefix === false) {
                     return false;
                 }
 
-                $pos = strpos(
+                return str_contains(
                     $current->getPathname(),
-                    DIRECTORY_SEPARATOR . $group . DIRECTORY_SEPARATOR
+                    DIRECTORY_SEPARATOR . $group . DIRECTORY_SEPARATOR,
                 );
-
-                return $pos !== false;
-            }
+            },
         );
         foreach ($filtered as $object) {
             $path = $object->getPathname();
@@ -492,6 +530,8 @@ class FileEngine extends CacheEngine
         // unsetting iterators helps releasing possible locks in certain environments,
         // which could otherwise make `rmdir()` fail
         unset($directoryIterator, $contents, $filtered);
+        $this->_eventClass = CacheGroupClearEvent::class;
+        $this->dispatchEvent(CacheGroupClearEvent::NAME, ['group' => $group]);
 
         return true;
     }
