@@ -1,0 +1,6 @@
+build-secrets:
+  global:
+    - source: db_password
+      dest: DB_PASSWORD
+    - source: db_root_password
+      dest: DB_ROOT_PASSWORD

@@ -8,11 +8,13 @@ set -e
 
 # Configuration
 COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.yml}"
-TESTS_DIR="tests"
+TESTS_DIR="$(pwd)/tests"
 IMAGE_DIR="$TESTS_DIR/images"
-BASE_URL="${BASE_URL:-http://localhost}"
+BASE_URL="${BASE_URL:-http://127.0.0.1}"
 PORT="${PORT:-8080}"
-TIMEOUT=60
+CAKE_PORT="${CAKE_PORT:-9000}"
+FLASK_PORT="${FLASK_PORT:-5000}"
+TIMEOUT=90
 
 # Colors
 GREEN='\033[0;32m'
@@ -179,7 +181,7 @@ start_services() {
             return 1
         fi
         
-        if curl -f -s -m 3 "$BASE_URL:$PORT/" > /dev/null 2>&1; then
+        if curl -f -s -m 1 "$BASE_URL:$FLASK_PORT/health" > /dev/null 2>&1; then
             log_pass "Services are ready"
             sleep 2
             return 0
@@ -194,8 +196,8 @@ start_services() {
 run_flask_tests() {
     log_section "Running Flask API Tests"
     
-    echo "Running: python3 $TESTS_DIR/test_cropper_flask.py $BASE_URL:$PORT $IMAGE_DIR"
-    if python3 "$TESTS_DIR/test_cropper_flask.py" "$BASE_URL:$PORT" "$IMAGE_DIR" 2>&1; then
+    echo "Running: python3 $TESTS_DIR/test_cropper_flask.py $BASE_URL:$FLASK_PORT $IMAGE_DIR"
+    if python3 "$TESTS_DIR/test_cropper_flask.py" "$BASE_URL:$FLASK_PORT" "$IMAGE_DIR" 2>&1; then
         log_pass "Flask tests passed"
         return 0
     else
@@ -209,7 +211,7 @@ run_flask_tests() {
 run_cakephp_tests() {
     log_section "Running CakePHP Web Tests"
     
-    if bash "$TESTS_DIR/test_cakephp_routes.sh" "$BASE_URL:$PORT"; then
+    if bash "$TESTS_DIR/test_cakephp_routes.sh" "$BASE_URL:$CAKE_PORT"; then
         log_pass "CakePHP tests passed"
         return 0
     else
@@ -222,7 +224,7 @@ run_cakephp_tests() {
 run_cli_tests() {
     log_section "Running CLI Tests"
     
-    if [ -f "tools/interactive_cropper.py" ]; then
+    if [ -f "$TESTS_DIR/tools/interactive_cropper.py" ]; then
         if python3 "$TESTS_DIR/test_interactive_cropper.py" "$IMAGE_DIR"; then
             log_pass "CLI tests passed"
             return 0
@@ -231,7 +233,7 @@ run_cli_tests() {
             return 1
         fi
     else
-        log_info "tools/interactive_cropper.py not found, skipping CLI tests"
+        log_info "$TESTS_DIR/tools/interactive_cropper.py not found, skipping CLI tests"
         return 0
     fi
 }

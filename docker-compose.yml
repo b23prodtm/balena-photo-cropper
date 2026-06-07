@@ -1,12 +1,10 @@
-#version: '2.1'
+#version: '2'
 services:
   nginx:
     build: ./nginx
     ports:
     - "8080:80"    # HTTP redirect
     - "8443:443"    # HTTPS
-    depends_on:
-      - web
     mem_limit: 64m
     mem_reservation: 32m
     restart: unless-stopped
@@ -14,25 +12,54 @@ services:
     command: >
       sh -c "/wait-for-it.sh web:9000 -t 60"
     volumes:
+      - cakephp_data:/var/www/cakephp  # Same volume as PHP
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
       - ./certs:/etc/nginx/ssl:ro
-
+    depends_on:
+      - web
+    networks:
+      - cakephp-network
+      
   web:
     build: ./web
     ports:
       - "9000:9000"
-    depends_on:
-      - cropper
     environment:
       - PHP_FPM_PM=ondemand
       - PHP_FPM_MAX_CHILDREN=2
       - PHP_FPM_MAX_REQUESTS=100
+      - DB_HOST=db
+      - DB_NAME=cake_db
+      - DB_USER=cake_user
     mem_limit: 128m
     mem_reservation: 64m
     restart: unless-stopped
     # PR #9: attend que cropper Flask soit ready
     command: >
-      sh -c "/wait-for-it.sh cropper:5000 -t 120"
-
+      sh -c "/wait-for-it.sh cropper:5000 -t 15"
+      sh -c "/wait-for-it.sh db:3306 -t 15"
+    volumes:
+      - cakephp_data:/var/www/cakephp
+      - .balena/secrets:/run/secrets:ro  # Local testing only (Balena ignores this)
+    networks:
+      - cakephp-network
+      
+  # --- MariaDB ---
+  db:
+    image: mariadb:10.11
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/DB_ROOT_PASSWORD
+      MYSQL_DATABASE: cake_db
+      MYSQL_USER: cake_user
+      MYSQL_PASSWORD_FILE: /run/secrets/DB_PASSWORD
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - .balena/secrets:/run/secrets:ro  # Local testing only (Balena ignores this)
+    networks:
+      - cakephp-network
+      
   cropper:
     build: ./cropper
     ports:
@@ -46,3 +73,14 @@ services:
 volumes:
   resin-data:
   certs:
+  cakephp_data:
+    driver: local
+  mysql_data:
+    driver: local
+
+networks:
+  cakephp-network:
+    driver: bridge
+
+
+

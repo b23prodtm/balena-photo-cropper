@@ -35,7 +35,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Upgrade pip & build tools
-RUN pip install --no-cache-dir --upgrade pip wheel setuptools
+#RUN pip install --no-cache-dir --upgrade pip wheel setuptools
 
 # Copy requirements
 COPY requirements.txt .
@@ -65,4 +65,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD python3 -c "import cv2; print('OpenCV OK:', cv2.__version__)" || exit 1
 
 # Run Flask app
-ENTRYPOINT ["app.py"]
+ENTRYPOINT ["./app.py"]
