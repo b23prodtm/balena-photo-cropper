@@ -36,7 +36,7 @@ jobs:
     - name: Install system dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y curl
+        sudo apt-get install -y curl docker-compose-plugin
       # For Docker Compose V2, use 'docker compose' instead of 'docker-compose'
 
     - name: Set up Docker Buildx
