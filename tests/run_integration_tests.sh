@@ -11,6 +11,7 @@ COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.yml}"
 TESTS_DIR="tests"
 IMAGE_DIR="$TESTS_DIR/images"
 BASE_URL="${BASE_URL:-http://localhost}"
+PORT="${PORT:-8080}"
 TIMEOUT=60
 
 # Colors
@@ -178,7 +179,7 @@ start_services() {
             return 1
         fi
         
-        if curl -f -s -m 3 "$BASE_URL/" > /dev/null 2>&1; then
+        if curl -f -s -m 3 "$BASE_URL:$PORT/" > /dev/null 2>&1; then
             log_pass "Services are ready"
             sleep 2
             return 0
@@ -193,12 +194,14 @@ start_services() {
 run_flask_tests() {
     log_section "Running Flask API Tests"
     
-    if python3 "$TESTS_DIR/test_cropper_flask.py" "$BASE_URL" "$IMAGE_DIR"; then
+    echo "Running: python3 $TESTS_DIR/test_cropper_flask.py $BASE_URL $IMAGE_DIR"
+    if python3 "$TESTS_DIR/test_cropper_flask.py" "$BASE_URL" "$IMAGE_DIR" 2>&1; then
         log_pass "Flask tests passed"
         return 0
     else
-        log_fail "Flask tests failed"
-        return 1
+        local exit_code=$?
+        log_fail "Flask tests failed with exit code: $exit_code"
+        return $exit_code
     fi
 }
 
@@ -281,11 +284,13 @@ main() {
     # Step 4.b: Start services
     start_services || exit 1
     
-    # Step 5-7: Run tests (collect failures)
+    # Step 5-7: Run tests (collect failures without exiting)
+    set +e  # Don't exit on test failures yet
     run_flask_tests || failed_tests+=("Flask")
-    run_cakephp_tests || failed_tests+=("CakePHP")
+    run_cakephp_tests || failed_tests+=("CakePHP")  
     run_cli_tests || failed_tests+=("CLI")
-    
+    set -e  # Re-enable exit on error
+
     # Summary
     log_section "🎯 Final Summary"
     
