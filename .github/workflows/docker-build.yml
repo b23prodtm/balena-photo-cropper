@@ -79,20 +79,6 @@ jobs:
       env:
         GIT_SHA: ${{ github.sha }}
         TAG: ${{ github.ref_name }}
-      if: github.event_name != 'pull_request'
-
-    - name: Build AMD64 only for PR testing
-      uses: docker/bake-action@v5
-      with:
-        workdir: .
-        files: |
-          ./docker-bake.hcl
-        targets: amd64-only
-        push: false
-        set: |
-          *.cache-from=type=gha
-          *.cache-to=type=gha,mode=max
-      if: github.event_name == 'pull_request'
 
     # ============================================================================
     # MANIFEST MERGE - Fusionner les images multi-platform (PAS de rebuild)
@@ -180,13 +166,12 @@ jobs:
     - name: Log build results
       if: always()
       run: |
-        echo "Build completed at $(date)"
+        echo "Build completed at $(date)"         
+        echo "Platforms: linux/amd64, linux/arm/v7, linux/arm64"
         if [[ "${{ github.event_name }}" == "pull_request" ]]; then
           echo "PR Build: #${{ steps.meta.outputs.PR_NUMBER }}"
-          echo "Platform: linux/amd64 (testing only)"
           echo "Push: disabled (PR)"
         else
-          echo "Platforms: linux/amd64, linux/arm/v7, linux/arm64"
           echo "Push: enabled (main branch)"
           echo "Manifests: merged without rebuild ✅"
         fi
