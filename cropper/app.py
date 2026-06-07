@@ -192,6 +192,15 @@ class ScannerProcessor:
 
 processor = ScannerProcessor()
 
+@app.route('/health', methods=['GET'])
+def health_check():
+    """Health check endpoint for orchestration and load balancers"""
+    return jsonify({
+        "status": "healthy",
+        "service": "cropper-flask",
+        "version": "1.0.0"
+    }), 200
+
 @app.route('/process', methods=['POST'])
 def process_image():
     """Original endpoint - maintains behavior with enhanced validation"""

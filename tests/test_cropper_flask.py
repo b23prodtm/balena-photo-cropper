@@ -12,7 +12,7 @@ import sys
 from pathlib import Path
 
 class CropperFlaskTest:
-    def __init__(self, base_url="http://localhost:5000", timeout=30):
+    def __init__(self, base_url="http://localhost:8080", timeout=30):  # Changed default
         self.base_url = base_url
         self.timeout = timeout
         self.results = []
@@ -29,7 +29,8 @@ class CropperFlaskTest:
         """Check if Flask app is running"""
         print("\n🔍 Checking Flask app health...")
         try:
-            response = requests.get(f"{self.base_url}/", timeout=self.timeout)
+            # Remove trailing slash - let the endpoint define the path
+            response = requests.get(f"{self.base_url}/health", timeout=self.timeout)
             if response.status_code == 200:
                 self.log("PASS", "Flask app is running")
                 return True
@@ -43,7 +44,7 @@ class CropperFlaskTest:
         except Exception as e:
             self.log("FAIL", f"Connection error: {str(e)}")
             return False
-    
+
     def test_process_jpeg(self, image_path="test_image.jpg"):
         """Test /process endpoint with JPEG"""
         print(f"\n📸 Testing /process with JPEG...")
