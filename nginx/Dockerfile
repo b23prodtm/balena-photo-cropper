@@ -22,7 +22,7 @@ RUN chmod 755 /wait-for-it.sh
 
 
 # Expose HTTP port
-EXPOSE 8080
+EXPOSE 80
 
 # Start Nginx
-CMD ["nginx", "-g", "daemon off;"]
+ENTRYPOINT ["nginx", "-g", "daemon off;"]

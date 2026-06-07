@@ -67,5 +67,6 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 COPY scripts/wait-for-it.sh /wait-for-it.sh
 RUN chmod 755 /wait-for-it.sh
 
+RUN php-fpm -t
 
-CMD ["php-fpm", "-F"]
+ENTRYPOINT ["php-fpm", "-F"]

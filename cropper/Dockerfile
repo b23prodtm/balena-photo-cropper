@@ -63,4 +63,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD python3 -c "import cv2; print('OpenCV OK:', cv2.__version__)" || exit 1
 
 # Run Flask app
-CMD ["python3", "app.py"]
+ENTRYPOINT ["python3", "app.py"]

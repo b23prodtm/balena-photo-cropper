@@ -10,7 +10,7 @@ set -e
 COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.yml}"
 TESTS_DIR="tests"
 IMAGE_DIR="$TESTS_DIR/images"
-BASE_URL="${BASE_URL:-http://localhost}"
+BASE_URL="${BASE_URL:-http://nginx}"
 PORT="${PORT:-8080}"
 TIMEOUT=60
 
