@@ -7,7 +7,6 @@ RUN apk add --no-cache \
     bash
 
 # Copy custom nginx configuration
-COPY conf.d/ /etc/nginx/conf.d/
 COPY nginx.conf /etc/nginx/nginx.conf
 
 # Create web root if not exists

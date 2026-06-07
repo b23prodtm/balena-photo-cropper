@@ -3,8 +3,8 @@ services:
   nginx:
     build: ./nginx
     ports:
-      - "8080:80"
-      - "8443:443"
+    - "8080:8080"    # HTTP redirect
+    - "8443:8443"    # HTTPS
     depends_on:
       - web
     mem_limit: 64m
