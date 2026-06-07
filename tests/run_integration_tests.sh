@@ -103,6 +103,58 @@ generate_images() {
     fi
 }
 
+# build services
+build_services() {
+    # Config — service names must match docker-compose.yml
+    SERVICE1="cropper"
+    SERVICE2="nginx"
+    SERVICE3="web"
+    CONTEXT1="./$SERVICE1"
+    CONTEXT2="./$SERVICE2"
+    CONTEXT3="./$SERVICE3"
+    STATE_FILE=".last_build_sigs"
+
+    sig_for() {
+      ctx="$1"
+      if [ ! -d "$ctx" ]; then
+        echo "absent-$ctx"
+        return
+      fi
+      find "$ctx" -type f ! -path '*/.git/*' -print0 \
+        | sort -z \
+        | xargs -0 sha256sum 2>/dev/null \
+        | sha256sum \
+        | awk '{print $1}'
+    }
+
+    cur1="$(sig_for "$CONTEXT1")"
+    cur2="$(sig_for "$CONTEXT2")"
+    cur3="$(sig_for "$CONTEXT3")"
+
+    last1=""; last2=""; last3=""
+    if [ -f "$STATE_FILE" ]; then
+      IFS=' ' read -r last1 last2 last3 < "$STATE_FILE"
+    fi
+
+    changed=""
+    [ "$cur1" != "$last1" ] && changed="$changed $SERVICE1"
+    [ "$cur2" != "$last2" ] && changed="$changed $SERVICE2"
+    [ "$cur3" != "$last3" ] && changed="$changed $SERVICE3"
+
+    if [ -n "$changed" ]; then
+      echo "Changes detected for:$changed"
+      for svc in $changed; do
+        svc=$(echo "$svc" | tr -d ' ')
+        echo "Building $svc..."
+        docker compose build --no-cache --pull "$svc" || exit 1
+      done
+      printf "%s %s %s" "$cur1" "$cur2" "$cur3" > "$STATE_FILE"
+      echo "Rebuild(s) complete."
+    else
+      echo "No changes detected for $SERVICE1, $SERVICE2, $SERVICE3. Skipping rebuild."
+    fi
+}
+
 # Start docker compose
 start_services() {
     log_section "Starting Docker Compose Services"
@@ -113,7 +165,7 @@ start_services() {
     fi
     
     log_info "Starting services (timeout: ${TIMEOUT}s)..."
-    docker compose -f "$COMPOSE_FILE" up -d
+    docker compose -f "$COMPOSE_FILE" up -d --force-recreate
     
     local start_time=$(date +%s)
     while true; do
@@ -223,7 +275,10 @@ main() {
     # Step 3: Generate test images
     generate_images || exit 1
     
-    # Step 4: Start services
+    # Step 4.a: Rebuild services
+    build_services || exit 1
+
+    # Step 4.b: Start services
     start_services || exit 1
     
     # Step 5-7: Run tests (collect failures)
