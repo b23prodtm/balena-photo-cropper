@@ -10,14 +10,15 @@ RUN apk add --no-cache \
     curl \
     icu-dev \
     oniguruma-dev \
-    libzip-dev \
     unzip \
+    libzip-dev \
     libpng-dev \
     libjpeg-turbo-dev \
     freetype-dev \
     imagemagick-dev \
     shadow \
-    netcat-openbsd
+    netcat-openbsd \
+    php83-intl
 
 
 # Copy PHP configuration
@@ -30,7 +31,7 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir="/usr/loca
 # PHP extensions (including those needed for CakePHP)
 RUN docker-php-ext-configure gd \
     --with-freetype \
-    --with-jpeg \
+   --with-jpeg \
  && docker-php-ext-install \
     gd \
     intl \
@@ -68,6 +69,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 COPY scripts/wait-for-it.sh /wait-for-it.sh
 RUN chmod 755 /wait-for-it.sh
 
-RUN php-fpm -t
-
-ENTRYPOINT ["php-fpm", "-F"]
+CMD ["php-fpm", "-F"]

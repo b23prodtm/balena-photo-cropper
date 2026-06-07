@@ -25,4 +25,4 @@ RUN chmod 755 /wait-for-it.sh
 EXPOSE 80
 
 # Start Nginx
-ENTRYPOINT ["nginx", "-g", "daemon off;"]
+CMD ["nginx", "-g", "daemon off;"]

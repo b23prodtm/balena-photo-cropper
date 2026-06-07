@@ -51,10 +51,12 @@ RUN pip install --no-cache-dir \
 
 # Copy application
 COPY app.py .
-COPY . /app
+COPY . .
+
+RUN chmod +x app.py
 
 # Create upload directories
-RUN mkdir -p /app/uploads /app/tmp
+RUN mkdir -p uploads tmp
 
 EXPOSE 5000
 
@@ -63,4 +65,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD python3 -c "import cv2; print('OpenCV OK:', cv2.__version__)" || exit 1
 
 # Run Flask app
-ENTRYPOINT ["python3", "app.py"]
+ENTRYPOINT ["app.py"]
