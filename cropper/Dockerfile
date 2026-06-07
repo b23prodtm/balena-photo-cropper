@@ -29,6 +29,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libwebp-dev \
     \
     # Additional tools
+    libgl1 \
+    libxcb-glx0 \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
