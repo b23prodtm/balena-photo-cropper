@@ -1,6 +1,5 @@
 # services/nginx/Dockerfile - Nginx with explicit multi-platform support
-
-FROM --platform=$BUILDPLATFORM nginx:1.27-alpine
+FROM nginx:1.27-alpine
 
 # Install curl for health checks
 RUN apk add --no-cache \
