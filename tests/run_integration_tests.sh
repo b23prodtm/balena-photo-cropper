@@ -264,7 +264,7 @@ run_cakephp_tests() {
 run_cli_tests() {
     log_section "Running CLI Tests"
     
-    if [ -f "$TESTS_DIR/tools/interactive_cropper.py" ]; then
+    if [ -f "$TESTS_DIR/../tools/interactive_cropper.py" ]; then
         if python3 "$TESTS_DIR/test_interactive_cropper.py" "$IMAGE_DIR"; then
             log_pass "CLI tests passed"
             return 0
@@ -273,7 +273,7 @@ run_cli_tests() {
             return 1
         fi
     else
-        log_info "$TESTS_DIR/tools/interactive_cropper.py not found, skipping CLI tests"
+        log_info "$TESTS_DIR/../tools/interactive_cropper.py not found, skipping CLI tests"
         return 0
     fi
 }
