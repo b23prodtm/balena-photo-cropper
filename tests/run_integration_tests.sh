@@ -167,6 +167,9 @@ start_services() {
         return 1
     fi
     
+    # Ensure secrets are available for docker-compose
+    export DB_PASSWORD=$(cat .balena/secrets/db_password)
+    export DB_ROOT_PASSWORD=$(cat .balena/secrets/db_root_password)
     log_info "Starting services (timeout: ${TIMEOUT}s)..."
     docker compose -f "$COMPOSE_FILE" up -d --force-recreate
     

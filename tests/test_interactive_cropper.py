@@ -13,7 +13,7 @@ from pathlib import Path
 class InteractiveCropperTest:
     def __init__(self):
         self.results = []
-        self.interactive_cropper_path = "../tools/interactive_cropper.py"
+        self.interactive_cropper_path = "tools/interactive_cropper.py"
         
     def log(self, status, message, details=""):
         """Log test result"""

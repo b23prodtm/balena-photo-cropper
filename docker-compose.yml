@@ -63,6 +63,8 @@ services:
     build: ./cropper
     ports:
       - "5000:5000"
+    environment:
+      HEADLESS_MODE: true
     volumes:
       - 'resin-data:/data'
     mem_limit: 450m

@@ -2,6 +2,7 @@
 # FIX: System dependencies installed BEFORE pip (fixes libpng16.so.16 error)
 
 FROM python:3.11-slim
+ENV QT_QPA_PLATFORM=offscreen
 
 WORKDIR /app
 
