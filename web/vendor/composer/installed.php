@@ -3,7 +3,7 @@
         'name' => 'b23prodtm/balena-photo-cropper-web',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => '1a3bb4eca4e491ea9c13e253129011028f845c86',
+        'reference' => '67a576f59c8d391a19451f3c5803457dc74f3149',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -13,7 +13,7 @@
         'b23prodtm/balena-photo-cropper-web' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => '1a3bb4eca4e491ea9c13e253129011028f845c86',
+            'reference' => '67a576f59c8d391a19451f3c5803457dc74f3149',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

@@ -9,8 +9,7 @@ services:
     mem_reservation: 32m
     restart: unless-stopped
     # PR #9: attend que web soit prêt avant de servir
-    command: >
-      sh -c "/wait-for-it.sh web:9000 -t 60"
+    command: ["/wait-for-it.sh", "web", "9000", "nginx", "-g", "daemon off;"]
     volumes:
       - cakephp_data:/var/www/cakephp  # Same volume as PHP
       - ./certs:/etc/nginx/ssl:ro
@@ -35,9 +34,7 @@ services:
     mem_reservation: 64m
     restart: unless-stopped
     # PR #9: attend que cropper Flask soit ready
-    command: >
-      sh -c "/wait-for-it.sh cropper:5000 -t 15"
-      sh -c "/wait-for-it.sh db:3306 -t 15"
+    command: ["/bin/sh", "-c", "/wait-for-it.sh cropper 5000 sh -c '/wait-for-it.sh db 3306 php-fpm -F'"]
     volumes:
       - cakephp_data:/var/www/cakephp
       - .balena/secrets:/run/secrets:ro  # Local testing only (Balena ignores this)
@@ -71,6 +68,8 @@ services:
     mem_limit: 450m
     mem_reservation: 200m
     restart: unless-stopped
+    networks:
+      - cakephp-network
 
 volumes:
   resin-data:
