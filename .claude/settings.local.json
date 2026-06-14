@@ -1,1 +1,0 @@
-{"hooks":{"PreToolUse":[{"matcher":"Edit|Write|MultiEdit","hooks":[{"type":"http","url":"http://127.0.0.1:28991/hook"}]}],"Stop":[{"matcher":".*","hooks":[{"type":"http","url":"http://127.0.0.1:28991/stop"}]}],"PermissionRequest":[{"matcher":".*","hooks":[{"type":"http","url":"http://127.0.0.1:28991/permission-request"}]}]}}

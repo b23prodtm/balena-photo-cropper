@@ -30,6 +30,7 @@ services:
       - DB_HOST=db
       - DB_NAME=cake_db
       - DB_USER=cake_user
+      - DB_PASSWORD_FILE=/run/secrets/DB_PASSWORD
     mem_limit: 128m
     mem_reservation: 64m
     restart: unless-stopped

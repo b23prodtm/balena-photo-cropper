@@ -167,9 +167,46 @@ start_services() {
         return 1
     fi
     
-    # Ensure secrets are available for docker-compose
-    export DB_PASSWORD=$(cat .balena/secrets/db_password)
-    export DB_ROOT_PASSWORD=$(cat .balena/secrets/db_root_password)
+    # Ensure secrets are available for docker-compose by dynamically parsing .balena/balena.yml
+    log_info "Loading secrets from .balena/balena.yml..."
+     if command -v python3 &> /dev/null; then
+        eval "$(python3 -c '
+import os, re
+try:
+    with open(".balena/balena.yml", "r") as f:
+        content = f.read()
+    pairs = re.findall(r"-\s+source:\s*(\S+)\s+dest:\s*(\S+)", content)
+    # Ensure the directory exists
+    os.makedirs(".balena/secrets", exist_ok=True)
+    for source, dest in pairs:
+        src_path = f".balena/secrets/{source}"
+        dest_path = f".balena/secrets/{dest}"
+        val = None
+        # 1. Try reading from source file
+        if os.path.exists(src_path):
+            with open(src_path, "r") as sf:
+                val = sf.read().strip()
+        # 2. Try reading from environment variable
+        if not val:
+            val = os.environ.get(dest)
+        if not val:
+            val = os.environ.get(source.upper())
+            
+        if val:
+            # Write to target file for docker-compose volume mount
+            with open(dest_path, "w") as df:
+                df.write(val + "\n")
+            # Export to shell environment
+            print(f"export {dest}=\\\"{val}\\\"")
+except Exception as e:
+    pass
+')"
+    else
+        export DB_PASSWORD=$(cat .balena/secrets/db_password)
+        export DB_ROOT_PASSWORD=$(cat .balena/secrets/db_root_password)
+    fi
+
+    
     log_info "Starting services (timeout: ${TIMEOUT}s)..."
     docker compose -f "$COMPOSE_FILE" up -d --force-recreate
     
