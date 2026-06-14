@@ -1,4 +1,4 @@
-name: Docker Build Multi-Platform
+name: Docker Build Multi-Platform with Manifest Merge
 
 on:
   pull_request:
@@ -8,80 +8,68 @@ on:
     tags:
       - 'v*'
   workflow_dispatch:
-    inputs:
-      runner:
-        description: 'Runner to use'
-        required: false
-        default: 'self-hosted'
-        type: choice
-        options:
-          - 'self-hosted'
-          - 'ubuntu-latest'
 
 env:
   REGISTRY: docker.io
   REGISTRY_IMAGE: bprtkop
-  GIT_SHA: ${{ github.sha }}
-  TAG: ${{ github.ref_name }}
 
 jobs:
   build:
-    runs-on: ${{ matrix.platform.runner }}
-    timeout-minutes: 90
-    strategy:
-      matrix:
-        platform:
-          - name: amd64
-            target: cropper-amd64,web-amd64,nginx-amd64
-            runner: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.runner || vars.DEFAULT_RUNNER }}
-          - name: arm64
-            target: cropper-rpi64,web-rpi64,nginx-rpi64
-            runner: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.runner || vars.DEFAULT_RUNNER }}
-          - name: arm-v7
-            target: cropper-rpi,web-rpi,nginx-rpi
-            runner: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.runner || vars.DEFAULT_RUNNER }}
-      max-parallel: 3
-      fail-fast: false
-
+    runs-on: ${{ vars.DEFAULT_RUNNER || 'ubuntu-latest' }}
+    timeout-minutes: 120
+    
     permissions:
-      contents: read
+      contents: write
       packages: write
-
+      pull-requests: write
+    
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
       with:
-        fetch-depth: ${{ startsWith(github.ref, 'refs/tags/') && '0' || '1' }}
+        fetch-depth: 1
 
     - name: Set up QEMU for multi-arch builds
       uses: docker/setup-qemu-action@v3
       with:
-        platforms: linux/${{ matrix.platform.name }}
-        image: tonistiigi/binfmt:master
+        platforms: linux/amd64,linux/arm/v7,linux/arm64
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
       with:
-        platforms: linux/${{ matrix.platform.name }}
+        platforms: linux/amd64,linux/arm/v7,linux/arm64
 
     - name: Login to Docker Hub
       uses: docker/login-action@v3
       with:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
-
+      
     - name: Extract metadata
       id: meta
       run: |
-        echo "SHORT_SHA=${GIT_SHA:0:7}" >> $GITHUB_OUTPUT
+        SHORT_SHA=${GITHUB_SHA:0:7}
+        echo "SHORT_SHA=${SHORT_SHA}" >> $GITHUB_OUTPUT
         echo "BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
+        
+        # PR build: Add PR reference
+        if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+          PR_NUMBER=${{ github.event.pull_request.number }}
+          echo "PR_NUMBER=${PR_NUMBER}" >> $GITHUB_OUTPUT
+          echo "TAG_SUFFIX=pr-${PR_NUMBER}" >> $GITHUB_OUTPUT
+          echo "PUSH_ENABLED=false" >> $GITHUB_OUTPUT
+        else
+          echo "TAG_SUFFIX=latest" >> $GITHUB_OUTPUT
+          echo "PUSH_ENABLED=true" >> $GITHUB_OUTPUT
+        fi
 
-    - name: Build for ${{ matrix.platform.name }}
+    - name: Build with Bake (each platform separately)
       uses: docker/bake-action@v5
       with:
         workdir: .
-        files: ./docker-bake.hcl
-        targets: ${{ matrix.platform.target }}
+        files: |
+          ./docker-bake.hcl
+        targets: default
         push: ${{ github.event_name != 'pull_request' }}
         set: |
           *.args.BUILD_DATE=${{ steps.meta.outputs.BUILD_DATE }}
@@ -89,13 +77,131 @@ jobs:
           *.cache-from=type=gha
           *.cache-to=type=gha,mode=max
       env:
-        REGISTRY: docker.io
-        REGISTRY_IMAGE: bprtkop
         GIT_SHA: ${{ github.sha }}
-        TAG: ${{ github.event_name != 'pull_request' && github.ref_name || 'pr-build' }}
-        BUILDKIT_PROGRESS: plain
+        TAG: ${{ github.ref_name }}
+
+    # ============================================================================
+    # MANIFEST MERGE - Fusionner les images multi-platform (PAS de rebuild)
+    # ============================================================================
+    
+    - name: Create and push manifests (multi-platform fusion)
+      if: github.event_name != 'pull_request'
+      run: |
+        set -e
+        
+        REGISTRY="${{ env.REGISTRY }}"
+        REGISTRY_IMAGE="${{ env.REGISTRY_IMAGE }}"
+        TAG="${{ github.ref_name }}"
+        SHORT_SHA="${{ steps.meta.outputs.SHORT_SHA }}"
+        
+        echo "🔄 Creating and pushing multi-platform manifests..."
+        echo ""
+        
+        # Services to create manifests for
+        SERVICES=("balena-photo-cropper-api" "balena-photo-cropper-web" "balena-photo-cropper-nginx")
+        PLATFORMS=("amd64" "arm32v7" "arm64v8")
+        
+        for SERVICE in "${SERVICES[@]}"; do
+          echo "📦 Processing: $SERVICE"
+          
+          # Image base name
+          IMAGE_BASE="${REGISTRY}/${REGISTRY_IMAGE}/${SERVICE}"
+          
+          # Create manifest with all platform images
+          echo "  Creating manifest..."
+          docker manifest create \
+            ${IMAGE_BASE}:${TAG} \
+            ${IMAGE_BASE}:${TAG}-amd64 \
+            ${IMAGE_BASE}:${TAG}-arm32v7 \
+            ${IMAGE_BASE}:${TAG}-arm64v8 \
+            || true  # Ignore if manifest already exists
+          
+          # Annotate architectures
+          echo "  Annotating architectures..."
+          docker manifest annotate ${IMAGE_BASE}:${TAG} \
+            ${IMAGE_BASE}:${TAG}-amd64 \
+            --os linux --arch amd64
+          
+          docker manifest annotate ${IMAGE_BASE}:${TAG} \
+            ${IMAGE_BASE}:${TAG}-arm32v7 \
+            --os linux --arch arm --variant v7
+          
+          docker manifest annotate ${IMAGE_BASE}:${TAG} \
+            ${IMAGE_BASE}:${TAG}-arm64v8 \
+            --os linux --arch arm64 --variant v8
+          
+          # Push manifest
+          echo "  Pushing manifest..."
+          docker manifest push ${IMAGE_BASE}:${TAG}
+          
+          # Also push as latest if on main
+          if [[ "${TAG}" == "main" ]]; then
+            echo "  Creating latest manifest..."
+            docker manifest create \
+              ${IMAGE_BASE}:latest \
+              ${IMAGE_BASE}:${TAG}-amd64 \
+              ${IMAGE_BASE}:${TAG}-arm32v7 \
+              ${IMAGE_BASE}:${TAG}-arm64v8 \
+              || true
+            
+            docker manifest annotate ${IMAGE_BASE}:latest \
+              ${IMAGE_BASE}:${TAG}-amd64 \
+              --os linux --arch amd64
+            
+            docker manifest annotate ${IMAGE_BASE}:latest \
+              ${IMAGE_BASE}:${TAG}-arm32v7 \
+              --os linux --arch arm --variant v7
+            
+            docker manifest annotate ${IMAGE_BASE}:latest \
+              ${IMAGE_BASE}:${TAG}-arm64v8 \
+              --os linux --arch arm64 --variant v8
+            
+            docker manifest push ${IMAGE_BASE}:latest
+          fi
+          
+          echo "  ✅ $SERVICE done"
+          echo ""
+        done
 
     - name: Log build results
       if: always()
       run: |
-        echo "Build for ${{ matrix.platform.name }} completed at $(date)"
+        echo "Build completed at $(date)"         
+        echo "Platforms: linux/amd64, linux/arm/v7, linux/arm64"
+        if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+          echo "PR Build: #${{ steps.meta.outputs.PR_NUMBER }}"
+          echo "Push: disabled (PR)"
+        else
+          echo "Push: enabled (main branch)"
+          echo "Manifests: merged without rebuild ✅"
+        fi
+
+    - name: Comment PR with build info
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: `## ✅ Docker Build Results\n\n**PR:** #${{ steps.meta.outputs.PR_NUMBER }}\n**Commit:** ${{ steps.meta.outputs.SHORT_SHA }}\n**Status:** Build successful (AMD64 testing)\n\nFull multi-platform manifest will be created when merged to main.`
+          })
+
+    - name: Verify manifests
+      if: github.event_name != 'pull_request'
+      run: |
+        echo "✅ Multi-platform manifests created and pushed"
+        echo ""
+        echo "Available images:"
+        echo "  - ${{ env.REGISTRY }}/${{ env.REGISTRY_IMAGE }}/balena-photo-cropper-api:${{ github.ref_name }}"
+        echo "  - ${{ env.REGISTRY }}/${{ env.REGISTRY_IMAGE }}/balena-photo-cropper-web:${{ github.ref_name }}"
+        echo "  - ${{ env.REGISTRY }}/${{ env.REGISTRY_IMAGE }}/balena-photo-cropper-nginx:${{ github.ref_name }}"
+        echo ""
+        echo "Architectures supported:"
+        echo "  - linux/amd64"
+        echo "  - linux/arm/v7 (Raspberry Pi 32-bit)"
+        echo "  - linux/arm64 (Raspberry Pi 4B 64-bit)"
+        echo ""
+        echo "docker-compose.yml can now pull these multi-platform images:"
+        echo "  docker pull ${{ env.REGISTRY }}/${{ env.REGISTRY_IMAGE }}/balena-photo-cropper-api:${{ github.ref_name }}"

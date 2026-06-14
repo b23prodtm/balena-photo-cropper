@@ -2,6 +2,7 @@
 # FIX: System dependencies installed BEFORE pip (fixes libpng16.so.16 error)
 
 FROM python:3.11-slim
+ENV QT_QPA_PLATFORM=offscreen
 
 WORKDIR /app
 
@@ -29,11 +30,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libwebp-dev \
     \
     # Additional tools
+    libgl1 \
+    libxcb-glx0 \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Upgrade pip & build tools
-RUN pip install --no-cache-dir --upgrade pip wheel setuptools
+#RUN pip install --no-cache-dir --upgrade pip wheel setuptools
 
 # Copy requirements
 COPY requirements.txt .
@@ -49,10 +52,12 @@ RUN pip install --no-cache-dir \
 
 # Copy application
 COPY app.py .
-COPY . /app
+COPY . .
+
+RUN chmod +x app.py
 
 # Create upload directories
-RUN mkdir -p /app/uploads /app/tmp
+RUN mkdir -p uploads tmp
 
 EXPOSE 5000
 
@@ -61,4 +66,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD python3 -c "import cv2; print('OpenCV OK:', cv2.__version__)" || exit 1
 
 # Run Flask app
-CMD ["python3", "app.py"]
+ENTRYPOINT ["./app.py"]

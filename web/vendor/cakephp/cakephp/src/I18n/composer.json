@@ -1,0 +1,54 @@
+{
+    "name": "cakephp/i18n",
+    "description": "CakePHP Internationalization library with support for messages translation and dates and numbers localization",
+    "type": "library",
+    "keywords": [
+        "cakephp",
+        "i18n",
+        "internationalisation",
+        "internationalization",
+        "localisation",
+        "localization",
+        "translation",
+        "date",
+        "number"
+    ],
+    "homepage": "https://cakephp.org",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "CakePHP Community",
+            "homepage": "https://github.com/cakephp/i18n/graphs/contributors"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/cakephp/cakephp/issues",
+        "forum": "https://stackoverflow.com/tags/cakephp",
+        "irc": "irc://irc.freenode.org/cakephp",
+        "source": "https://github.com/cakephp/i18n"
+    },
+    "require": {
+        "php": ">=8.2",
+        "ext-intl": "*",
+        "cakephp/core": "^5.3.0",
+        "cakephp/chronos": "^3.3"
+    },
+    "autoload": {
+        "psr-4": {
+            "Cake\\I18n\\": "."
+        },
+        "files": [
+            "functions.php"
+        ]
+    },
+    "suggest": {
+        "cakephp/cache": "Require this if you want automatic caching of translators"
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "extra": {
+        "branch-alias": {
+            "dev-5.next": "5.4.x-dev"
+        }
+    }
+}

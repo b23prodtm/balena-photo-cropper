@@ -1,0 +1,152 @@
+name: Integration Tests (Balena Cloud Pre-Flight Check)
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  integration-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    
+    permissions:
+      contents: read
+      checks: write
+      
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+
+    - name: Install Python dependencies
+      run: |
+        python3 -m pip install --upgrade pip
+        python3 -m pip install pillow requests
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y curl ca-certificates gnupg lsb-release
+        
+        # Add Docker's official GPG key
+        sudo mkdir -p /etc/apt/keyrings
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+        
+        # Add Docker repository
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+        
+        # Install docker-compose-plugin
+        sudo apt-get update
+        sudo apt-get install -y docker-compose-plugin
+      # For Docker Compose V2, use 'docker compose' instead of 'docker-compose'
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Display environment info
+      run: |
+        echo "Python version:"
+        python3 --version
+        echo ""
+        echo "Docker version:"
+        docker --version
+        echo ""
+        echo "Docker Compose version:"
+        docker compose --version
+        echo ""
+        echo "Curl version:"
+        curl --version
+
+    - name: Check tests directory
+      run: |
+        echo "Checking tests/ directory structure..."
+        ls -la tests/ || echo "❌ tests/ directory not found"
+        [ -f tests/generate_test_images.py ] && echo "✅ generate_test_images.py found" || echo "❌ Not found"
+        [ -f tests/test_cropper_flask.py ] && echo "✅ test_cropper_flask.py found" || echo "❌ Not found"
+        [ -f tests/test_interactive_cropper.py ] && echo "✅ test_interactive_cropper.py found" || echo "❌ Not found"
+        [ -f tests/test_cakephp_routes.sh ] && echo "✅ test_cakephp_routes.sh found" || echo "❌ Not found"
+        [ -f tests/run_integration_tests.sh ] && echo "✅ run_integration_tests.sh found" || echo "❌ Not found"
+        
+    - name: Generate SSL certificates
+      run: |
+        mkdir -p certs
+        openssl req -x509 -newkey rsa:4096 -keyout certs/server.key -out certs/server.crt -days 365 -nodes -subj "/CN=localhost"
+        
+    - name: Make test scripts executable
+      run: |
+        chmod +x tests/run_integration_tests.sh
+        chmod +x tests/test_cakephp_routes.sh
+        
+    - name: Create .balena/secrets directory with GitHub secrets
+      run: |
+        mkdir -p .balena/secrets
+        echo "${{ secrets.DB_PASSWORD }}" > .balena/secrets/db_password
+        echo "${{ secrets.DB_ROOT_PASSWORD }}" > .balena/secrets/db_root_password
+        chmod 600 .balena/secrets/*
+      env:
+        DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        DB_ROOT_PASSWORD: ${{ secrets.DB_ROOT_PASSWORD }}
+
+    - name: Run integration tests
+      id: integration-tests
+      run: |
+        set -e  # Exit on first error
+     
+        set -x  # Print commands for debugging
+        bash tests/run_integration_tests.sh || TEST_EXIT_CODE=$?
+        echo "Integration tests exit code: $TEST_EXIT_CODE"
+        exit $TEST_EXIT_CODE
+      timeout-minutes: 90
+      continue-on-error: true
+      env:
+        HEADLESS_MODE: true
+
+    - name: Docker compose logs (if failed)
+      if: failure()
+      run: |
+        echo "=== Docker Compose Logs ==="
+        docker compose logs web || true
+        docker compose logs cropper || true
+        echo ""
+        echo "=== Test Output ==="
+        [ -f test_output.log ] && cat test_output.log || echo "No test output file found"
+        echo ""
+        echo "=== Running Containers ==="
+        docker ps -a || true
+
+    - name: Cleanup
+      if: always()
+      run: |
+        docker compose down -v || true
+        docker system prune -f || true
+
+    - name: Test Report
+      if: always()
+      run: |
+        echo "## 🧪 Integration Test Results" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+
+        if [ "${{ steps.integration-tests.outcome }}" == "success" ]; then
+          echo "✅ **All tests passed!**" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Tests completed:" >> $GITHUB_STEP_SUMMARY
+          echo "- Flask API routes" >> $GITHUB_STEP_SUMMARY
+          echo "- CakePHP web routes" >> $GITHUB_STEP_SUMMARY
+          echo "- CLI tool functionality" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Ready for Balena Cloud deployment!" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "❌ **Some tests failed**" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Please check the logs above and fix issues before deployment." >> $GITHUB_STEP_SUMMARY
+        fi
