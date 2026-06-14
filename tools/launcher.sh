@@ -13,13 +13,13 @@ if [ -f /etc/os-release ]; then
     if [ "$ID" = "opensuse-tumbleweed" ] || [ "$ID" = "opensuse" ]; then
         if ! rpm -q libglib-2_0-0 Mesa-libGL1 >/dev/null 2>&1; then
             echo "--> [Tumbleweed] Installing missing system libraries..."
-            sudo zypper in -y libglib-2_0-0 Mesa-libGL1 libXrender1 libXext6
+            sudo zypper in -y libglib-2_0-0 Mesa-libGL1 libXrender1 libXext6 python3-devel
             sudo zypper in -t pattern devel_basis
         fi
     elif [ "$ID" = "ubuntu" ] || [ "$ID_LIKE" = "debian" ]; then
         if ! dpkg -s libglib2.0-0 libgl1-mesa-glx >/dev/null 2>&1; then
             echo "--> [Ubuntu] Installing missing system libraries..."
-            sudo apt-get update && sudo apt-get install -y libglib2.0-0 libgl1-mesa-glx build-essential
+            sudo apt-get update && sudo apt-get install -y libglib2.0-0 libgl1-mesa-glx build-essential python3-dev
         fi
     fi
 elif [ "$(uname)" = "Darwin" ]; then
