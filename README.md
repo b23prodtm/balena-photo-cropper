@@ -19,18 +19,19 @@ balenaCLI installed on your machine.
 
 A Raspberry Pi 3 (or higher).
 
+[![[Screen Shot](screenshot.png)]]
 📖 Usage
 
 Once deployed, enable the Public Device URL in your balenaCloud dashboard. Access the provided URL to start uploading your .jpg scans. You can also use the interactive tool in the tools/ folder for local manual cropping.
 
 ```bash Linux
-tools/launcher.sh interactive_cropper.py
+tools/launcher.sh tests/images/test_image.jpg --output result.jpg
 ```
 ```bash macOS
-tools/launcher.command
+tools/launcher.command tests/images/test_image.jpg --output result.jpg
 ```
 ```cmd windows
-tools/launcher.bat
+tools/launcher.bat tests/images/test_image.jpg --output result.jpg
 ```
 
 ## 🚀 Installation

@@ -13,7 +13,12 @@ if [ -f /etc/os-release ]; then
     if [ "$ID" = "opensuse-tumbleweed" ] || [ "$ID" = "opensuse" ]; then
         if ! rpm -q libglib-2_0-0 Mesa-libGL1 >/dev/null 2>&1; then
             echo "--> [Tumbleweed] Installing missing system libraries..."
-            sudo zypper in -y libglib-2_0-0 Mesa-libGL1 libXrender1 libXext6 python3-devel
+            sudo zypper in -y libglib-2_0-0 \
+			Mesa-libGL1 \
+			libXrender1 \
+			libXext6 \
+			python3-devel \
+			glib2-devel
             sudo zypper in -t pattern devel_basis
         fi
     elif [ "$ID" = "ubuntu" ] || [ "$ID_LIKE" = "debian" ]; then
@@ -38,4 +43,5 @@ echo "--> Installing pip dependencies (opencv, numpy)..."
 "$VENV_DIR/bin/pip" install -r "tools/requirements.txt"
 
 # 3. Hand over execution seamlessly to Python inside the venv
-exec "$VENV_DIR/bin/python" "$@"
+cd "$PROJECT_DIR"
+"$VENV_DIR/bin/python" ./tools/interactive_cropper.py "$@"
