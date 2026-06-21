@@ -65,6 +65,7 @@ jobs:
           
           docker buildx bake -f docker-bake.hcl \
             --set BALENA_ARCH=${BALENA_ARCH} \
+            --set BAKE_TAG=${BAKE_TAG} \
             --set "*.platform=${PLATFORM}" \
             --push
 
