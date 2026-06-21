@@ -13,6 +13,10 @@ variable "REGISTRY_IMAGE" {
   default = "bprtkop"
 }
 
+variable "BALENA_ARCH" {
+  default = "armhf"
+}
+
 variable "TAG" {
   default = ""
 }
