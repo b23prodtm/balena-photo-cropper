@@ -64,8 +64,8 @@ jobs:
           echo "${{ secrets.DB_PASSWORD }}" > .balena/secrets/db_password
           
           docker buildx bake -f docker-bake.hcl \
-            --set BALENA_ARCH=${BALENA_ARCH} \
-            --set BAKE_TAG=${BAKE_TAG} \
+            --set "*.dockerfile=Dockerfile.${BALENA_ARCH}" \
+            --set "BAKE_TAG=${BAKE_TAG}" \
             --set "*.platform=${PLATFORM}" \
             --push
 
