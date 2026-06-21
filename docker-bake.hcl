@@ -13,10 +13,6 @@ variable "REGISTRY_IMAGE" {
   default = "bprtkop"
 }
 
-variable "BALENA_ARCH" {
-  default = "armhf"
-}
-
 variable "BAKE_TAG" {
   default = ""
 }
@@ -51,7 +47,7 @@ target "cropper" {
   
   # Context: ./cropper (NOT ./services/cropper/)
   context = "./cropper"
-  dockerfile = "Dockerfile.${BALENA_ARCH}"
+  dockerfile = "Dockerfile"
   
   args = {
     BUILDKIT_CONTEXT_KEEP_GIT_DIR = 1
@@ -75,7 +71,7 @@ target "web" {
   
   # Context: ./web (NOT ./services/web/)
   context = "./web"
-  dockerfile = "Dockerfile.${BALENA_ARCH}"
+  dockerfile = "Dockerfile"
   
   args = {
     BUILDKIT_CONTEXT_KEEP_GIT_DIR = 1
@@ -106,7 +102,7 @@ target "nginx" {
   
   # Context: ./nginx (NOT ./services/nginx/)
   context = "./nginx"
-  dockerfile = "Dockerfile.${BALENA_ARCH}"
+  dockerfile = "Dockerfile"
   
   tags = [
     "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-nginx:latest",
@@ -124,7 +120,7 @@ target "nginx" {
 
 target "db" {
   context    = "./mysqldb"
-  dockerfile = "Dockerfile.${BALENA_ARCH}"
+  dockerfile = "Dockerfile"
 
   tags       = [
     "${REGISTRY_IMAGE}/mysqldb:latest",
