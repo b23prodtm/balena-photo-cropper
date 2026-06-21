@@ -47,7 +47,7 @@ target "cropper" {
   
   # Context: ./cropper (NOT ./services/cropper/)
   context = "./cropper"
-  dockerfile = "Dockerfile"
+  dockerfile = "Dockerfile.${BALENA_ARCH}"
   
   args = {
     BUILDKIT_CONTEXT_KEEP_GIT_DIR = 1
@@ -71,7 +71,7 @@ target "web" {
   
   # Context: ./web (NOT ./services/web/)
   context = "./web"
-  dockerfile = "Dockerfile"
+  dockerfile = "Dockerfile.${BALENA_ARCH}"
   
   args = {
     BUILDKIT_CONTEXT_KEEP_GIT_DIR = 1
@@ -87,6 +87,11 @@ target "web" {
   
   # Force dependency to ensure ordered builds
   depends_on = ["cropper"]
+  
+  secret = [
+    "id=db_root_password,src=.balena/secrets/db_root_password",
+    "id=db_password,src=.balena/secrets/db_password",
+  ]
 }
 
 # ============================================================================
@@ -97,7 +102,7 @@ target "nginx" {
   
   # Context: ./nginx (NOT ./services/nginx/)
   context = "./nginx"
-  dockerfile = "Dockerfile"
+  dockerfile = "Dockerfile.${BALENA_ARCH}"
   
   tags = [
     "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-nginx:latest",
@@ -109,7 +114,27 @@ target "nginx" {
   
   depends_on = ["web"]
 }
+# ============================================================================
+# DB SERVICE - Maria DB database
+# ============================================================================
 
+target "db" {
+  context    = "./mysqldb"
+  dockerfile = "Dockerfile.${BALENA_ARCH}"
+
+  tags       = [
+    "${DOCKER_ORG}/mysqldb:latest",
+    "${DOCKER_ORG}/mysqldb:${BAKE_TAG}"
+  ]
+  args = {
+    PUID = "1000"
+    PGID = "1000"
+  }
+  secret = [
+    "id=db_root_password,src=.balena/secrets/db_root_password",
+    "id=db_password,src=.balena/secrets/db_password",
+  ]
+}
 # ============================================================================
 # MATRIX BUILDS - Different configurations
 # ============================================================================
