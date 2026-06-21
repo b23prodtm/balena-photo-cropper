@@ -10,7 +10,7 @@ WORKDIR /app
 # CRITICAL: Install system dependencies BEFORE pip install
 # This is the KEY to fixing "libpng16.so.16: cannot open shared object file"
 # ============================================================================
-RUN RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     libopenblas-dev \
     libblas-dev \
     liblapack-dev \
