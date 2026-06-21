@@ -123,8 +123,8 @@ target "db" {
   dockerfile = "Dockerfile.${BALENA_ARCH}"
 
   tags       = [
-    "${DOCKER_ORG}/mysqldb:latest",
-    "${DOCKER_ORG}/mysqldb:${BAKE_TAG}"
+    "${REGISTRY_IMAGE}/mysqldb:latest",
+    "${REGISTRY_IMAGE}/mysqldb:${BAKE_TAG}"
   ]
   args = {
     PUID = "1000"
