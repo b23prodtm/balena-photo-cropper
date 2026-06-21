@@ -17,7 +17,7 @@ variable "BALENA_ARCH" {
   default = "armhf"
 }
 
-variable "TAG" {
+variable "BAKE_TAG" {
   default = ""
 }
 
@@ -60,7 +60,7 @@ target "cropper" {
   # Multi-tag strategy
   tags = [
     "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-api:latest",
-    TAG != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-api:${replace(TAG, "/", "-")}" : "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-api:v1.2.0",
+    BAKE_TAG != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-api:${replace(BAKE_TAG, "/", "-")}" : "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-api:latest",
     GIT_SHA != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-api:${GIT_SHA}" : "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-api:latest"
   ]
   
@@ -83,7 +83,7 @@ target "web" {
   
   tags = [
     "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-web:latest",
-    TAG != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-web:${replace(TAG, "/", "-")}" : "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-web:v1.2.0",
+    BAKE_TAG != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-web:${replace(BAKE_TAG, "/", "-")}" : "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-web:latest",
     GIT_SHA != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-web:${GIT_SHA}" : "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-web:latest"
   ]
   
@@ -110,7 +110,7 @@ target "nginx" {
   
   tags = [
     "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-nginx:latest",
-    TAG != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-nginx:${replace(TAG, "/", "-")}" : "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-nginx:v1.2.0",
+    BAKE_TAG != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-nginx:${replace(BAKE_TAG, "/", "-")}" : "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-nginx:latest",
     GIT_SHA != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-nginx:${GIT_SHA}" : "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-nginx:latest"
   ]
   
@@ -128,7 +128,8 @@ target "db" {
 
   tags       = [
     "${REGISTRY_IMAGE}/mysqldb:latest",
-    "${REGISTRY_IMAGE}/mysqldb:${BAKE_TAG}"
+    BAKE_TAG != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-db:${replace(BAKE_TAG, "/", "-")}" : "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-db:latest",
+    GIT_SHA != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-db:${GIT_SHA}" : "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-db:latest"
   ]
   args = {
     PUID = "1000"
