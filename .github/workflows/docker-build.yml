@@ -27,8 +27,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:     
-        #arch: [ x86_64, aarch64 ]
-        arch: [ armhf ]
+        arch: [ x86_64, aarch64, armhf ]
     steps:
       - uses: actions/checkout@v4
       - name: Enable QEMU
@@ -113,7 +112,7 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `## ✅ Docker Build Results\n\n**PR:** #${{ steps.meta.outputs.PR_NUMBER }}\n**Commit:** ${{ steps.meta.outputs.SHORT_SHA }}\n**Status:** Build successful (AMD64 testing)\n\nFull multi-platform manifest will be created when merged to main.`
+              body: `## ✅ Docker Build Results\n\n**PR:** #${{ steps.meta.outputs.PR_NUMBER }}\n**Commit:** ${{ steps.meta.outputs.SHORT_SHA }}\n**Status:** Build successful)\n\nFull multi-platform manifest will be created when merged to main.`
             })
 
       - name: Verify manifests
