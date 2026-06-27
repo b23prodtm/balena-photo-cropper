@@ -3,5 +3,5 @@
 
 
 "balena-cloud-apps@file:../../../../usr/local/lib/node_modules/balena-cloud-apps":
-  version "1.2.2"
+  version "1.2.4"
   resolved "file:../../../../usr/local/lib/node_modules/balena-cloud-apps"
