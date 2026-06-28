@@ -78,7 +78,7 @@ jobs:
           push: true
           set: |
             *.platform=${{ steps.balena.outputs.platform }}
-            *.args.DOCKERFILE=${{ steps.balena.outputs.dockerfile }}
+            *.dockerfile=${{ steps.balena.outputs.dockerfile }}
             *.args.BAKE_TAG=${{ steps.balena.outputs.bake_tag }}
             *.args.GITHUB_SHA=${{ steps.balena.outputs.github_sha }}
             *.cache-from=type=gha
