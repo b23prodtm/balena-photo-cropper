@@ -2,7 +2,7 @@
   "name": "balena-photo-cropper",
   "packageManager": "yarn@4.17.0",
   "dependencies": {
-    "balena-cloud-apps": "^1.2.2"
+    "balena-cloud-apps": "^1.2.4"
   },
   "version": "1.0.0",
   "description": "Balena Photo Cropper is a multi-container solution for Raspberry Pi 3 designed to automate the process of cropping scanned analog photo contact sheets.",
