@@ -55,7 +55,7 @@ echo "🔄 Creating and pushing multi-platform manifests for ALL services"
 echo "   REGISTRY=${REGISTRY}"
 echo "   IMAGE=${REGISTRY_IMAGE}"
 echo "   TAG=${BAKE_TAG}"
-echo "   GITHUB_SHA="${GITHUB_SHA}"
+echo "   GITHUB_SHA=${GITHUB_SHA}"
 echo ""
 
 for SERVICE in "${BALENA_PROJECTS[@]}"; do
