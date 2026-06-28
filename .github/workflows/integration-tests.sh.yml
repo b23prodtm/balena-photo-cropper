@@ -106,7 +106,7 @@ jobs:
         load: true
         set: |
           *.platform=linux/amd64
-          *.args.DOCKERFILE=Dockerfile.x86_64
+          *.dockerfile=Dockerfile.x86_64
 
     - name: Start docker compose stack
       run: |
