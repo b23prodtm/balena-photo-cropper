@@ -68,6 +68,8 @@ jobs:
             --set "*.platform=${PLATFORM}" \
             --push
       - name: Push multi-platform manifests
+        env:
+          BAKE_TAG: ${{ steps.sanitize.outputs.tag }}
         run: |
           if "./manifest-push.sh"; then
               echo "✅ All manifests pushed successfully"
