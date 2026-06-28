@@ -97,22 +97,46 @@ jobs:
         DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
         DB_ROOT_PASSWORD: ${{ secrets.DB_ROOT_PASSWORD }}
 
+    - name: Build linux/amd64 services with Bake
+      uses: docker/bake-action@v5
+      with:
+        files: |
+          ./docker-bake.hcl
+        targets: default
+        load: true
+        set: |
+          *.platform=linux/amd64
+          *.args.DOCKERFILE=Dockerfile.x86_64
+
+    - name: Start docker compose stack
+      run: |
+        docker compose up -d
+        docker compose ps
+
     - name: Run integration tests
       id: integration-tests
-      run: |
-        set -e  # Exit on first error
-     
-        set -x  # Print commands for debugging
-        bash tests/run_integration_tests.sh || TEST_EXIT_CODE=$?
-        echo "Integration tests exit code: $TEST_EXIT_CODE"
-        exit $TEST_EXIT_CODE
-      timeout-minutes: 90
       continue-on-error: true
+      run: |
+        set +e
+
+        bash tests/run_integration_tests.sh > test_output.log 2>&1
+        TEST_EXIT_CODE=$?
+
+        echo "Integration tests exit code: ${TEST_EXIT_CODE}"
+
+        if [ "${TEST_EXIT_CODE}" != "0" ]; then
+          echo "❌ Integration tests failed"
+          exit ${TEST_EXIT_CODE}
+        fi
+
+        echo "✅ Integration tests passed"
+        exit 0
+      timeout-minutes: 90
       env:
         HEADLESS_MODE: true
 
-    - name: Docker compose logs (if failed)
-      if: failure()
+    - name: Docker compose logs
+      if: always()
       run: |
         echo "=== Docker Compose Logs ==="
         docker compose logs web || true
@@ -123,6 +147,12 @@ jobs:
         echo ""
         echo "=== Running Containers ==="
         docker ps -a || true
+
+    - name: Capture failure result
+      if: steps.integration-tests.outcome == 'failure'
+      run: |
+        echo "Integration test failure detected"
+        docker compose logs --no-color > docker-compose-failure.log || true
 
     - name: Cleanup
       if: always()
