@@ -15,7 +15,7 @@ RUN apt-get update && \
         libsm6 \
         libxext6 \
         libxrender1 \
-        libpng16-16 \
+        libpng16-16t64 \
         libjpeg62-turbo \
         libfreetype6 \
         libharfbuzz0b \
