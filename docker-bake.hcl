@@ -118,14 +118,14 @@ target "nginx" {
 # DB SERVICE - Maria DB database
 # ============================================================================
 
-target "db" {
+target "mysqldb" {
   context    = "./mysqldb"
   dockerfile = "Dockerfile"
 
   tags       = [
     "${REGISTRY_IMAGE}/mysqldb:latest",
-    BAKE_TAG != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-db:${replace(BAKE_TAG, "/", "-")}" : "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-db:latest",
-    GIT_SHA != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-db:${GIT_SHA}" : "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-db:latest"
+    BAKE_TAG != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-mysqldb:${replace(BAKE_TAG, "/", "-")}" : "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-mysqldb:latest",
+    GIT_SHA != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-mysqldb:${GIT_SHA}" : "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-mysqldb:latest"
   ]
   args = {
     PUID = "1000"
@@ -142,7 +142,7 @@ target "db" {
 
 # Build for testing locally (arm/v7 only, for Raspberry Pi)
 group "rpi" {
-  targets = ["cropper-rpi", "web-rpi", "nginx-rpi"]
+  targets = ["cropper-rpi", "web-rpi", "nginx-rpi", "mysqlb-rpi"]
 }
 
 target "cropper-rpi" {
@@ -157,6 +157,11 @@ target "web-rpi" {
 
 target "nginx-rpi" {
   inherits = ["nginx"]
+  platforms = ["linux/arm/v7"]
+}
+
+target "mysqldb-rpi" {
+  inherits = ["mysqldb"]
   platforms = ["linux/arm/v7"]
 }
 
@@ -180,6 +185,11 @@ target "nginx-rpi64" {
   platforms = ["linux/arm64"]
 }
 
+target "mysqldb-rpi64" {
+  inherits = ["mysqldb"]
+  platforms = ["linux/arm64"]
+}
+
 # Build for AMD64 only (local development)
 group "amd64-only" {
   targets = ["cropper-amd64", "web-amd64", "nginx-amd64"]
@@ -197,5 +207,10 @@ target "web-amd64" {
 
 target "nginx-amd64" {
   inherits = ["nginx"]
+  platforms = ["linux/amd64"]
+}
+
+target "mysqldb-amd64" {
+  inherits = ["mysqldb"]
   platforms = ["linux/amd64"]
 }

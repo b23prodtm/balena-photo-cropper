@@ -61,7 +61,7 @@ services:
       - cakephp-network
 
   # --- MariaDB ---
-  db:
+  mysqldb:
     build:
       context: ./mysqldb
       dockerfile: Dockerfile.armhf
