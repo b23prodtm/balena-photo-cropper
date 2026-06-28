@@ -32,7 +32,7 @@ source "${TOPDIR}/common.env"
 # ============================================================================
 
 BAKE_TAG="${BAKE_TAG:-$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo 'unknown')}"
-GIT_SHA="${GIT_SHA:-$(git rev-parse --short=7 HEAD 2>/dev/null || echo 'unknown')}"
+GITHUB_SHA="${GITHUB_SHA:-$(git rev-parse --short=7 HEAD 2>/dev/null || echo 'unknown')}"
 
 # ============================================================================
 # VALIDATIONS
@@ -41,9 +41,9 @@ GIT_SHA="${GIT_SHA:-$(git rev-parse --short=7 HEAD 2>/dev/null || echo 'unknown'
 : "${REGISTRY?Erreur: REGISTRY non défini}"
 : "${REGISTRY_IMAGE?Erreur: REGISTRY_IMAGE non défini}"
 
-if [[ "${BAKE_TAG}" == "unknown" || "${GIT_SHA}" == "unknown" ]]; then
+if [[ "${BAKE_TAG}" == "unknown" || "${GITHUB_SHA}" == "unknown" ]]; then
     echo "⚠️  Avertissement: Git info manquante (repo détaché ou git absent)"
-    echo "   BAKE_TAG=${BAKE_TAG}, GIT_SHA=${GIT_SHA}"
+    echo "   BAKE_TAG=${BAKE_TAG}, GITHUB_SHA=${GITHUB_SHA:0:7}"
 fi
 
 # ============================================================================
@@ -55,6 +55,7 @@ echo "🔄 Creating and pushing multi-platform manifests for ALL services"
 echo "   REGISTRY=${REGISTRY}"
 echo "   IMAGE=${REGISTRY_IMAGE}"
 echo "   TAG=${BAKE_TAG}"
+echo "   GITHUB_SHA="${GITHUB_SHA}"
 echo ""
 
 for SERVICE in "${BALENA_PROJECTS[@]}"; do
@@ -65,26 +66,23 @@ for SERVICE in "${BALENA_PROJECTS[@]}"; do
     
     # Créer manifest avec toutes les platform images
     echo "  Creating manifest for ${BAKE_TAG}..."
-    docker manifest create \
-      "${IMAGE_BASE}:${BAKE_TAG}" \
-      "${IMAGE_BASE}:${BAKE_TAG}-amd64" \
-      "${IMAGE_BASE}:${BAKE_TAG}-arm32v7" \
-      "${IMAGE_BASE}:${BAKE_TAG}-arm64v8" \
+    docker manifest create "${IMAGE_BASE}:${BAKE_TAG}" \
+      "${IMAGE_BASE}:${GITHUB_SHA}" \
       || true  # Ignorer si manifest existe déjà
     
     # Annoter les architectures
     echo "  Annotating architectures..."
     
     docker manifest annotate "${IMAGE_BASE}:${BAKE_TAG}" \
-      "${IMAGE_BASE}:${BAKE_TAG}-amd64" \
+      "${IMAGE_BASE}:${GITHUB_SHA}" \
       --os linux --arch amd64
     
     docker manifest annotate "${IMAGE_BASE}:${BAKE_TAG}" \
-      "${IMAGE_BASE}:${BAKE_TAG}-arm32v7" \
+      "${IMAGE_BASE}:${GITHUB_SHA}" \
       --os linux --arch arm --variant v7
     
     docker manifest annotate "${IMAGE_BASE}:${BAKE_TAG}" \
-      "${IMAGE_BASE}:${BAKE_TAG}-arm64v8" \
+      "${IMAGE_BASE}:${GITHUB_SHA}" \
       --os linux --arch arm64 --variant v8
     
     # Push manifest
@@ -94,23 +92,21 @@ for SERVICE in "${BALENA_PROJECTS[@]}"; do
     # Push latest si on est sur main/master
     if [[ "${BAKE_TAG}" =~ ^(main|master)$ ]]; then
         echo "  Creating latest manifest..."
-        docker manifest create \
-          "${IMAGE_BASE}:latest" \
-          "${IMAGE_BASE}:${BAKE_TAG}-amd64" \
-          "${IMAGE_BASE}:${BAKE_TAG}-arm32v7" \
-          "${IMAGE_BASE}:${BAKE_TAG}-arm64v8" \
+        docker manifest create "${IMAGE_BASE}:latest" \
+          "${IMAGE_BASE}:${BAKE_TAG}" \
+          "${IMAGE_BASE}:${GITHUB_SHA}" \
           || true
         
         docker manifest annotate "${IMAGE_BASE}:latest" \
-          "${IMAGE_BASE}:${BAKE_TAG}-amd64" \
+          "${IMAGE_BASE}:${GITHUB_SHA}" \
           --os linux --arch amd64
         
         docker manifest annotate "${IMAGE_BASE}:latest" \
-          "${IMAGE_BASE}:${BAKE_TAG}-arm32v7" \
+          "${IMAGE_BASE}:${GITHUB_SHA}" \
           --os linux --arch arm --variant v7
         
         docker manifest annotate "${IMAGE_BASE}:latest" \
-          "${IMAGE_BASE}:${BAKE_TAG}-arm64v8" \
+          "${IMAGE_BASE}:${GITHUB_SHA}" \
           --os linux --arch arm64 --variant v8
         
         echo "  Pushing manifest latest..."
