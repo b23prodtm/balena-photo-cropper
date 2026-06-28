@@ -55,7 +55,6 @@ echo "🔄 Creating and pushing multi-platform manifests for ALL services"
 echo "   REGISTRY=${REGISTRY}"
 echo "   IMAGE=${REGISTRY_IMAGE}"
 echo "   TAG=${BAKE_TAG}"
-echo "   GITHUB_SHA=${GITHUB_SHA}"
 echo ""
 
 for SERVICE in "${BALENA_PROJECTS[@]}"; do
@@ -64,54 +63,60 @@ for SERVICE in "${BALENA_PROJECTS[@]}"; do
     
     echo "📦 Processing: ${SERVICE_NAME}"
     
-    # Créer manifest avec toutes les platform images
-    echo "  Creating manifest for ${BAKE_TAG}..."
-    docker manifest create "${IMAGE_BASE}:${BAKE_TAG}" \
-      || true  # Ignorer si manifest existe déjà
-    
-    # Annoter les architectures
-    echo "  Annotating architectures..."
-    
-    docker manifest annotate "${IMAGE_BASE}:${BAKE_TAG}" \
-      --os linux --arch amd64
-    
-    docker manifest annotate "${IMAGE_BASE}:${BAKE_TAG}" \
-      --os linux --arch arm --variant v7
-    
-    docker manifest annotate "${IMAGE_BASE}:${BAKE_TAG}" \
-      --os linux --arch arm64 --variant v8
-    
-    # Push manifest
-    echo "  Pushing manifest ${BAKE_TAG}..."
-    docker manifest push "${IMAGE_BASE}:${BAKE_TAG}"
-
-    echo "  Pushing manifest ${GITHUB_SHA}..."
-    docker manifest push "${IMAGE_BASE}:${GITHUB_SHA}"
-    
-    # Push latest si on est sur main/master
-    if [[ "${BAKE_TAG}" =~ ^(main|master)$ ]]; then
-        echo "  Creating latest manifest..."
-        docker manifest create "${IMAGE_BASE}:latest" \
-          || true
-        
-        docker manifest annotate "${IMAGE_BASE}:latest" \
-          "${IMAGE_BASE}:${BAKE_TAG}" \
-          --os linux --arch amd64
-        
-        docker manifest annotate "${IMAGE_BASE}:latest" \
-          "${IMAGE_BASE}:${BAKE_TAG}" \
-          --os linux --arch arm --variant v7
-        
-        docker manifest annotate "${IMAGE_BASE}:latest" \
-          "${IMAGE_BASE}:${BAKE_TAG}" \
-          --os linux --arch arm64 --variant v8
-        
-        echo "  Pushing manifest latest..."
-        docker manifest push "${IMAGE_BASE}:latest"
-    fi
-    
-    echo "  ✅ ${SERVICE_NAME} done"
-    echo ""
+    # Create manifest with all platform images
+          echo "  Creating manifest..."
+          docker manifest create \
+            ${IMAGE_BASE}:${TAG} \
+            ${IMAGE_BASE}:${TAG}-amd64 \
+            ${IMAGE_BASE}:${TAG}-arm32v7 \
+            ${IMAGE_BASE}:${TAG}-arm64v8 \
+            || true  # Ignore if manifest already exists
+          
+          # Annotate architectures
+          echo "  Annotating architectures..."
+          docker manifest annotate ${IMAGE_BASE}:${TAG} \
+            ${IMAGE_BASE}:${TAG}-amd64 \
+            --os linux --arch amd64
+          
+          docker manifest annotate ${IMAGE_BASE}:${TAG} \
+            ${IMAGE_BASE}:${TAG}-arm32v7 \
+            --os linux --arch arm --variant v7
+          
+          docker manifest annotate ${IMAGE_BASE}:${TAG} \
+            ${IMAGE_BASE}:${TAG}-arm64v8 \
+            --os linux --arch arm64 --variant v8
+          
+          # Push manifest
+          echo "  Pushing manifest..."
+          docker manifest push ${IMAGE_BASE}:${TAG}
+          
+          # Also push as latest if on main
+          if [[ "${TAG}" == "main" ]]; then
+            echo "  Creating latest manifest..."
+            docker manifest create \
+              ${IMAGE_BASE}:latest \
+              ${IMAGE_BASE}:${TAG}-amd64 \
+              ${IMAGE_BASE}:${TAG}-arm32v7 \
+              ${IMAGE_BASE}:${TAG}-arm64v8 \
+              || true
+            
+            docker manifest annotate ${IMAGE_BASE}:latest \
+              ${IMAGE_BASE}:${TAG}-amd64 \
+              --os linux --arch amd64
+            
+            docker manifest annotate ${IMAGE_BASE}:latest \
+              ${IMAGE_BASE}:${TAG}-arm32v7 \
+              --os linux --arch arm --variant v7
+            
+            docker manifest annotate ${IMAGE_BASE}:latest \
+              ${IMAGE_BASE}:${TAG}-arm64v8 \
+              --os linux --arch arm64 --variant v8
+            
+            docker manifest push ${IMAGE_BASE}:latest
+          fi
+          
+          echo "  ✅ $SERVICE done"
+          echo ""
 done
 
 echo "✅ All manifests pushed successfully"
