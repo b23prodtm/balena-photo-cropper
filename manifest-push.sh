@@ -67,46 +67,44 @@ for SERVICE in "${BALENA_PROJECTS[@]}"; do
     # Créer manifest avec toutes les platform images
     echo "  Creating manifest for ${BAKE_TAG}..."
     docker manifest create "${IMAGE_BASE}:${BAKE_TAG}" \
-      "${IMAGE_BASE}:${GITHUB_SHA}" \
+          "${IMAGE_BASE}:${GITHUB_SHA}" \
       || true  # Ignorer si manifest existe déjà
     
     # Annoter les architectures
     echo "  Annotating architectures..."
     
     docker manifest annotate "${IMAGE_BASE}:${BAKE_TAG}" \
-      "${IMAGE_BASE}:${GITHUB_SHA}" \
+          "${IMAGE_BASE}:${GITHUB_SHA}" \
       --os linux --arch amd64
     
     docker manifest annotate "${IMAGE_BASE}:${BAKE_TAG}" \
-      "${IMAGE_BASE}:${GITHUB_SHA}" \
+          "${IMAGE_BASE}:${GITHUB_SHA}" \
       --os linux --arch arm --variant v7
     
     docker manifest annotate "${IMAGE_BASE}:${BAKE_TAG}" \
-      "${IMAGE_BASE}:${GITHUB_SHA}" \
+          "${IMAGE_BASE}:${GITHUB_SHA}" \
       --os linux --arch arm64 --variant v8
     
     # Push manifest
     echo "  Pushing manifest ${BAKE_TAG}..."
     docker manifest push "${IMAGE_BASE}:${BAKE_TAG}"
+
+    echo "  Pushing manifest ${GITHUB_SHA}..."
+    docker manifest push "${IMAGE_BASE}:${GITHUB_SHA}"
     
     # Push latest si on est sur main/master
     if [[ "${BAKE_TAG}" =~ ^(main|master)$ ]]; then
         echo "  Creating latest manifest..."
         docker manifest create "${IMAGE_BASE}:latest" \
-          "${IMAGE_BASE}:${BAKE_TAG}" \
-          "${IMAGE_BASE}:${GITHUB_SHA}" \
           || true
         
         docker manifest annotate "${IMAGE_BASE}:latest" \
-          "${IMAGE_BASE}:${GITHUB_SHA}" \
           --os linux --arch amd64
         
         docker manifest annotate "${IMAGE_BASE}:latest" \
-          "${IMAGE_BASE}:${GITHUB_SHA}" \
           --os linux --arch arm --variant v7
         
         docker manifest annotate "${IMAGE_BASE}:latest" \
-          "${IMAGE_BASE}:${GITHUB_SHA}" \
           --os linux --arch arm64 --variant v8
         
         echo "  Pushing manifest latest..."
