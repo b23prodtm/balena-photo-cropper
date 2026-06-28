@@ -26,8 +26,6 @@ jobs:
     
     strategy:
       fail-fast: false
-      matrix:     
-        arch: [ x86_64, aarch64, armhf ]
     steps:
       - uses: actions/checkout@v4
       - name: Enable QEMU
