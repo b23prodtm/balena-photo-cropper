@@ -67,22 +67,18 @@ for SERVICE in "${BALENA_PROJECTS[@]}"; do
     # Créer manifest avec toutes les platform images
     echo "  Creating manifest for ${BAKE_TAG}..."
     docker manifest create "${IMAGE_BASE}:${BAKE_TAG}" \
-          "${IMAGE_BASE}:${GITHUB_SHA}" \
       || true  # Ignorer si manifest existe déjà
     
     # Annoter les architectures
     echo "  Annotating architectures..."
     
     docker manifest annotate "${IMAGE_BASE}:${BAKE_TAG}" \
-          "${IMAGE_BASE}:${GITHUB_SHA}" \
       --os linux --arch amd64
     
     docker manifest annotate "${IMAGE_BASE}:${BAKE_TAG}" \
-          "${IMAGE_BASE}:${GITHUB_SHA}" \
       --os linux --arch arm --variant v7
     
     docker manifest annotate "${IMAGE_BASE}:${BAKE_TAG}" \
-          "${IMAGE_BASE}:${GITHUB_SHA}" \
       --os linux --arch arm64 --variant v8
     
     # Push manifest
@@ -99,12 +95,15 @@ for SERVICE in "${BALENA_PROJECTS[@]}"; do
           || true
         
         docker manifest annotate "${IMAGE_BASE}:latest" \
+          "${IMAGE_BASE}:${BAKE_TAG}" \
           --os linux --arch amd64
         
         docker manifest annotate "${IMAGE_BASE}:latest" \
+          "${IMAGE_BASE}:${BAKE_TAG}" \
           --os linux --arch arm --variant v7
         
         docker manifest annotate "${IMAGE_BASE}:latest" \
+          "${IMAGE_BASE}:${BAKE_TAG}" \
           --os linux --arch arm64 --variant v8
         
         echo "  Pushing manifest latest..."
