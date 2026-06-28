@@ -39,37 +39,44 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Sanitize ref name for Docker tag
-        id: sanitize
+
+      - name: Extract metadata
+        id: meta
         run: |
-          RAW="${{ github.ref_name }}"
-          TAG=$(echo "$RAW" | tr '[:upper:]' '[:lower:]')
-          TAG=$(echo "$TAG" | sed 's/[^a-z0-9._-]/-/g')
-          echo "tag=$TAG" >> $GITHUB_OUTPUT
-      - name: Build docker-compose stack
+          SHORT_SHA=${GITHUB_SHA:0:7}
+          echo "SHORT_SHA=${SHORT_SHA}" >> $GITHUB_OUTPUT
+          echo "BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
+          
+          # PR build: Add PR reference
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            PR_NUMBER=${{ github.event.pull_request.number }}
+            echo "PR_NUMBER=${PR_NUMBER}" >> $GITHUB_OUTPUT
+            echo "TAG_SUFFIX=pr-${PR_NUMBER}" >> $GITHUB_OUTPUT
+            echo "PUSH_ENABLED=false" >> $GITHUB_OUTPUT
+          else
+            echo "TAG_SUFFIX=latest" >> $GITHUB_OUTPUT
+            echo "PUSH_ENABLED=true" >> $GITHUB_OUTPUT
+          fi
+      - name: Build with Bake (each platform separately)
+        uses: docker/bake-action@v5
+        with:
+          workdir: .
+          files: |
+            ./docker-bake.hcl
+          targets: default
+          push: ${{ github.event_name != 'pull_request' }}
+          set: |
+            *.args.BUILD_DATE=${{ steps.meta.outputs.BUILD_DATE }}
+            *.args.VCS_REF=${{ steps.meta.outputs.SHORT_SHA }}
+            *.cache-from=type=gha
+            *.cache-to=type=gha,mode=max
         env:
-          BALENA_ARCH: ${{ matrix.arch }}
-          BAKE_TAG: ${{ steps.sanitize.outputs.tag }}
-        run: |
-          case "${BALENA_ARCH}" in
-            "armhf")    export PLATFORM="linux/arm/v7"  ;;
-            "aarch64")  export PLATFORM="linux/arm64"   ;;
-            "x86_64")   export PLATFORM="linux/amd64"   ;;
-            *)          export PLATFORM="linux/$(uname -m)" ;;
-          esac
-          ln -sf "${BALENA_ARCH}.env" ".env"
-          cp -vf "docker-compose.${BALENA_ARCH}" "docker-compose.yml"       
+          GIT_SHA: ${{ github.sha }}
+          TAG: ${{ github.ref_name }}
           
-          echo "${{ secrets.DB_ROOT_PASSWORD }}" > .balena/secrets/db_root_password
-          echo "${{ secrets.DB_PASSWORD }}" > .balena/secrets/db_password
-          
-          docker buildx bake -f docker-bake.hcl \
-            --set "*.dockerfile=Dockerfile.${BALENA_ARCH}" \
-            --set "*.platform=${PLATFORM}" \
-            --push
       - name: Push multi-platform manifests
         env:
-          BAKE_TAG: ${{ steps.sanitize.outputs.tag }}
+          BAKE_TAG: ${{ github.ref_name }}
         run: |
           if "./manifest-push.sh"; then
               echo "✅ All manifests pushed successfully"
