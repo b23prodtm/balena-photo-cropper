@@ -72,11 +72,12 @@ jobs:
             *.cache-from=type=gha
             *.cache-to=type=gha,mode=max
         env:
-          GIT_SHA: ${{ github.sha }}
-          TAG: ${{ github.ref_name }}
+          GITHUB_SHA: ${{ github.sha }}
+          BAKE_TAG: ${{ github.ref_name }}
           
       - name: Push multi-platform manifests
         env:
+          GITHUB_SHA: ${{ github.sha }}
           BAKE_TAG: ${{ github.ref_name }}
         run: |
           if "./manifest-push.sh"; then
