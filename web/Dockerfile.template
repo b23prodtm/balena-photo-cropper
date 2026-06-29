@@ -67,6 +67,14 @@ RUN if [ -f composer.json ]; then \
         composer install --no-dev --optimize-autoloader --no-interaction; \
     fi
 
+RUN \
+# BEGIN DOCKER_BUILDKIT
+    --mount=type=secret,id=db_password \
+    --mount=type=secret,id=db_root_password \
+    # END DOCKER_BUILDKIT
+    export MYSQL_PASSWORD=$(cat /run/secrets/DB_PASSWORD) && \
+    export MYSQL_ROOT_PASSWORD=$(cat /run/secrets/DB_ROOT_PASSWORD)
+
 EXPOSE 9000
 
 # Health check - verify PHP-FPM is working
