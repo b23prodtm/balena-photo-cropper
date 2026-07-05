@@ -137,7 +137,7 @@ target "mysqldb" {
 
 # Build for testing locally (arm/v7 only, for Raspberry Pi)
 group "armhf" {
-  targets = ["cropper-armhf", "web-armhf", "nginx-armhf", "mysqlb-armhf"]
+  targets = ["cropper-armhf", "web-armhf", "nginx-armhf", "mysqldb-armhf"]
 }
 
 target "cropper-armhf" {
