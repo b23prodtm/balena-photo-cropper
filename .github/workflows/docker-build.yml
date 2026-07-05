@@ -51,12 +51,13 @@ jobs:
       - name: Load Balena architecture
         id: balena
         run: |
-          source ./${{ matrix.balena_arch }}.env
 
-          echo "balena_arch=${BALENA_ARCH}" >> $GITHUB_OUTPUT
-          echo "platform=${PLATFORM}" >> $GITHUB_OUTPUT
+          # Source your env file
+          source "./${{ matrix.balena_arch }}.env"
+
+          # Write to GITHUB_OUTPUT
+          echo "balena_arch=${{ matrix.balena_arch }}" >> "$GITHUB_OUTPUT"
           echo "bake_tag=${{ steps.ref.outputs.safe_ref }}.${BALENA_ARCH}" >> $GITHUB_OUTPUT
-          echo "dockerfile=Dockerfile.${BALENA_ARCH}" >> $GITHUB_OUTPUT
 
       - name: Enable QEMU
         uses: docker/setup-qemu-action@v3
@@ -74,13 +75,9 @@ jobs:
         uses: docker/bake-action@v5
         with:
           files: ./docker-bake.hcl
-          targets: default
+          targets: ${{ steps.balena.outputs.balena_arch }}
           push: true
           set: |
-            *.platform=${{ steps.balena.outputs.platform }}
-            *.dockerfile=${{ steps.balena.outputs.dockerfile }}
-            *.args.BAKE_TAG=${{ steps.balena.outputs.bake_tag }}
-            *.args.GITHUB_SHA=${{ steps.balena.outputs.github_sha }}
             *.cache-from=type=gha
             *.cache-to=type=gha,mode=max
           

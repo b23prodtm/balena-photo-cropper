@@ -108,11 +108,8 @@ jobs:
       with:
         files: |
           ./docker-bake.hcl
-        targets: default
+        targets: x86_64
         load: true
-        set: |
-          *.platform=linux/amd64
-          *.dockerfile=Dockerfile.x86_64
 
     - name: Start docker compose stack
       run: |

@@ -74,6 +74,8 @@ else
     echo "⚠️  Pas de fichier %%BALENA_ARCH%%.env trouvé"
 fi
 
+source "${CURRENT_DIR}/.env"
+
 # ============================================================================
 # BUILD MULTI-PLATFORM - via docker buildx bake (service courant)
 # ============================================================================
@@ -83,14 +85,12 @@ echo "   TAG=${BAKE_TAG}"
 echo "   SHA=${GIT_SHA}"
 echo ""
 
-# Target docker-bake: utiliser SERVICE, sauf mysqldb → db
 TARGET="${SERVICE}"
 
 # Lancer le build depuis TOPDIR pour avoir accès au docker-bake.hcl
 cd "${TOPDIR}"
 docker buildx bake -f docker-bake.hcl \
-  --set "*.platform=%%PLATFORM%%" \
-  --set "*.dockerfile=Dockerfile.%%BALENA_ARCH%%" \
+  --set targets="%%BALENA_ARCH%%" \
   --push \
   "${TARGET}"
 

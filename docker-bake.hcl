@@ -2,7 +2,7 @@
 # Structure: ./cropper, ./web, ./nginx (pas services/)
 
 group "default" {
-  targets = ["cropper", "web", "nginx"]
+  targets = ["cropper-x86_64", "web-x86_64", "nginx-x86_64", "mysqldb-x86_64"]
 }
 
 variable "REGISTRY" {
@@ -22,7 +22,6 @@ variable "GITHUB_SHA" {
 }
 
 target "common" {
-  context = "."
   
   # Multi-platform support: amd64, arm/v7 (Raspberry Pi 32-bit), arm64 (Pi 4B 64-bit)
   platforms = [
@@ -47,7 +46,6 @@ target "cropper" {
   
   # Context: ./cropper (NOT ./services/cropper/)
   context = "./cropper"
-  dockerfile = "Dockerfile"
   
   args = {
     BUILDKIT_CONTEXT_KEEP_GIT_DIR = 1
@@ -71,7 +69,6 @@ target "web" {
   
   # Context: ./web (NOT ./services/web/)
   context = "./web"
-  dockerfile = "Dockerfile"
   
   args = {
     BUILDKIT_CONTEXT_KEEP_GIT_DIR = 1
@@ -102,7 +99,6 @@ target "nginx" {
   
   # Context: ./nginx (NOT ./services/nginx/)
   context = "./nginx"
-  dockerfile = "Dockerfile"
   
   tags = [
     "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-nginx:latest",
@@ -120,7 +116,6 @@ target "nginx" {
 
 target "mysqldb" {
   context    = "./mysqldb"
-  dockerfile = "Dockerfile"
 
   tags       = [
     "${REGISTRY_IMAGE}/mysqldb:latest",
@@ -141,76 +136,88 @@ target "mysqldb" {
 # ============================================================================
 
 # Build for testing locally (arm/v7 only, for Raspberry Pi)
-group "rpi" {
-  targets = ["cropper-rpi", "web-rpi", "nginx-rpi", "mysqlb-rpi"]
+group "armhf" {
+  targets = ["cropper-armhf", "web-armhf", "nginx-armhf", "mysqlb-armhf"]
 }
 
-target "cropper-rpi" {
+target "cropper-armhf" {
   inherits = ["cropper"]
   platforms = ["linux/arm/v7"]
+  dockerfile = "Dockerfile.armhf"
 }
 
-target "web-rpi" {
+target "web-armhf" {
   inherits = ["web"]
   platforms = ["linux/arm/v7"]
+  dockerfile = "Dockerfile.armhf"
 }
 
-target "nginx-rpi" {
+target "nginx-armhf" {
   inherits = ["nginx"]
   platforms = ["linux/arm/v7"]
+  dockerfile = "Dockerfile.armhf"
 }
 
-target "mysqldb-rpi" {
+target "mysqldb-armhf" {
   inherits = ["mysqldb"]
   platforms = ["linux/arm/v7"]
+  dockerfile = "Dockerfile.armhf"
 }
 
 # Build for testing locally (arm64 only, for Raspberry Pi 3-4-5)
-group "rpi64" {
-  targets = ["cropper-rpi64", "web-rpi64", "nginx-rpi64"]
+group "aarch64" {
+  targets = ["cropper-aarch64", "web-aarch64", "nginx-aarch64", "mysqldb-aarch64"]
 }
 
-target "cropper-rpi64" {
+target "cropper-aarch64" {
   inherits = ["cropper"]
   platforms = ["linux/arm64"]
+  dockerfile = "Dockerfile.aarch64"
 }
 
-target "web-rpi64" {
+target "web-aarch64" {
   inherits = ["web"]
   platforms = ["linux/arm64"]
+  dockerfile = "Dockerfile.aarch64"
 }
 
-target "nginx-rpi64" {
+target "nginx-aarch64" {
   inherits = ["nginx"]
   platforms = ["linux/arm64"]
+  dockerfile = "Dockerfile.aarch64"
 }
 
-target "mysqldb-rpi64" {
+target "mysqldb-aarch64" {
   inherits = ["mysqldb"]
   platforms = ["linux/arm64"]
+  dockerfile = "Dockerfile.aarch64"
 }
 
-# Build for AMD64 only (local development)
-group "amd64-only" {
-  targets = ["cropper-amd64", "web-amd64", "nginx-amd64"]
+# Build for AMD64  (local development)
+group "x86_64" {
+  targets = ["cropper-x86_64", "web-x86_64", "nginx-x86_64", "mysqldb-x86_64"]
 }
 
-target "cropper-amd64" {
+target "cropper-x86_64" {
   inherits = ["cropper"]
   platforms = ["linux/amd64"]
+  dockerfile = "Dockerfile.x86_64"
 }
 
-target "web-amd64" {
+target "web-x86_64" {
   inherits = ["web"]
   platforms = ["linux/amd64"]
+  dockerfile = "Dockerfile.x86_64"
 }
 
-target "nginx-amd64" {
+target "nginx-x86_64" {
   inherits = ["nginx"]
   platforms = ["linux/amd64"]
+  dockerfile = "Dockerfile.x86_64"
 }
 
-target "mysqldb-amd64" {
+target "mysqldb-x86_64" {
   inherits = ["mysqldb"]
   platforms = ["linux/amd64"]
+  dockerfile = "Dockerfile.x86_64"
 }

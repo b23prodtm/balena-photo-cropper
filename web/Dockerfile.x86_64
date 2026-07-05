@@ -75,7 +75,6 @@ RUN \
     export MYSQL_PASSWORD=$(cat /run/secrets/DB_PASSWORD) && \
     export MYSQL_ROOT_PASSWORD=$(cat /run/secrets/DB_ROOT_PASSWORD)
 
-
 EXPOSE 9000
 
 # Health check - verify PHP-FPM is working

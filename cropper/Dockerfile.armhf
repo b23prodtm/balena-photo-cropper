@@ -1,5 +1,5 @@
 FROM python:3.11-slim
-ENV QT_QPA_PLATFORM=offscreen \
+ENV QT_QPA_PLATFORM=linux/arm/v7 \
     PIP_NO_CACHE_DIR=1
 
 WORKDIR /app
