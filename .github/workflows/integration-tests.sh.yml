@@ -113,7 +113,7 @@ jobs:
 
     - name: Start docker compose stack
       run: |
-        cp -vf docker-compose.x86_64 docker-conpose.yml
+        cp -vf docker-compose.x86_64 docker-compose.yml
         docker compose up -d
         docker compose ps
 
