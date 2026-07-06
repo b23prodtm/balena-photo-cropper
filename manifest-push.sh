@@ -54,7 +54,7 @@ echo ""
 echo "🔄 Creating and pushing multi-platform manifests for ALL services"
 echo "   REGISTRY=${REGISTRY}"
 echo "   IMAGE=${REGISTRY_IMAGE}"
-echo "   TAG=${BAKE_TAG}"
+echo "   BAKE_TAG=${BAKE_TAG}"
 echo ""
 
 for SERVICE in "${BALENA_PROJECTS[@]}"; do
@@ -66,50 +66,50 @@ for SERVICE in "${BALENA_PROJECTS[@]}"; do
     # Create manifest with all platform images
           echo "  Creating manifest..."
           docker manifest create \
-            ${IMAGE_BASE}:${TAG} \
-            ${IMAGE_BASE}:${TAG}-amd64 \
-            ${IMAGE_BASE}:${TAG}-arm32v7 \
-            ${IMAGE_BASE}:${TAG}-arm64v8 \
+            ${IMAGE_BASE}:${BAKE_TAG} \
+            ${IMAGE_BASE}:${BAKE_TAG}-amd64 \
+            ${IMAGE_BASE}:${BAKE_TAG}-arm32v7 \
+            ${IMAGE_BASE}:${BAKE_TAG}-arm64v8 \
             || true  # Ignore if manifest already exists
           
           # Annotate architectures
           echo "  Annotating architectures..."
-          docker manifest annotate ${IMAGE_BASE}:${TAG} \
-            ${IMAGE_BASE}:${TAG}-amd64 \
+          docker manifest annotate ${IMAGE_BASE}:${BAKE_TAG} \
+            ${IMAGE_BASE}:${BAKE_TAG}-amd64 \
             --os linux --arch amd64
           
-          docker manifest annotate ${IMAGE_BASE}:${TAG} \
-            ${IMAGE_BASE}:${TAG}-arm32v7 \
+          docker manifest annotate ${IMAGE_BASE}:${BAKE_TAG} \
+            ${IMAGE_BASE}:${BAKE_TAG}-arm32v7 \
             --os linux --arch arm --variant v7
           
-          docker manifest annotate ${IMAGE_BASE}:${TAG} \
-            ${IMAGE_BASE}:${TAG}-arm64v8 \
+          docker manifest annotate ${IMAGE_BASE}:${BAKE_TAG} \
+            ${IMAGE_BASE}:${BAKE_TAG}-arm64v8 \
             --os linux --arch arm64 --variant v8
           
           # Push manifest
           echo "  Pushing manifest..."
-          docker manifest push ${IMAGE_BASE}:${TAG}
+          docker manifest push ${IMAGE_BASE}:${BAKE_TAG}
           
           # Also push as latest if on main
-          if [[ "${TAG}" == "main" ]]; then
+          if [[ "${BAKE_TAG}" == "main" ]]; then
             echo "  Creating latest manifest..."
             docker manifest create \
               ${IMAGE_BASE}:latest \
-              ${IMAGE_BASE}:${TAG}-amd64 \
-              ${IMAGE_BASE}:${TAG}-arm32v7 \
-              ${IMAGE_BASE}:${TAG}-arm64v8 \
+              ${IMAGE_BASE}:${BAKE_TAG}-amd64 \
+              ${IMAGE_BASE}:${BAKE_TAG}-arm32v7 \
+              ${IMAGE_BASE}:${BAKE_TAG}-arm64v8 \
               || true
             
             docker manifest annotate ${IMAGE_BASE}:latest \
-              ${IMAGE_BASE}:${TAG}-amd64 \
+              ${IMAGE_BASE}:${BAKE_TAG}-amd64 \
               --os linux --arch amd64
             
             docker manifest annotate ${IMAGE_BASE}:latest \
-              ${IMAGE_BASE}:${TAG}-arm32v7 \
+              ${IMAGE_BASE}:${BAKE_TAG}-arm32v7 \
               --os linux --arch arm --variant v7
             
             docker manifest annotate ${IMAGE_BASE}:latest \
-              ${IMAGE_BASE}:${TAG}-arm64v8 \
+              ${IMAGE_BASE}:${BAKE_TAG}-arm64v8 \
               --os linux --arch arm64 --variant v8
             
             docker manifest push ${IMAGE_BASE}:latest
