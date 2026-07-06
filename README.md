@@ -38,7 +38,7 @@ tools/launcher.bat tests/images/test_image.jpg --output result.jpg
 ## 🚀 Installation
 
 1. **Clone via SSH** : `git clone git@github.com:votre-utilisateur/balena-photo-cropper.git`
-2. **Push vers Balena** : `balena push <fleet_name>`
+2. **Push vers Balena** : `node_modules/.bin/balena_deploy ./`
 
 ---
 **Author**: [www.b23prodtm.info](https://www.b23prodtm.info) | **License**: Apache v2
