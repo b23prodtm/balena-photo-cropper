@@ -27,13 +27,6 @@ variable "BALENA_ARCH" {
 
 target "common" {
   
-  # Multi-platform support: amd64, arm/v7 (Raspberry Pi 32-bit), arm64 (Pi 4B 64-bit)
-  platforms = [
-    "linux/amd64",
-    "linux/arm/v7",
-    "linux/arm64"
-  ]
-  
   # GitHub Actions cache (fastest)
   cache-from = ["type=gha"]
   cache-to = ["type=gha,mode=max"]
