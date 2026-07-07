@@ -43,15 +43,9 @@ jobs:
             | tr ':' '-' \
             | tr '[:upper:]' '[:lower:]' \
             | sed 's/[^a-z0-9._-]//g')
-      
-          echo "RAW_REF=$RAW_REF"
-          echo "SAFE_REF=$SAFE_REF"
-      
-          echo "safe_ref=$SAFE_REF" >> $GITHUB_OUTPUT
 
-      - name: Extract metadata
-        id: meta
-        run: |
+          echo "safe_ref=$SAFE_REF" >> $GITHUB_OUTPUT
+          
           SHORT_SHA=${GITHUB_SHA:0:7}
           echo "short_sha=${SHORT_SHA}" >> $GITHUB_OUTPUT
 
@@ -79,11 +73,9 @@ jobs:
             *.cache-from=type=gha
             *.cache-to=type=gha,mode=max
             *.args.BALENA_ARCH=${{ matrix.balena_arch }}
-        env:
-          BALENA_ARCH: ${{ matrix.balena_arch }}
-          PLATFORM: ${{ matrix.platform }}
-          BAKE_TAG: ${{ steps.ref.outputs.safe_ref }}
-          GITHUB_SHA: ${{ steps.meta.outputs.short_sha }}
+            *.platform=${{ matrix.platform }}
+            *.args.BAKE_TAG=${{ steps.ref.outputs.safe_ref }}
+            *.args.GITHUB_SHA=${{ steps.ref.outputs.short_sha }}
           
   deploy:
     runs-on: ${{ vars.DEFAULT_RUNNER || 'ubuntu-latest' }}
@@ -115,21 +107,15 @@ jobs:
             | tr ':' '-' \
             | tr '[:upper:]' '[:lower:]' \
             | sed 's/[^a-z0-9._-]//g')
-      
-          echo "RAW_REF=$RAW_REF"
-          echo "SAFE_REF=$SAFE_REF"
-      
-          echo "safe_ref=$SAFE_REF" >> $GITHUB_OUTPUT
 
-      - name: Extract metadata
-        id: meta
-        run: |
+          echo "safe_ref=$SAFE_REF" >> $GITHUB_OUTPUT
+          
           SHORT_SHA=${GITHUB_SHA:0:7}
           echo "short_sha=${SHORT_SHA}" >> $GITHUB_OUTPUT
 
       - name: Push multi-platform manifests
         env:
-          GITHUB_SHA: ${{ steps.meta.outputs.short_sha }}
+          GITHUB_SHA: ${{ steps.ref.outputs.short_sha }}
           BAKE_TAG: ${{ steps.ref.outputs.safe_ref }}
         run: |
           if "./manifest-push.sh"; then
