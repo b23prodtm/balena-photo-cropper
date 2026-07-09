@@ -65,6 +65,9 @@ jobs:
 
       - name: Build service image for ${{ matrix.balena_arch }}
         uses: docker/bake-action@v5
+        env:
+          GITHUB_SHA: ${{ steps.ref.outputs.short_sha }}
+          BAKE_TAG: ${{ steps.ref.outputs.safe_ref }}
         with:
           files: ./docker-bake.hcl
           targets: ${{ matrix.balena_arch }}
@@ -74,8 +77,6 @@ jobs:
             *.cache-to=type=gha,mode=max
             *.args.BALENA_ARCH=${{ matrix.balena_arch }}
             *.platform=${{ matrix.platform }}
-            *.args.BAKE_TAG=${{ steps.ref.outputs.safe_ref }}
-            *.args.GITHUB_SHA=${{ steps.ref.outputs.short_sha }}
           
       - name: Set up Docker Compose
         uses: docker/setup-compose-action@v1
