@@ -58,20 +58,16 @@ echo "   BAKE_TAG=${BAKE_TAG}"
 echo ""
 
 for SERVICE in "${BALENA_PROJECTS[@]}"; do
-    SERVICE_NAME="balena-photo-cropper-${SERVICE}"
-    IMAGE_BASE="${REGISTRY}/${REGISTRY_IMAGE}/${SERVICE_NAME}"
+        SERVICE_NAME="balena-photo-cropper-${SERVICE}"
+        IMAGE_BASE="${REGISTRY}/${REGISTRY_IMAGE}/${SERVICE_NAME}"
+        
+        echo "📦 Processing: ${SERVICE_NAME}"
+        docker buildx imagetools create -t \
+        ${IMAGE_BASE}:${BAKE_TAG} \
+        ${IMAGE_BASE}:${BAKE_TAG}-amd64 \
+        ${IMAGE_BASE}:${BAKE_TAG}-arm32v7 \
+        ${IMAGE_BASE}:${BAKE_TAG}-arm64v8
     
-    echo "📦 Processing: ${SERVICE_NAME}"
-    
-    # Create manifest with all platform images
-          echo "  Creating manifest..."
-          docker manifest create \
-            ${IMAGE_BASE}:${BAKE_TAG} \
-            ${IMAGE_BASE}:${BAKE_TAG}-amd64 \
-            ${IMAGE_BASE}:${BAKE_TAG}-arm32v7 \
-            ${IMAGE_BASE}:${BAKE_TAG}-arm64v8 \
-            || true  # Ignore if manifest already exists
-          
           # Annotate architectures
           echo "  Annotating architectures..."
           docker manifest annotate ${IMAGE_BASE}:${BAKE_TAG} \
@@ -93,12 +89,11 @@ for SERVICE in "${BALENA_PROJECTS[@]}"; do
           # Also push as latest if on main
           if [[ "${BAKE_TAG}" == "main" ]]; then
             echo "  Creating latest manifest..."
-            docker manifest create \
+            docker buildx imagetools create -t \
               ${IMAGE_BASE}:latest \
               ${IMAGE_BASE}:${BAKE_TAG}-amd64 \
               ${IMAGE_BASE}:${BAKE_TAG}-arm32v7 \
-              ${IMAGE_BASE}:${BAKE_TAG}-arm64v8 \
-              || true
+              ${IMAGE_BASE}:${BAKE_TAG}-arm64v8
             
             docker manifest annotate ${IMAGE_BASE}:latest \
               ${IMAGE_BASE}:${BAKE_TAG}-amd64 \
