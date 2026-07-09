@@ -50,9 +50,9 @@ target "cropper" {
   
   # Multi-tag strategy: latest is multiplatform, platform-tagged versions per arch
   tags = [
-    "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-api:latest",
-    BAKE_TAG != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-api:${replace(BAKE_TAG, "/", "-")}" : "",
-    GITHUB_SHA != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-api:${GITHUB_SHA}" : ""
+    "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-cropper:latest",
+    BAKE_TAG != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-cropper:${replace(BAKE_TAG, "/", "-")}" : "",
+    GITHUB_SHA != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-cropper:${GITHUB_SHA}" : ""
   ]
   
   # Dynamic dockerfile selection based on BALENA_ARCH
@@ -157,9 +157,9 @@ target "cropper-armhf" {
   platforms = ["linux/arm/v7"]
   dockerfile = "Dockerfile.armhf"
   tags = [
-    "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-api:arm32v7",
-    BAKE_TAG != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-api:${replace(BAKE_TAG, "/", "-")}-arm32v7":"",
-    GITHUB_SHA != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-api:${GITHUB_SHA}-arm32v7":""
+    "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-cropper:arm32v7",
+    BAKE_TAG != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-cropper:${replace(BAKE_TAG, "/", "-")}-arm32v7":"",
+    GITHUB_SHA != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-cropper:${GITHUB_SHA}-arm32v7":""
   ]
 }
 
@@ -208,9 +208,9 @@ target "cropper-aarch64" {
   platforms = ["linux/arm64"]
   dockerfile = "Dockerfile.aarch64"
   tags = [
-    "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-api:arm64v8",
-    BAKE_TAG != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-api:${replace(BAKE_TAG, "/", "-")}-arm64v8":"",
-    GITHUB_SHA != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-api:${GITHUB_SHA}-arm64v8":""
+    "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-cropper:arm64v8",
+    BAKE_TAG != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-cropper:${replace(BAKE_TAG, "/", "-")}-arm64v8":"",
+    GITHUB_SHA != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-cropper:${GITHUB_SHA}-arm64v8":""
   ]
 }
 
@@ -259,9 +259,9 @@ target "cropper-x86_64" {
   platforms = ["linux/amd64"]
   dockerfile = "Dockerfile.x86_64"
   tags = [
-    "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-api:amd64",
-    BAKE_TAG != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-api:${replace(BAKE_TAG, "/", "-")}-amd64" : "",
-    GITHUB_SHA != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-api:${GITHUB_SHA}-amd64" : ""
+    "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-cropper:amd64",
+    BAKE_TAG != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-cropper:${replace(BAKE_TAG, "/", "-")}-amd64" : "",
+    GITHUB_SHA != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-cropper:${GITHUB_SHA}-amd64" : ""
   ]
 }
 
