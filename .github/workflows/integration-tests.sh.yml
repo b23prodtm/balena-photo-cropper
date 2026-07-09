@@ -11,7 +11,16 @@ jobs:
   integration-tests:
     runs-on: ubuntu-latest
     timeout-minutes: 120
-    
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - balena_arch: armhf
+            platform: linux/arm/v7
+          - balena_arch: aarch64
+            platform: linux/arm64
+          - balena_arch: x86_64
+            platform: linux/amd64
     permissions:
       contents: read
       checks: write
