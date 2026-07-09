@@ -158,8 +158,8 @@ target "cropper-armhf" {
   dockerfile = "Dockerfile.armhf"
   tags = [
     "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-api:arm32v7",
-    BAKE_TAG != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-api:${replace(BAKE_TAG, "/", "-")}-armhf" : "",
-    GITHUB_SHA != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-api:${GITHUB_SHA}-armhf" : ""
+    BAKE_TAG != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-api:${replace(BAKE_TAG, "/", "-")}-arm32v7":"",
+    GITHUB_SHA != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-api:${GITHUB_SHA}-arm32v7":""
   ]
 }
 
@@ -169,8 +169,8 @@ target "web-armhf" {
   dockerfile = "Dockerfile.armhf"
   tags = [
     "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-web:arm32v7",
-    BAKE_TAG != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-web:${replace(BAKE_TAG, "/", "-")}-armhf" : "",
-    GITHUB_SHA != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-web:${GITHUB_SHA}-armhf" : ""
+    BAKE_TAG != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-web:${replace(BAKE_TAG, "/", "-")}-arm32v7":"",
+    GITHUB_SHA != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-web:${GITHUB_SHA}-arm32v7":""
   ]
   depends_on = ["cropper-armhf"]
 }
@@ -181,8 +181,8 @@ target "nginx-armhf" {
   dockerfile = "Dockerfile.armhf"
   tags = [
     "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-nginx:arm32v7",
-    BAKE_TAG != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-nginx:${replace(BAKE_TAG, "/", "-")}-armhf" : "",
-    GITHUB_SHA != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-nginx:${GITHUB_SHA}-armhf" : ""
+    BAKE_TAG != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-nginx:${replace(BAKE_TAG, "/", "-")}-arm32v7":"",
+    GITHUB_SHA != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-nginx:${GITHUB_SHA}-arm32v7":""
   ]
   depends_on = ["web-armhf"]
 }
@@ -193,8 +193,8 @@ target "mysqldb-armhf" {
   dockerfile = "Dockerfile.armhf"
   tags = [
     "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-mysqldb:arm32v7",
-    BAKE_TAG != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-mysqldb:${replace(BAKE_TAG, "/", "-")}-armhf" : "",
-    GITHUB_SHA != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-mysqldb:${GITHUB_SHA}-armhf" : ""
+    BAKE_TAG != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-mysqldb:${replace(BAKE_TAG, "/", "-")}-arm32v7":"",
+    GITHUB_SHA != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-mysqldb:${GITHUB_SHA}-arm32v7":""
   ]
 }
 
@@ -209,8 +209,8 @@ target "cropper-aarch64" {
   dockerfile = "Dockerfile.aarch64"
   tags = [
     "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-api:arm64v8",
-    BAKE_TAG != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-api:${replace(BAKE_TAG, "/", "-")}-arm64" : "",
-    GITHUB_SHA != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-api:${GITHUB_SHA}-arm64" : ""
+    BAKE_TAG != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-api:${replace(BAKE_TAG, "/", "-")}-arm64v8":"",
+    GITHUB_SHA != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-api:${GITHUB_SHA}-arm64v8":""
   ]
 }
 
@@ -220,8 +220,8 @@ target "web-aarch64" {
   dockerfile = "Dockerfile.aarch64"
   tags = [
     "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-web:arm64v8",
-    BAKE_TAG != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-web:${replace(BAKE_TAG, "/", "-")}-arm64" : "",
-    GITHUB_SHA != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-web:${GITHUB_SHA}-arm64" : ""
+    BAKE_TAG != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-web:${replace(BAKE_TAG, "/", "-")}-arm64v8":"",
+    GITHUB_SHA != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-web:${GITHUB_SHA}-arm64v8":""
   ]
   depends_on = ["cropper-aarch64"]
 }
@@ -232,8 +232,8 @@ target "nginx-aarch64" {
   dockerfile = "Dockerfile.aarch64"
   tags = [
     "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-nginx:arm64v8",
-    BAKE_TAG != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-nginx:${replace(BAKE_TAG, "/", "-")}-arm64" : "",
-    GITHUB_SHA != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-nginx:${GITHUB_SHA}-arm64" : ""
+    BAKE_TAG != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-nginx:${replace(BAKE_TAG, "/", "-")}-arm64v8":"",
+    GITHUB_SHA != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-nginx:${GITHUB_SHA}-arm64v8":""
   ]
   depends_on = ["web-aarch64"]
 }
@@ -244,8 +244,8 @@ target "mysqldb-aarch64" {
   dockerfile = "Dockerfile.aarch64"
   tags = [
     "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-mysqldb:arm64v8",
-    BAKE_TAG != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-mysqldb:${replace(BAKE_TAG, "/", "-")}-arm64" : "",
-    GITHUB_SHA != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-mysqldb:${GITHUB_SHA}-arm64" : ""
+    BAKE_TAG != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-mysqldb:${replace(BAKE_TAG, "/", "-")}-arm64v8":"",
+    GITHUB_SHA != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-mysqldb:${GITHUB_SHA}-arm64v8":""
   ]
 }
 
