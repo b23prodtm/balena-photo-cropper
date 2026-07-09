@@ -142,4 +142,7 @@ jobs:
           fi
           
       - name: Deploy stack
-        run: docker compose up -d
+        run: |
+          ln -sf docker-compose.${{ matrix.balena_arch }} docker-compose.yml
+          ln -sf ${{ matrix.balena_arch }}.env .env
+          docker compose up -d
