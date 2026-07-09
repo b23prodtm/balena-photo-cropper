@@ -63,55 +63,23 @@ for SERVICE in "${BALENA_PROJECTS[@]}"; do
         
         echo "📦 Processing: ${SERVICE_NAME}"
         docker buildx imagetools create -t \
-        ${IMAGE_BASE}:${BAKE_TAG} \
-        ${IMAGE_BASE}:${BAKE_TAG}-amd64 \
-        ${IMAGE_BASE}:${BAKE_TAG}-arm32v7 \
-        ${IMAGE_BASE}:${BAKE_TAG}-arm64v8
-    
-          # Annotate architectures
-          echo "  Annotating architectures..."
-          docker manifest annotate ${IMAGE_BASE}:${BAKE_TAG} \
-            ${IMAGE_BASE}:${BAKE_TAG}-amd64 \
-            --os linux --arch amd64
+        ${IMAGE_BASE}:${GITHUB_SHA} \
+        ${IMAGE_BASE}:${GITHUB_SHA}-amd64 \
+        ${IMAGE_BASE}:${GITHUB_SHA}-arm32v7 \
+        ${IMAGE_BASE}:${GITHUB_SHA}-arm64v8
           
-          docker manifest annotate ${IMAGE_BASE}:${BAKE_TAG} \
-            ${IMAGE_BASE}:${BAKE_TAG}-arm32v7 \
-            --os linux --arch arm --variant v7
-          
-          docker manifest annotate ${IMAGE_BASE}:${BAKE_TAG} \
-            ${IMAGE_BASE}:${BAKE_TAG}-arm64v8 \
-            --os linux --arch arm64 --variant v8
-          
-          # Push manifest
-          echo "  Pushing manifest..."
-          docker manifest push ${IMAGE_BASE}:${BAKE_TAG}
-          
-          # Also push as latest if on main
-          if [[ "${BAKE_TAG}" == "main" ]]; then
+        # Also push as latest if on main
+        if [[ "${BAKE_TAG}" == "main" ]]; then
             echo "  Creating latest manifest..."
             docker buildx imagetools create -t \
               ${IMAGE_BASE}:latest \
-              ${IMAGE_BASE}:${BAKE_TAG}-amd64 \
-              ${IMAGE_BASE}:${BAKE_TAG}-arm32v7 \
-              ${IMAGE_BASE}:${BAKE_TAG}-arm64v8
-            
-            docker manifest annotate ${IMAGE_BASE}:latest \
-              ${IMAGE_BASE}:${BAKE_TAG}-amd64 \
-              --os linux --arch amd64
-            
-            docker manifest annotate ${IMAGE_BASE}:latest \
-              ${IMAGE_BASE}:${BAKE_TAG}-arm32v7 \
-              --os linux --arch arm --variant v7
-            
-            docker manifest annotate ${IMAGE_BASE}:latest \
-              ${IMAGE_BASE}:${BAKE_TAG}-arm64v8 \
-              --os linux --arch arm64 --variant v8
-            
-            docker manifest push ${IMAGE_BASE}:latest
-          fi
+              ${IMAGE_BASE}:${GITHUB_SHA}-amd64 \
+              ${IMAGE_BASE}:${GITHUB_SHA}-arm32v7 \
+              ${IMAGE_BASE}:${GITHUB_SHA}-arm64v8
+        fi
           
-          echo "  ✅ $SERVICE done"
-          echo ""
+        echo "  ✅ $SERVICE done"
+        echo ""
 done
 
 echo "✅ All manifests pushed successfully"
