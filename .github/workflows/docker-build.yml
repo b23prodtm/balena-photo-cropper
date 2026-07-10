@@ -79,7 +79,7 @@ jobs:
             *.platform=${{ matrix.platform }}
           
   deploy:
-    depends-on: build-services
+    needs: build-services
     runs-on: ${{ vars.DEFAULT_RUNNER || 'ubuntu-latest' }}
     timeout-minutes: 120
 
