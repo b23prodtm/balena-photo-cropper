@@ -17,10 +17,11 @@ jobs:
         include:
           - balena_arch: armhf
             platform: linux/arm/v7
-          - balena_arch: aarch64
-            platform: linux/arm64
-          - balena_arch: x86_64
-            platform: linux/amd64
+          #- balena_arch: aarch64
+          #  platform: linux/arm64
+          #- balena_arch: x86_64
+          #  platform: linux/amd64
+
     permissions:
       contents: read
       checks: write
@@ -30,6 +31,11 @@ jobs:
       uses: actions/checkout@v4
       with:
         fetch-depth: 1
+
+    - name: Enable QEMU
+      uses: docker/setup-qemu-action@v3
+      with:
+        platforms: ${{ matrix.platform }}
 
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -112,17 +118,18 @@ jobs:
         DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
         DB_ROOT_PASSWORD: ${{ secrets.DB_ROOT_PASSWORD }}
 
-    - name: Build linux/amd64 services with Bake
+    - name: Build all services with Bake
       uses: docker/bake-action@v5
       with:
         files: |
           ./docker-bake.hcl
-        targets: x86_64
+        targets: ${{ matrix.balena_arch }}
         load: true
 
     - name: Start docker compose stack
       run: |
-        cp -vf docker-compose.x86_64 docker-compose.yml
+        ln -sf docker-compose.${{ matrix.platform }} docker-compose.yml
+        ln -sf ${{ matrix.platform }}.env .env
         docker compose up -d
         docker compose ps
 
