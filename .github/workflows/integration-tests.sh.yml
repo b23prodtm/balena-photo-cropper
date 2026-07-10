@@ -61,6 +61,7 @@ jobs:
       uses: docker/setup-compose-action@v1
       with:
         version: latest
+        platform: ${{ matrix.platform }}
 
     - name: Display environment info
       run: |
@@ -116,8 +117,8 @@ jobs:
 
     - name: Start docker compose stack
       run: |
-        ln -sf docker-compose.${{ matrix.platform }} docker-compose.yml
-        ln -sf ${{ matrix.platform }}.env .env
+        ln -sf docker-compose.${{ matrix.balena_arch }} docker-compose.yml
+        ln -sf ${{ matrix.balena_arch }}.env .env
         docker compose up -d
         docker compose ps
 
