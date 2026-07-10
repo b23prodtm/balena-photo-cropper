@@ -5,7 +5,7 @@ DIR="$(pwd)"
 cd "$(dirname "$0")"
 
 # Run the unified script (it will handle venv creation & python execution)
-./launcher.sh interactive_cropper.py
+./launcher.sh interactive_cropper.py "$@"
 
 # Keep terminal open if it crashes so you can read errors
 echo ""

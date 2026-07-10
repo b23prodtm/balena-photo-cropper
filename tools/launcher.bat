@@ -26,9 +26,10 @@ if not exist "%VENV_DIR%" (
 echo --> [Windows] Installing pip dependencies (opencv, numpy)...
 "%VENV_DIR%\Scripts\pip" install --upgrade pip
 "%VENV_DIR%\Scripts\pip" install -r "tools\requirements.txt"
-:: 3. Run the python script using the Windows venv interpreter
+
+:: 3. Run the python script with all arguments passed to the batch file
 echo --> [Windows] Launching Interactive Cropper...
-"%VENV_DIR%\Scripts\python" "tools\interactive_cropper.py"
+"%VENV_DIR%\Scripts\python" ".\tools\interactive_cropper.py" %*
 
 if %errorlevel% neq 0 (
     echo [ERROR] Script exited with an error.

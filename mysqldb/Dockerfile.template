@@ -1,0 +1,52 @@
+# syntax=docker/dockerfile:1
+ARG MYSQLDB_HUB
+ARG MYSQLDB_TAG
+FROM ${MYSQLDB_HUB:-%%MYSQLDB_HUB%%}:${MYSQLDB_TAG:-%%MYSQLDB_TAG%%}
+
+ARG PUID
+ENV PUID=${PUID:-0}
+ARG PGID
+ENV PGID=${PGID:-0}
+ARG MYSQL_HOST
+ENV MYSQL_HOST=${MYSQL_HOST:-'localhost'}
+ARG TZ
+ENV TZ=${TZ:-'Europe/Paris'}
+ARG MYSQL_BIND_ADDRESS
+ENV MYSQL_BIND_ADDRESS=${MYSQL_BIND_ADDRESS:-0.0.0.0}
+
+# These are now expected at RUNTIME only — no ARG, no default values baked in
+# They must be provided via: docker buildx build --secret id=mytoken,src=.balena/secrets/secret_mytoken
+COPY . .
+RUN \
+# BEGIN DOCKER_BUILDKIT
+    --mount=type=secret,id=DB_PASSWORD \
+    --mount=type=secret,id=DB_ROOT_PASSWORD \
+    # END DOCKER_BUILDKIT
+    export MYSQL_PASSWORD=$(cat /run/secrets/DB_PASSWORD) && \
+    export MYSQL_ROOT_PASSWORD=$(cat /run/secrets/DB_ROOT_PASSWORD)
+
+COPY conf.d/my.cnf /etc/my.cnf.d/my.cnf
+RUN sed -i.bind "/bind-address/s/=.*$/= ${MYSQL_BIND_ADDRESS}/" /etc/my.cnf.d/my.cnf
+RUN sed -i.user "/user/s/=.*$/= ${USER}/" /etc/my.cnf.d/my.cnf
+
+RUN apk update \
+    && apk upgrade \
+    && apk add \
+      build-base \
+      expect \
+      xz \
+    mariadb-client \
+    && apk del build-base \
+    && rm -rf /var/cache/apk/*
+
+RUN chmod 1755 mysql_secure_shell \
+    && ./mysql_secure_shell
+
+# This script runs ONCE at first container start, using runtime env vars
+COPY init-db.sh /docker-entrypoint-initdb.d/init-db.sh
+RUN chmod 755 /docker-entrypoint-initdb.d/init-db.sh
+
+# Splash screen ;)
+RUN cat mariadb.ans
+
+VOLUME /var/run/mysqld

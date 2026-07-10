@@ -1,0 +1,40 @@
+FROM python:3.11-slim
+ENV QT_QPA_PLATFORM=%%PLATFORM%% \
+    PIP_NO_CACHE_DIR=1
+
+WORKDIR /app
+
+# Dépendances système minimales pour OpenCV, Pillow, PyMuPDF
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        libopenblas0 \
+        libblas3 \
+        liblapack3 \
+        libopenjp2-7 \
+        libtiff6 \
+        libsm6 \
+        libxext6 \
+        libxrender1 \
+        libpng16-16t64 \
+        libjpeg62-turbo \
+        libfreetype6 \
+        libharfbuzz0b \
+        libwebp7 \
+        libgl1 \
+        libxcb1 \
+        ffmpeg \
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -rf /usr/share/man/* /usr/share/doc/* /usr/share/locale/*
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY app.py .
+RUN chmod +x app.py && mkdir -p uploads tmp
+
+EXPOSE 5000
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD python3 -c "import cv2; print('OpenCV OK:', cv2.__version__)" || exit 1
+
+ENTRYPOINT ["./app.py"]

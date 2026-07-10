@@ -11,7 +11,17 @@ jobs:
   integration-tests:
     runs-on: ubuntu-latest
     timeout-minutes: 120
-    
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          #- balena_arch: armhf
+          #  platform: linux/arm/v7
+          #- balena_arch: aarch64
+          #  platform: linux/arm64
+          - balena_arch: x86_64
+            platform: linux/amd64
+
     permissions:
       contents: read
       checks: write
@@ -21,6 +31,11 @@ jobs:
       uses: actions/checkout@v4
       with:
         fetch-depth: 1
+
+    - name: Enable QEMU
+      uses: docker/setup-qemu-action@v3
+      with:
+        platforms: ${{ matrix.platform }}
 
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -33,25 +48,20 @@ jobs:
         python3 -m pip install --upgrade pip
         python3 -m pip install pillow requests
 
-    - name: Install system dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y curl ca-certificates gnupg lsb-release
-        
-        # Add Docker's official GPG key
-        sudo mkdir -p /etc/apt/keyrings
-        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-        
-        # Add Docker repository
-        echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-        
-        # Install docker-compose-plugin
-        sudo apt-get update
-        sudo apt-get install -y docker-compose-plugin
-      # For Docker Compose V2, use 'docker compose' instead of 'docker-compose'
-
-    - name: Set up Docker Buildx
+    - name: Enable Buildx
       uses: docker/setup-buildx-action@v3
+
+    - name: Login to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Set up Docker Compose
+      uses: docker/setup-compose-action@v1
+      with:
+        version: latest
+        platform: ${{ matrix.platform }}
 
     - name: Display environment info
       run: |
@@ -97,22 +107,45 @@ jobs:
         DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
         DB_ROOT_PASSWORD: ${{ secrets.DB_ROOT_PASSWORD }}
 
+    - name: Build all services with Bake
+      uses: docker/bake-action@v5
+      with:
+        files: |
+          ./docker-bake.hcl
+        targets: ${{ matrix.balena_arch }}
+        load: true
+
+    - name: Start docker compose stack
+      run: |
+        ln -sf docker-compose.${{ matrix.balena_arch }} docker-compose.yml
+        ln -sf ${{ matrix.balena_arch }}.env .env
+        docker compose up -d
+        docker compose ps
+
     - name: Run integration tests
       id: integration-tests
-      run: |
-        set -e  # Exit on first error
-     
-        set -x  # Print commands for debugging
-        bash tests/run_integration_tests.sh || TEST_EXIT_CODE=$?
-        echo "Integration tests exit code: $TEST_EXIT_CODE"
-        exit $TEST_EXIT_CODE
-      timeout-minutes: 90
       continue-on-error: true
+      run: |
+        set +e
+
+        bash tests/run_integration_tests.sh > test_output.log 2>&1
+        TEST_EXIT_CODE=$?
+
+        echo "Integration tests exit code: ${TEST_EXIT_CODE}"
+
+        if [ "${TEST_EXIT_CODE}" != "0" ]; then
+          echo "❌ Integration tests failed"
+          exit ${TEST_EXIT_CODE}
+        fi
+
+        echo "✅ Integration tests passed"
+        exit 0
+      timeout-minutes: 90
       env:
         HEADLESS_MODE: true
 
-    - name: Docker compose logs (if failed)
-      if: failure()
+    - name: Docker compose logs
+      if: always()
       run: |
         echo "=== Docker Compose Logs ==="
         docker compose logs web || true
@@ -123,6 +156,12 @@ jobs:
         echo ""
         echo "=== Running Containers ==="
         docker ps -a || true
+
+    - name: Capture failure result
+      if: steps.integration-tests.outcome == 'failure'
+      run: |
+        echo "Integration test failure detected"
+        docker compose logs --no-color > docker-compose-failure.log || true
 
     - name: Cleanup
       if: always()
