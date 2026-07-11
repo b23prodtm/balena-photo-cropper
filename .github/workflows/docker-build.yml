@@ -62,7 +62,14 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-
+          
+      - name: Materialize build secrets for bake
+        run: |
+          mkdir -p .balena/secrets
+          printf '%s' "${{ secrets.MYSQL_ROOT_PASSWORD }}" > .balena/secrets/mysql_root_password
+          printf '%s' "${{ secrets.MYSQL_PASSWORD }}" > .balena/secrets/mysql_password
+          chmod 600 .balena/secrets/mysql_root_password .balena/secrets/mysql_password
+    
       - name: Build service image for ${{ matrix.balena_arch }}
         uses: docker/bake-action@v5
         env:
@@ -147,3 +154,4 @@ jobs:
           ln -sf ${{ matrix.balena_arch }}.env .env
           # Only start Balena-compatible services (no bind mounts)
           docker compose up -d cropper web mysqldb nginx
+          

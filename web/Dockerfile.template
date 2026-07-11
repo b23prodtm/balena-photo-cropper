@@ -70,11 +70,8 @@ RUN if [ -f composer.json ]; then \
 RUN \
 # BEGIN DOCKER_BUILDKIT
     --mount=type=secret,id=mysql_password,target=/run/secrets/MYSQL_PASSWORD \
-    --mount=type=secret,id=mysql_root_password,target=/run/secrets/MYSQL_ROOT_PASSWORD \
     # END DOCKER_BUILDKIT
-    export MYSQL_PASSWORD=$(cat /run/secrets/MYSQL_PASSWORD) && \
-    export MYSQL_ROOT_PASSWORD=$(cat /run/secrets/MYSQL_ROOT_PASSWORD)
-
+    export MYSQL_PASSWORD=$(cat /run/secrets/MYSQL_PASSWORD)
 EXPOSE 9000
 
 # Health check - verify PHP-FPM is working

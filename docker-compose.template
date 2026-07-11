@@ -14,11 +14,11 @@ services:
     restart: unless-stopped
     # PR #9: attend que web soit prêt avant de servir
     command: ["/wait-for-it.sh", "web", "9000"]
+# START DOCKER_BUILDKIT
     secrets:
-      - ssl_key
-      - ssl_crt
-      - db_password
-      - db_root_password
+      - SSL_KEY
+      - SSL_CRT
+# END DOCKER_BUILDKIT
     depends_on:
       - web
       - cropper
@@ -37,7 +37,6 @@ services:
       DB_HOST: db
       DB_NAME: cake_db
       DB_USER: cake_user
-      # DB_PASSWORD_FILE: /run/secrets/MYSQL_PASSWORD  # Not used in balena Cloud (secrets handled at build time via .balena/balena.yml)
       # Runtime
       FLASK_ENV: production
       PYTHONUNBUFFERED: "1"
@@ -56,12 +55,14 @@ services:
     restart: unless-stopped
     # PR #9: attend que cropper Flask soit ready
     command: ["/bin/sh", "-c", "/wait-for-it.sh cropper 5000 sh -c '/wait-for-it.sh db 3306 php-fpm -F'"]
-    volumes:
+# START DOCKER_BUILDKIT
+    secrets:
+      - MYSQL_PASSWORD
+# END DOCKER_BUILDKIT
+volumes:
       - web_data:/var/www/html
       - cropper_uploads:/app/uploads
       - cropper_cache:/tmp
-    secrets:
-      - DB_PASSWORD
     networks:
       - cakephp-network
 
@@ -75,12 +76,14 @@ services:
     environment:
       MYSQL_DATABASE: cake_db
       MYSQL_USER: cake_user
+# START DOCKER_BUILDKIT
+    secrets:
+      - MYSQL_PASSWORD
+      - MYSQL_ROOT_PASSWORD
+# END DOCKER_BUILDKIT
     volumes:
       - db_data:/var/lib/mysql
       - db_init:/docker-entrypoint-initdb.d
-    secrets:
-      - db_password
-      - db_root_password
     networks:
       cakephp-network:
         aliases:
@@ -121,17 +124,17 @@ volumes:
   web_data:
     driver: local
 
+# BEGIN DOCKER_BUILDKIT
 secrets:
-  ssl_key:
+  SSL_KEY:
     file: ./.balena/secrets/ssl_key
-  ssl_crt:
+  SSL_CRT:
     file: ./.balena/secrets/ssl_crt
-  db_password:
-    file: ./.balena/secrets/db_password
-  db_root_password:
-    file: ./.balena/secrets/db_root_password
-  DB_PASSWORD:
-    file: ./.balena/secrets/db_password
+  MYSQL_PASSWORD:
+    file: ./.balena/secrets/mysql_password
+  MYSQL_ROOT_PASSWORD:
+    file: ./.balena/secrets/mysql_root_password
+# END DOCKER_BUILDKIT
 
 networks:
   cakephp-network:

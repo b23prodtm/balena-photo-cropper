@@ -27,11 +27,12 @@ COPY scripts/wait-for-it.sh /wait-for-it.sh
 RUN chmod 755 /wait-for-it.sh
 
 
+
 # Mount SSL secrets at build time (balena Cloud: provided via .balena/balena.yml)
 RUN \
 # BEGIN DOCKER_BUILDKIT
-    --mount=type=secret,id=ssl_key,target=/run/secrets/SSL_KEY \
-    --mount=type=secret,id=ssl_crt,target=/run/secrets/SSL_CRT \
+#  --mount=type=secret,id=ssl_key,target=/run/secrets/SSL_KEY \
+#  --mount=type=secret,id=ssl_crt,target=/run/secrets/SSL_CRT \
     # END DOCKER_BUILDKIT
     mkdir -p /etc/nginx/ssl && \
     if [ -f /run/secrets/SSL_KEY ] && [ -s /run/secrets/SSL_KEY ]; then \

@@ -14,11 +14,6 @@ services:
     restart: unless-stopped
     # PR #9: attend que web soit prêt avant de servir
     command: ["/wait-for-it.sh", "web", "9000"]
-    secrets:
-      - ssl_key
-      - ssl_crt
-      - db_password
-      - db_root_password
     depends_on:
       - web
       - cropper
@@ -37,7 +32,6 @@ services:
       DB_HOST: db
       DB_NAME: cake_db
       DB_USER: cake_user
-      # DB_PASSWORD_FILE: /run/secrets/MYSQL_PASSWORD  # Not used in balena Cloud (secrets handled at build time via .balena/balena.yml)
       # Runtime
       FLASK_ENV: production
       PYTHONUNBUFFERED: "1"
@@ -60,8 +54,6 @@ services:
       - web_data:/var/www/html
       - cropper_uploads:/app/uploads
       - cropper_cache:/tmp
-    secrets:
-      - DB_PASSWORD
     networks:
       - cakephp-network
 
@@ -78,9 +70,6 @@ services:
     volumes:
       - db_data:/var/lib/mysql
       - db_init:/docker-entrypoint-initdb.d
-    secrets:
-      - db_password
-      - db_root_password
     networks:
       cakephp-network:
         aliases:
@@ -120,18 +109,6 @@ volumes:
     driver: local
   web_data:
     driver: local
-
-secrets:
-  ssl_key:
-    file: ./.balena/secrets/ssl_key
-  ssl_crt:
-    file: ./.balena/secrets/ssl_crt
-  db_password:
-    file: ./.balena/secrets/db_password
-  db_root_password:
-    file: ./.balena/secrets/db_root_password
-  DB_PASSWORD:
-    file: ./.balena/secrets/db_password
 
 networks:
   cakephp-network:

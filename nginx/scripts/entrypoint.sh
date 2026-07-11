@@ -5,7 +5,7 @@ set -e
 # NGINX ENTRYPOINT - SSL Certificate Handling at Runtime
 # ============================================================================
 # Priority order for SSL certificates:
-# 1. Docker secrets (/run/secrets/ssl_key and /run/secrets/ssl_crt)
+# 1. Docker secrets (/run/secrets/SSL_KEY and /run/secrets/SSL_CRT)
 # 2. Environment variables (SSL_KEY_FILE and SSL_CRT_FILE)
 # 3. Existing certificates in /etc/nginx/ssl/
 # 4. Auto-generate self-signed certificate
@@ -36,10 +36,10 @@ check_cert_valid() {
 # ============================================================================
 # PRIORITY 1: Docker Secrets (highest priority)
 # ============================================================================
-if [ -f /run/secrets/ssl_key ] && [ -f /run/secrets/ssl_crt ]; then
-    echo "✅ Found Docker secrets: ssl_key and ssl_crt"
-    cp /run/secrets/ssl_key "${SSL_KEY}"
-    cp /run/secrets/ssl_crt "${SSL_CRT}"
+if [ -f /run/secrets/SSL_KEY ] && [ -f /run/secrets/SSL_CRT ]; then
+    echo "✅ Found Docker secrets: SSL_KEY and SSL_CRT"
+    cp /run/secrets/SSL_KEY "${SSL_KEY}"
+    cp /run/secrets/SSL_CRT "${SSL_CRT}"
     chmod 600 "${SSL_KEY}"
     chmod 644 "${SSL_CRT}"
     echo "✅ Certificates installed from Docker secrets"
