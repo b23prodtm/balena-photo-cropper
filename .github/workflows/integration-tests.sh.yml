@@ -139,7 +139,7 @@ jobs:
         sleep 15
         
         echo "--- Container-side secrets check (db service) ---"
-        docker compose exec -e DB_PASSWORD_FILE=/run/secrets/DB_PASSWORD mysqldb sh -c "
+        docker compose exec mysqldb sh -c "
           if [ -f /run/secrets/db_password ]; then
             echo '✅ /run/secrets/db_password exists in db container'
             wc -c < /run/secrets/db_password
@@ -189,7 +189,7 @@ jobs:
         " || exit 1
         
         echo "--- Nginx listening ports ---"
-        docker compose exec nginx sh -c "netstat -tlnp 2>/dev/null | grep -E ':(80|443)' || nc -tlnp 2>/dev/null"
+        docker compose exec nginx sh -c "netstat -tlnp 2>/dev/null | grep -E ':(80|443)' || ss -tln 2>/dev/null | grep -E ':(80|443)'"
         
         echo "--- Testing Nginx health endpoint ---"
         sleep 5
