@@ -135,11 +135,11 @@ jobs:
         
         # Start all required services
         echo "--- Starting services with secrets ---"
-        docker compose up -d cropper web db nginx
+        docker compose up -d cropper web mysqldb nginx
         sleep 15
         
         echo "--- Container-side secrets check (db service) ---"
-        docker compose exec -e DB_PASSWORD_FILE=/run/secrets/DB_PASSWORD db sh -c "
+        docker compose exec -e DB_PASSWORD_FILE=/run/secrets/DB_PASSWORD mysqldb sh -c "
           if [ -f /run/secrets/db_password ]; then
             echo '✅ /run/secrets/db_password exists in db container'
             wc -c < /run/secrets/db_password
@@ -204,7 +204,7 @@ jobs:
       run: |
         ln -sf docker-compose.${{ matrix.balena_arch }} docker-compose.yml
         ln -sf ${{ matrix.balena_arch }}.env .env
-        docker compose up -d cropper web db nginx
+        docker compose up -d cropper web mysqldb nginx
         docker compose ps
         sleep 10
 

@@ -146,4 +146,4 @@ jobs:
           ln -sf docker-compose.${{ matrix.balena_arch }} docker-compose.yml
           ln -sf ${{ matrix.balena_arch }}.env .env
           # Only start Balena-compatible services (no bind mounts)
-          docker compose up -d cropper web db nginx
+          docker compose up -d cropper web mysqldb nginx

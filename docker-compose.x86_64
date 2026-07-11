@@ -82,7 +82,9 @@ services:
       - db_password
       - db_root_password
     networks:
-      - cakephp-network
+      cakephp-network:
+        aliases:
+          - db
 
   cropper:
     build:

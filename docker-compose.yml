@@ -74,7 +74,9 @@ services:
       - db_data:/var/lib/mysql
       - db_init:/docker-entrypoint-initdb.d
     networks:
-      - cakephp-network
+      cakephp-network:
+        aliases:
+          - db
 
   cropper:
     build:
