@@ -189,7 +189,7 @@ jobs:
         " || exit 1
         
         echo "--- Nginx listening ports ---"
-        docker compose exec nginx sh -c "status=0; nc -z localhost 80 || status=1; nc -z localhost 443 || status=1; exit $status"
+        docker compose exec nginx sh -c "nc -z localhost 80; port80=$?; nc -z localhost 443; port443=$?; [ $port80 -eq 0 ] && [ $port443 -eq 0 ]"
         
         echo "--- Testing Nginx health endpoint ---"
         sleep 5
