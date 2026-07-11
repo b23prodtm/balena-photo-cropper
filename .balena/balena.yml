@@ -1,6 +1,6 @@
 build-secrets:
   global:
-    - source: db_password
-      dest: DB_PASSWORD
-    - source: db_root_password
-      dest: DB_ROOT_PASSWORD
+    - source: mysql_password
+      dest: MYSQL_PASSWORD
+    - source: mysql_root_password
+      dest: MYSQL_ROOT_PASSWORD

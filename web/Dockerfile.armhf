@@ -69,11 +69,11 @@ RUN if [ -f composer.json ]; then \
 
 RUN \
 # BEGIN DOCKER_BUILDKIT
-#    --mount=type=secret,id=DB_PASSWORD \
-#    --mount=type=secret,id=DB_ROOT_PASSWORD \
+#    --mount=type=secret,id=mysql_password \
+#    --mount=type=secret,id=mysql_root_password \
     # END DOCKER_BUILDKIT
-    export MYSQL_PASSWORD=$(cat /run/secrets/DB_PASSWORD) && \
-    export MYSQL_ROOT_PASSWORD=$(cat /run/secrets/DB_ROOT_PASSWORD)
+    export MYSQL_PASSWORD=$(cat /run/secrets/mysql_password) && \
+    export MYSQL_ROOT_PASSWORD=$(cat /run/secrets/mysql_root_password)
 
 EXPOSE 9000
 
