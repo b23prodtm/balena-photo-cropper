@@ -141,8 +141,9 @@ jobs:
               exit 1
           fi
           
-      - name: Deploy stack
+      - name: Deploy stack (Balena Cloud compatible - named volumes only)
         run: |
           ln -sf docker-compose.${{ matrix.balena_arch }} docker-compose.yml
           ln -sf ${{ matrix.balena_arch }}.env .env
-          docker compose up -d
+          # Only start Balena-compatible services (no bind mounts)
+          docker compose up -d cropper web mysqldb nginx
