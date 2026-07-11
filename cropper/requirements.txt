@@ -3,7 +3,7 @@
  
 # Versions stables pour armhf (Raspberry Pi)
 opencv-python-headless==4.8.1.78
-numpy>=1.24.2,<2
+numpy>=1.26.0,<2 # Updated: umpy 1.26+ supports Python 3.11
 Pillow>=9.5.0
 requests>=2.28.0
 flask>=2.3.0
