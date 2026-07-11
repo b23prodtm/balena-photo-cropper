@@ -10,6 +10,12 @@ WORKDIR /app
 # Using -dev packages (which auto-include runtime libs) for both build & runtime
 # ============================================================================
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    # Build tools (required for any C extensions fallback)
+    build-essential \
+    gcc \
+    g++ \
+    python3-dev \
+    \
     # OpenCV/image processing dependencies
     libopenblas-dev \
     libblas-dev \
