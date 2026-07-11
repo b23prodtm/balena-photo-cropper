@@ -1,7 +1,7 @@
 version: '2.1'
 
 services:
-  # Nginx - Reverse proxy
+  # Nginx - Reverse proxy with SSL
   nginx:
     build:
       context: ./nginx
@@ -16,6 +16,11 @@ services:
     command: ["/wait-for-it.sh", "web", "9000"]
     volumes:
       - nginx_config:/etc/nginx/conf.d
+    secrets:
+      - ssl_key
+      - ssl_crt
+      - db_password
+      - db_root_password
     depends_on:
       - web
       - cropper
@@ -57,6 +62,8 @@ services:
       - web_data:/var/www/html
       - cropper_uploads:/app/uploads
       - cropper_cache:/tmp
+    secrets:
+      - DB_PASSWORD
     networks:
       - cakephp-network
 
@@ -73,6 +80,9 @@ services:
     volumes:
       - db_data:/var/lib/mysql
       - db_init:/docker-entrypoint-initdb.d
+    secrets:
+      - db_password
+      - db_root_password
     networks:
       - cakephp-network
 
@@ -112,6 +122,18 @@ volumes:
     driver: local
   web_data:
     driver: local
+
+secrets:
+  ssl_key:
+    file: ./.balena/secrets/ssl_key
+  ssl_crt:
+    file: ./.balena/secrets/ssl_crt
+  db_password:
+    file: ./.balena/secrets/db_password
+  db_root_password:
+    file: ./.balena/secrets/db_root_password
+  DB_PASSWORD:
+    file: ./.balena/secrets/db_password
 
 networks:
   cakephp-network:
