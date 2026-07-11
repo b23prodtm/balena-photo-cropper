@@ -6,7 +6,8 @@ WORKDIR /app
 
 # ============================================================================
 # CRITICAL: Install system dependencies BEFORE pip install
-# This is the KEY to fixing "libpng16.so.16: cannot open shared object file"
+# This is the KEY to fixing "libavcodec.so: cannot open shared object file"
+# Added libavcodec and related codec libraries for PyMuPDF/FFmpeg on armhf
 # ============================================================================
 RUN apt-get update && apt-get install -y --no-install-recommends \
     # OpenCV/image processing dependencies
@@ -26,6 +27,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libfreetype6 \
     libharfbuzz0b \
     libwebp-dev \
+    \
+    # Audio/Video codec libraries (FIX for libavcodec.so error)
+    libavcodec-dev \
+    libavformat-dev \
+    libavutil-dev \
+    libswscale-dev \
     \
     # Additional tools
     libgl1 \
