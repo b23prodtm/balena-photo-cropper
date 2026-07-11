@@ -1,7 +1,7 @@
 version: '2.1'
 
 services:
-  # Nginx - Reverse proxy with SSL
+  # Nginx - Reverse proxy with SSL (all config baked into image)
   nginx:
     build:
       context: ./nginx
@@ -14,8 +14,6 @@ services:
     restart: unless-stopped
     # PR #9: attend que web soit prêt avant de servir
     command: ["/wait-for-it.sh", "web", "9000"]
-    volumes:
-      - nginx_config:/etc/nginx/conf.d
     secrets:
       - ssl_key
       - ssl_crt
@@ -102,7 +100,7 @@ services:
     networks:
       - cakephp-network
 
-# Volumes - ONLY named volumes (no bind mounts)
+# Volumes - ONLY named volumes (no bind mounts for Balena Cloud compatibility)
 volumes:
   cropper-data:
     driver: local
@@ -117,8 +115,6 @@ volumes:
   cropper_uploads:
     driver: local
   cropper_cache:
-    driver: local
-  nginx_config:
     driver: local
   web_data:
     driver: local
