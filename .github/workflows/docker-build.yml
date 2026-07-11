@@ -71,7 +71,7 @@ jobs:
           printf '%s' "${{ secrets.SSL_KEY}}" > .balena/secrets/ssl_key
           printf '%s' "${{ secrets.SSL_CRT }}" > .balena/secrets/ssl_crt
           chmod 600 .balena/secrets/mysql_root_password .balena/secrets/mysql_password \
-          .balena/secrets/sl_key .balena/secrets/ssl_crt 
+          .balena/secrets/ssl_key .balena/secrets/ssl_crt 
     
       - name: Build service image for ${{ matrix.balena_arch }}
         uses: docker/bake-action@v5
