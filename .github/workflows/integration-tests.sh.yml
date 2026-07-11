@@ -189,7 +189,7 @@ jobs:
         " || exit 1
         
         echo "--- Nginx listening ports ---"
-        docker compose exec nginx sh -c "netstat -tlnp 2>/dev/null | grep -E ':(80|443)' || ss -tln 2>/dev/null | grep -E ':(80|443)'"
+        docker compose exec nginx sh -c "nc -z localhost 80 && nc -z localhost 443"
         
         echo "--- Testing Nginx health endpoint ---"
         sleep 5
