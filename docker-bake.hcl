@@ -89,8 +89,8 @@ target "web" {
   depends_on = ["cropper"]
   
   secret = [
-    "id=DB_ROOT_PASSWORD,src=.balena/secrets/db_root_password",
-    "id=DB_PASSWORD,src=.balena/secrets/db_password",
+    "id=MYSQL_ROOT_PASSWORD,src=.balena/secrets/mysql_root_password",
+    "id=MYSQL_PASSWORD,src=.balena/secrets/mysql_password",
   ]
 }
 
@@ -138,8 +138,8 @@ target "mysqldb" {
     PGID = "1000"
   }
   secret = [
-    "id=DB_ROOT_PASSWORD,src=.balena/secrets/db_root_password",
-    "id=DB_PASSWORD,src=.balena/secrets/db_password",
+    "id=MYSQL_ROOT_PASSWORD,src=.balena/secrets/mysql_root_password",
+    "id=MYSQL_PASSWORD,src=.balena/secrets/mysql_password",
   ]
 }
 
