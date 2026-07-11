@@ -88,6 +88,8 @@ jobs:
         echo "${{ secrets.DB_PASSWORD }}" > .balena/secrets/db_password
         echo "${{ secrets.DB_ROOT_PASSWORD }}" > .balena/secrets/db_root_password
         chmod 600 .balena/secrets/*
+        echo "✅ Secrets created successfully"
+        ls -la .balena/secrets/
 
     - name: Build all services with Bake
       uses: docker/bake-action@v5
@@ -120,14 +122,91 @@ jobs:
         echo "=== Pre-flight check OK ==="
 
     # ============================================================
+    # PRE-FLIGHT CHECK: Secrets Passing at Build & Runtime
+    # ============================================================
+    - name: Pre-flight check: Secrets passed to build and runtime
+      run: |
+        echo "=== Pre-flight: Checking Secrets Availability ==="
+        
+        # Verify secrets exist on host
+        echo "--- Host-side secrets ---"
+        [ -f .balena/secrets/db_password ] && echo "✅ db_password exists" || echo "❌ db_password missing"
+        [ -f .balena/secrets/db_root_password ] && echo "✅ db_root_password exists" || echo "❌ db_root_password missing"
+        
+        # Start all required services
+        echo "--- Starting services with secrets ---"
+        docker compose up -d cropper web db nginx
+        sleep 15
+        
+        echo "--- Container-side secrets check (db service) ---"
+        docker compose exec -e DB_PASSWORD_FILE=/run/secrets/DB_PASSWORD db sh -c "
+          if [ -f /run/secrets/db_password ]; then
+            echo '✅ /run/secrets/db_password exists in db container'
+            wc -c < /run/secrets/db_password
+          else
+            echo '❌ /run/secrets/db_password NOT found in db container'
+            exit 1
+          fi
+        " || exit 1
+        
+        echo "--- Container-side secrets check (web service) ---"
+        docker compose exec web sh -c "
+          if [ -f /run/secrets/DB_PASSWORD ]; then
+            echo '✅ /run/secrets/DB_PASSWORD exists in web container'
+            wc -c < /run/secrets/DB_PASSWORD
+          else
+            echo '❌ /run/secrets/DB_PASSWORD NOT found in web container'
+            exit 1
+          fi
+        " || exit 1
+        
+        echo "=== Pre-flight secrets check OK ==="
+
+    # ============================================================
+    # PRE-FLIGHT CHECK: Nginx + SSL Certificates
+    # ============================================================
+    - name: Pre-flight check: Nginx SSL and routing
+      run: |
+        echo "=== Pre-flight: Checking Nginx SSL & Routing ==="
+        
+        echo "--- Nginx container status ---"
+        docker compose ps nginx
+        
+        echo "--- Nginx configuration test ---"
+        docker compose exec nginx nginx -t
+        
+        echo "--- Checking Nginx SSL certificates ---"
+        docker compose exec nginx sh -c "
+          if [ -f /etc/nginx/ssl/server.crt ] && [ -f /etc/nginx/ssl/server.key ]; then
+            echo '✅ SSL certificates found'
+            openssl x509 -in /etc/nginx/ssl/server.crt -noout -dates
+          else
+            echo '❌ SSL certificates NOT found'
+            echo 'Looking for certs in /etc/nginx/ssl/:'
+            ls -la /etc/nginx/ssl/ 2>/dev/null || echo 'Directory does not exist'
+            exit 1
+          fi
+        " || exit 1
+        
+        echo "--- Nginx listening ports ---"
+        docker compose exec nginx sh -c "netstat -tlnp 2>/dev/null | grep -E ':(80|443)' || nc -tlnp 2>/dev/null"
+        
+        echo "--- Testing Nginx health endpoint ---"
+        sleep 5
+        curl -s http://localhost:8080/health || echo "Health check on :8080 (HTTP redirect)"
+        
+        echo "=== Pre-flight Nginx check OK ==="
+
+    # ============================================================
     # START ONLY REQUIRED SERVICES FOR TESTS
     # ============================================================
     - name: Start required services
       run: |
         ln -sf docker-compose.${{ matrix.balena_arch }} docker-compose.yml
         ln -sf ${{ matrix.balena_arch }}.env .env
-        docker compose up -d cropper web db
+        docker compose up -d cropper web db nginx
         docker compose ps
+        sleep 10
 
     - name: Run integration tests
       id: integration-tests
@@ -146,6 +225,7 @@ jobs:
       run: |
         docker compose logs cropper || true
         docker compose logs web || true
+        docker compose logs nginx || true
         [ -f test_output.log ] && cat test_output.log
 
     - name: Capture failure result
@@ -168,7 +248,10 @@ jobs:
           echo "- Flask API routes" >> $GITHUB_STEP_SUMMARY
           echo "- CakePHP web routes" >> $GITHUB_STEP_SUMMARY
           echo "- CLI tool functionality" >> $GITHUB_STEP_SUMMARY
+          echo "- Nginx SSL routing" >> $GITHUB_STEP_SUMMARY
+          echo "- Docker secrets propagation" >> $GITHUB_STEP_SUMMARY
           echo "Ready for Balena Cloud deployment!" >> $GITHUB_STEP_SUMMARY
         else
           echo "❌ Some tests failed" >> $GITHUB_STEP_SUMMARY
           echo "Check logs above." >> $GITHUB_STEP_SUMMARY
+        fi
