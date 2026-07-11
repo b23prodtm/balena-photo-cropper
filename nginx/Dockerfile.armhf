@@ -1,28 +1,30 @@
 # services/nginx/Dockerfile - Nginx with explicit multi-platform support
 FROM nginx:1.27-alpine
 
-# Install curl for health checks
+# Install curl for health checks and openssl for certificate generation
 RUN apk add --no-cache \
     curl \
     bash \
-    netcat-openbsd
+    netcat-openbsd \
+    openssl
 
 # Copy custom nginx configuration
 COPY nginx.conf /etc/nginx/nginx.conf
 
-# Create web root if not exists
-RUN mkdir -p /var/www/html && mkdir -p /etc/nginx/conf.d
+# Create web root and SSL directory
+RUN mkdir -p /var/www/html && mkdir -p /etc/nginx/conf.d && mkdir -p /etc/nginx/ssl
+
+# Copy entrypoint and wait-for-it scripts
+COPY scripts/entrypoint.sh /entrypoint.sh
+COPY scripts/wait-for-it.sh /wait-for-it.sh
+RUN chmod 755 /entrypoint.sh /wait-for-it.sh
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
     CMD curl -f http://localhost/health 2>/dev/null || exit 1
 
-COPY scripts/wait-for-it.sh /wait-for-it.sh
-RUN chmod 755 /wait-for-it.sh
+# Expose HTTP and HTTPS ports
+EXPOSE 80 443
 
-
-# Expose HTTP port
-EXPOSE 80
-
-# Start Nginx
-CMD ["nginx", "-g", "daemon off;"]
+# Use entrypoint script for SSL certificate handling
+ENTRYPOINT ["/entrypoint.sh"]
