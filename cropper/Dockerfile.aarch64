@@ -4,13 +4,8 @@ ENV QT_QPA_PLATFORM=linux/arm64 \
 
 WORKDIR /app
 
-# ============================================================================
-# CRITICAL: Install system dependencies BEFORE pip install
-# This is the KEY to fixing "libavcodec.so: cannot open shared object file"
-# Added libavcodec and related codec libraries for PyMuPDF/FFmpeg on aarch64
-# ============================================================================
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    # OpenCV/image processing dependencies
+    # OpenCV deps
     libopenblas-dev \
     libblas-dev \
     liblapack-dev \
@@ -20,25 +15,22 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxext6 \
     libxrender-dev \
     pkg-config \
-    \
-    # Image format support (aarch64-available packages)
     libpng-dev \
     libjpeg-dev \
     libfreetype6 \
     libharfbuzz0b \
     libwebp-dev \
-    \
-    # Audio/Video codec libraries (FIX for libavcodec.so error)
-    libavcodec-dev \
-    libavformat-dev \
-    libavutil-dev \
-    libswscale-dev \
-    \
-    # Additional tools
     libgl1 \
     libxcb-glx0 \
     curl \
+    \
+    # FFmpeg runtime (CRITICAL)
     ffmpeg \
+    libavcodec59 \
+    libavformat59 \
+    libavutil57 \
+    libswscale6 \
+    \
     && rm -rf /var/lib/apt/lists/* \
     && rm -rf /usr/share/man/* /usr/share/doc/* /usr/share/locale/*
 
