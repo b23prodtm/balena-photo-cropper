@@ -4,3 +4,7 @@ build-secrets:
       dest: MYSQL_PASSWORD
     - source: mysql_root_password
       dest: MYSQL_ROOT_PASSWORD
+    - source: ssl_key
+      dest: SSL_KEY
+    - source: ssl_crt
+      dest: SSL_CRT
