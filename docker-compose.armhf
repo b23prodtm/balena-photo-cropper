@@ -37,7 +37,7 @@ services:
       DB_HOST: db
       DB_NAME: cake_db
       DB_USER: cake_user
-      DB_PASSWORD_FILE: /run/secrets/DB_PASSWORD
+      # DB_PASSWORD_FILE: /run/secrets/MYSQL_PASSWORD  # Not used in balena Cloud (secrets handled at build time via .balena/balena.yml)
       # Runtime
       FLASK_ENV: production
       PYTHONUNBUFFERED: "1"
