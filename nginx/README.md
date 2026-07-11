@@ -17,8 +17,8 @@ This ensures secure deployments without baking private keys into the Docker imag
 At container startup, the entrypoint script checks for SSL material in this order:
 
 1. **Docker secrets**  
-   - `/run/secrets/ssl_key`  
-   - `/run/secrets/ssl_crt`
+   - `/run/secrets/SSL_KEY`  
+   - `/run/secrets/SSL_CRT`
 
 2. **Environment variables**  
    - `SSL_KEY`  
