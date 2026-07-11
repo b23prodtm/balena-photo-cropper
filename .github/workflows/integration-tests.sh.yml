@@ -15,10 +15,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          #- balena_arch: armhf
-          #  platform: linux/arm/v7
-          #- balena_arch: aarch64
-          #  platform: linux/arm64
           - balena_arch: x86_64
             platform: linux/amd64
 
@@ -65,27 +61,17 @@ jobs:
 
     - name: Display environment info
       run: |
-        echo "Python version:"
         python3 --version
-        echo ""
-        echo "Docker version:"
         docker --version
-        echo ""
-        echo "Docker Compose version:"
         docker compose --version
-        echo ""
-        echo "Curl version:"
         curl --version
 
     - name: Check tests directory
       run: |
-        echo "Checking tests/ directory structure..."
-        ls -la tests/ || echo "❌ tests/ directory not found"
-        [ -f tests/generate_test_images.py ] && echo "✅ generate_test_images.py found" || echo "❌ Not found"
-        [ -f tests/test_cropper_flask.py ] && echo "✅ test_cropper_flask.py found" || echo "❌ Not found"
-        [ -f tests/test_interactive_cropper.py ] && echo "✅ test_interactive_cropper.py found" || echo "❌ Not found"
-        [ -f tests/test_cakephp_routes.sh ] && echo "✅ test_cakephp_routes.sh found" || echo "❌ Not found"
-        [ -f tests/run_integration_tests.sh ] && echo "✅ run_integration_tests.sh found" || echo "❌ Not found"
+        ls -la tests/
+        for f in generate_test_images.py test_cropper_flask.py test_interactive_cropper.py test_cakephp_routes.sh run_integration_tests.sh; do
+          [ -f tests/$f ] && echo "✅ $f found" || echo "❌ $f missing"
+        done
         
     - name: Generate SSL certificates
       run: |
@@ -94,8 +80,7 @@ jobs:
         
     - name: Make test scripts executable
       run: |
-        chmod +x tests/run_integration_tests.sh
-        chmod +x tests/test_cakephp_routes.sh
+        chmod +x tests/*.sh
         
     - name: Create .balena/secrets directory with GitHub secrets
       run: |
@@ -103,43 +88,55 @@ jobs:
         echo "${{ secrets.DB_PASSWORD }}" > .balena/secrets/db_password
         echo "${{ secrets.DB_ROOT_PASSWORD }}" > .balena/secrets/db_root_password
         chmod 600 .balena/secrets/*
-      env:
-        DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-        DB_ROOT_PASSWORD: ${{ secrets.DB_ROOT_PASSWORD }}
 
     - name: Build all services with Bake
       uses: docker/bake-action@v5
       with:
-        files: |
-          ./docker-bake.hcl
+        files: ./docker-bake.hcl
         targets: ${{ matrix.balena_arch }}
         load: true
 
-    - name: Start docker compose stack
+    # ============================================================
+    # PRE-FLIGHT CHECK: OpenCV + FFmpeg inside cropper container
+    # ============================================================
+    - name: Pre-flight check: OpenCV + FFmpeg availability
+      run: |
+        echo "=== Pre-flight: Checking OpenCV + FFmpeg ==="
+
+        ln -sf docker-compose.${{ matrix.balena_arch }} docker-compose.yml
+        ln -sf ${{ matrix.balena_arch }}.env .env
+
+        docker compose up -d cropper
+        sleep 10
+
+        echo "--- FFmpeg libs ---"
+        docker compose exec cropper sh -c "ldconfig -p | grep libavcodec || true"
+        docker compose exec cropper sh -c "ldconfig -p | grep libavformat || true"
+        docker compose exec cropper sh -c "ldconfig -p | grep libavutil || true"
+
+        echo "--- OpenCV import ---"
+        docker compose exec cropper sh -c "python3 -c 'import cv2; print(\"OpenCV OK:\", cv2.__version__)'"
+
+        echo "=== Pre-flight check OK ==="
+
+    # ============================================================
+    # START ONLY REQUIRED SERVICES FOR TESTS
+    # ============================================================
+    - name: Start required services
       run: |
         ln -sf docker-compose.${{ matrix.balena_arch }} docker-compose.yml
         ln -sf ${{ matrix.balena_arch }}.env .env
-        docker compose up -d
+        docker compose up -d cropper web db
         docker compose ps
 
     - name: Run integration tests
       id: integration-tests
       continue-on-error: true
       run: |
-        set +e
-
         bash tests/run_integration_tests.sh > test_output.log 2>&1
         TEST_EXIT_CODE=$?
-
         echo "Integration tests exit code: ${TEST_EXIT_CODE}"
-
-        if [ "${TEST_EXIT_CODE}" != "0" ]; then
-          echo "❌ Integration tests failed"
-          exit ${TEST_EXIT_CODE}
-        fi
-
-        echo "✅ Integration tests passed"
-        exit 0
+        exit ${TEST_EXIT_CODE}
       timeout-minutes: 90
       env:
         HEADLESS_MODE: true
@@ -147,20 +144,13 @@ jobs:
     - name: Docker compose logs
       if: always()
       run: |
-        echo "=== Docker Compose Logs ==="
-        docker compose logs web || true
         docker compose logs cropper || true
-        echo ""
-        echo "=== Test Output ==="
-        [ -f test_output.log ] && cat test_output.log || echo "No test output file found"
-        echo ""
-        echo "=== Running Containers ==="
-        docker ps -a || true
+        docker compose logs web || true
+        [ -f test_output.log ] && cat test_output.log
 
     - name: Capture failure result
       if: steps.integration-tests.outcome == 'failure'
       run: |
-        echo "Integration test failure detected"
         docker compose logs --no-color > docker-compose-failure.log || true
 
     - name: Cleanup
@@ -173,19 +163,12 @@ jobs:
       if: always()
       run: |
         echo "## 🧪 Integration Test Results" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-
         if [ "${{ steps.integration-tests.outcome }}" == "success" ]; then
-          echo "✅ **All tests passed!**" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Tests completed:" >> $GITHUB_STEP_SUMMARY
+          echo "✅ All tests passed!" >> $GITHUB_STEP_SUMMARY
           echo "- Flask API routes" >> $GITHUB_STEP_SUMMARY
           echo "- CakePHP web routes" >> $GITHUB_STEP_SUMMARY
           echo "- CLI tool functionality" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Ready for Balena Cloud deployment!" >> $GITHUB_STEP_SUMMARY
+          echo "Ready for Balena Cloud deployment!" >> $GITHUB_STEP_SUMMARY
         else
-          echo "❌ **Some tests failed**" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Please check the logs above and fix issues before deployment." >> $GITHUB_STEP_SUMMARY
-        fi
+          echo "❌ Some tests failed" >> $GITHUB_STEP_SUMMARY
+          echo "Check logs above." >> $GITHUB_STEP_SUMMARY
