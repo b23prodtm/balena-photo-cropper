@@ -1,29 +1,56 @@
 # Stage 1: Builder (with all dev deps)
-FROM python:3.11-slim AS builder
+FROM python:3.11-alpine AS builder
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential gcc g++ python3-dev \
-    libopenblas-dev libblas-dev liblapack-dev libopenjp2-7 \
-    libtiff5-dev libsm6 libxext6 libxrender-dev pkg-config \
-    libpng-dev libjpeg-dev libfreetype6-dev libharfbuzz-dev libwebp-dev \
-    libavcodec-dev libavformat-dev libavutil-dev libswscale-dev \
-    && rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache \
+    build-base \
+    gcc \
+    g++ \
+    python3-dev \
+    libopenblas-dev \
+    lapack-dev \
+    openjp2-dev \
+    tiff-dev \
+    libsm-dev \
+    libxext-dev \
+    libxrender-dev \
+    pkgconfig \
+    libpng-dev \
+    jpeg-dev \
+    freetype-dev \
+    harfbuzz-dev \
+    libwebp-dev \
+    ffmpeg-dev \
+    libgl \
+    libxcb \
+    curl
 
 WORKDIR /build
 COPY requirements.txt .
 RUN pip install --user --no-cache-dir -r requirements.txt
 
-# Stage 2: Runtime (minimal)
-FROM python:3.11-slim
+# Stage 2: Runtime (minimal - Alpine)
+FROM python:3.11-alpine
 
 ENV QT_QPA_PLATFORM=linux/amd64 \
     PIP_NO_CACHE_DIR=1
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libopenblas0 libblas3 liblapack3 libopenjp2-7 libtiff5 libsm6 libxext6 \
-    libxrender1 libpng16-16 libjpeg62-turbo libfreetype6 libharfbuzz0b libwebp7 \
-    libavcodec59 libavformat59 libavutil57 libswscale6 libgl1 libxcb-glx0 ffmpeg curl \
-    && rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache \
+    libopenblas \
+    lapack \
+    openjp2 \
+    tiff \
+    libsm \
+    libxext \
+    libxrender \
+    libpng \
+    jpeg \
+    freetype \
+    harfbuzz \
+    libwebp \
+    ffmpeg \
+    libgl \
+    libxcb \
+    curl
 
 WORKDIR /app
 
