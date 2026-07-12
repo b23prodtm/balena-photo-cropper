@@ -3,12 +3,12 @@
  
 # Versions stables pour armhf (Raspberry Pi)
 opencv-python-headless==4.8.1.78
-numpy>=1.26.0,<2 # Updated: umpy 1.26+ supports Python 3.11
+numpy>=1.24.2,<2
 Pillow>=9.5.0
 requests>=2.28.0
 flask>=2.3.0
 werkzeug>=2.3.0
 gunicorn>=20.1.0
 
-# On autorise une plage de versions pour trouver un binaire compatible ARM/AMD64
-PyMuPDF>=1.22.0,<1.25.0
+# pypdfium2: bindings ctypes vers libpdfium.so precompile, wheels musllinux pour x86_64/aarch64/armv7l
+pypdfium2>=4.30.0
