@@ -1,0 +1,5 @@
+/nbproject/private/
+/.last_build_sigs
+/.balena/secrets/*
+*.sed
+*.old

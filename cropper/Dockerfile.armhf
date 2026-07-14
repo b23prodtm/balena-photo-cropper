@@ -1,6 +1,10 @@
+<<<<<<< HEAD
 # Dockerfile for ARMv7 (armhf) - Raspberry Pi 3
 FROM python:3.11-slim
 
+=======
+FROM python:3.11-slim
+>>>>>>> origin/main
 ENV QT_QPA_PLATFORM=linux/arm/v7 \
     PIP_NO_CACHE_DIR=1
 
@@ -8,7 +12,12 @@ WORKDIR /app
 
 # ============================================================================
 # CRITICAL: Install system dependencies BEFORE pip install
+<<<<<<< HEAD
 # This prevents "cannot open shared object file" errors for PyMuPDF/OpenCV
+=======
+# This is the KEY to fixing "libavcodec.so: cannot open shared object file"
+# Added libavcodec and related codec libraries for PyMuPDF/FFmpeg on armhf
+>>>>>>> origin/main
 # ============================================================================
 RUN apt-get update && apt-get install -y --no-install-recommends \
     # OpenCV/image processing dependencies
@@ -22,14 +31,22 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxrender-dev \
     pkg-config \
     \
+<<<<<<< HEAD
     # Image format support
+=======
+    # Image format support (armhf-available packages)
+>>>>>>> origin/main
     libpng-dev \
     libjpeg-dev \
     libfreetype6 \
     libharfbuzz0b \
     libwebp-dev \
     \
+<<<<<<< HEAD
     # Audio/Video codec libraries (REQUIRED for PyMuPDF)
+=======
+    # Audio/Video codec libraries (FIX for libavcodec.so error)
+>>>>>>> origin/main
     libavcodec-dev \
     libavformat-dev \
     libavutil-dev \
@@ -43,11 +60,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/* \
     && rm -rf /usr/share/man/* /usr/share/doc/* /usr/share/locale/*
 
+<<<<<<< HEAD
 # Prepare Python environment
 RUN pip install --no-cache-dir --upgrade pip wheel setuptools
 
 # Install Python dependencies
 # Use piwheels for ARM-compatible packages, allow binary-only
+=======
+>>>>>>> origin/main
 COPY requirements.txt .
 RUN pip install --no-cache-dir \
     --index-url https://www.piwheels.org/simple \
@@ -61,6 +81,12 @@ RUN chmod +x app.py && mkdir -p uploads tmp
 EXPOSE 5000
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+<<<<<<< HEAD
     CMD python3 -c "import cv2; import numpy; import fitz; print('All deps OK')" || exit 1
 
 CMD ["python3", "app.py"]
+=======
+    CMD python3 -c "import cv2; print('OpenCV OK:', cv2.__version__)" || exit 1
+
+ENTRYPOINT ["./app.py"]
+>>>>>>> origin/main
