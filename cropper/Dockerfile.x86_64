@@ -1,0 +1,55 @@
+# Dockerfile for AMD64 (x86_64) - Local development
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install system dependencies for OpenCV and PyMuPDF
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    # OpenCV/image processing dependencies
+    libopenblas-dev \
+    libblas-dev \
+    liblapack-dev \
+    libopenjp2-7 \
+    libtiff5-dev \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    pkg-config \
+    \
+    # Image format support
+    libpng-dev \
+    libjpeg-dev \
+    libfreetype6 \
+    libharfbuzz0b \
+    libwebp-dev \
+    \
+    # Audio/Video codec libraries (REQUIRED for PyMuPDF)
+    libavcodec-dev \
+    libavformat-dev \
+    libavutil-dev \
+    libswscale-dev \
+    \
+    # Additional tools
+    libgl1 \
+    libxcb-glx0 \
+    curl \
+    ffmpeg \
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -rf /usr/share/man/* /usr/share/doc/* /usr/share/locale/*
+
+# Prepare Python environment
+RUN pip install --no-cache-dir --upgrade pip wheel setuptools
+
+# Install Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY app.py .
+RUN chmod +x app.py && mkdir -p uploads tmp
+
+EXPOSE 5000
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD python3 -c "import cv2; import numpy; import fitz; print('All deps OK')" || exit 1
+
+CMD ["python3", "app.py"]
