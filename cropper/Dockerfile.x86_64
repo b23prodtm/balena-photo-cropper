@@ -1,12 +1,6 @@
-<<<<<<< HEAD
 # Dockerfile for AMD64 (x86_64) - Local development
 FROM python:3.11-slim
 
-WORKDIR /app
-
-# Install system dependencies for OpenCV and PyMuPDF
-=======
-FROM python:3.11-slim
 ENV QT_QPA_PLATFORM=linux/amd64 \
     PIP_NO_CACHE_DIR=1
 
@@ -14,10 +8,9 @@ WORKDIR /app
 
 # ============================================================================
 # CRITICAL: Install system dependencies BEFORE pip install
-# This is the KEY to fixing "libavcodec.so: cannot open shared object file"
+# This prevents "cannot open shared object file" errors for PyMuPDF/OpenCV
 # Added libavcodec and related codec libraries for PyMuPDF/FFmpeg on x86_64
 # ============================================================================
->>>>>>> origin/main
 RUN apt-get update && apt-get install -y --no-install-recommends \
     # OpenCV/image processing dependencies
     libopenblas-dev \
@@ -30,22 +23,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxrender-dev \
     pkg-config \
     \
-<<<<<<< HEAD
-    # Image format support
-=======
     # Image format support (x86_64-available packages)
->>>>>>> origin/main
     libpng-dev \
     libjpeg-dev \
     libfreetype6 \
     libharfbuzz0b \
     libwebp-dev \
     \
-<<<<<<< HEAD
-    # Audio/Video codec libraries (REQUIRED for PyMuPDF)
-=======
-    # Audio/Video codec libraries (FIX for libavcodec.so error)
->>>>>>> origin/main
+    # Audio/Video codec libraries (REQUIRED for PyMuPDF - FIX for libavcodec.so error)
     libavcodec-dev \
     libavformat-dev \
     libavutil-dev \
@@ -59,13 +44,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/* \
     && rm -rf /usr/share/man/* /usr/share/doc/* /usr/share/locale/*
 
-<<<<<<< HEAD
 # Prepare Python environment
 RUN pip install --no-cache-dir --upgrade pip wheel setuptools
 
 # Install Python dependencies
-=======
->>>>>>> origin/main
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
@@ -75,12 +57,6 @@ RUN chmod +x app.py && mkdir -p uploads tmp
 EXPOSE 5000
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-<<<<<<< HEAD
     CMD python3 -c "import cv2; import numpy; import fitz; print('All deps OK')" || exit 1
 
 CMD ["python3", "app.py"]
-=======
-    CMD python3 -c "import cv2; print('OpenCV OK:', cv2.__version__)" || exit 1
-
-ENTRYPOINT ["./app.py"]
->>>>>>> origin/main
