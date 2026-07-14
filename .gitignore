@@ -3,3 +3,4 @@
 /.balena/secrets/*
 *.sed
 *.old
+.DS_Store

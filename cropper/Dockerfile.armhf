@@ -25,7 +25,7 @@ RUN pip install --user --no-cache-dir -r requirements.txt
 # Stage 2: Runtime (minimal - Alpine)
 FROM python:3.11-alpine
 
-ENV QT_QPA_PLATFORM=offscreen \
+ENV QT_QPA_PLATFORM=linux/arm/v7 \
     PIP_NO_CACHE_DIR=1
 
 RUN apk add --no-cache \
