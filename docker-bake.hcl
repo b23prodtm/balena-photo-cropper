@@ -25,8 +25,10 @@ variable "BALENA_ARCH" {
   default = "x86_64"
 }
 
+# ============================================================================
+# COMMON CONFIGURATION
+# ============================================================================
 target "common" {
-  
   # GitHub Actions cache (fastest)
   cache-from = ["type=gha"]
   cache-to = ["type=gha,mode=max"]
@@ -254,7 +256,7 @@ target "mysqldb-aarch64" {
   ]
 }
 
-# Build for AMD64  (local development)
+# Build for AMD64 (local development)
 group "x86_64" {
   targets = ["cropper-x86_64", "web-x86_64", "nginx-x86_64", "mysqldb-x86_64"]
 }
