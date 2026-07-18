@@ -1,56 +1,70 @@
-FROM python:3.11-slim
+# Stage 1: Builder (with all dev deps)
+FROM python:3.11-alpine AS builder
+
+RUN apk add --no-cache \
+    build-base \
+    gcc \
+    g++ \
+    python3-dev \
+    libopenblas-dev \
+    lapack-dev \
+    openjp2-dev \
+    tiff-dev \
+    libsm-dev \
+    libxext-dev \
+    libxrender-dev \
+    pkgconfig \
+    libpng-dev \
+    jpeg-dev \
+    freetype-dev \
+    harfbuzz-dev \
+    libwebp-dev \
+    ffmpeg-dev \
+    libgl \
+    libxcb \
+    curl
+
+WORKDIR /build
+COPY requirements.txt .
+RUN pip install --user --no-cache-dir -r requirements.txt
+
+# Stage 2: Runtime (minimal - Alpine)
+FROM python:3.11-alpine
+
 ENV QT_QPA_PLATFORM=%%PLATFORM%% \
     PIP_NO_CACHE_DIR=1
 
+RUN apk add --no-cache \
+    libopenblas \
+    lapack \
+    openjp2 \
+    tiff \
+    libsm \
+    libxext \
+    libxrender \
+    libpng \
+    jpeg \
+    freetype \
+    harfbuzz \
+    libwebp \
+    ffmpeg \
+    libgl \
+    libxcb \
+    curl
+
 WORKDIR /app
 
-# ============================================================================
-# CRITICAL: Install system dependencies BEFORE pip install
-# This is the KEY to fixing "libavcodec.so: cannot open shared object file"
-# Added libavcodec and related codec libraries for PyMuPDF/FFmpeg (all architectures)
-# ============================================================================
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    # OpenCV/image processing dependencies
-    libopenblas-dev \
-    libblas-dev \
-    liblapack-dev \
-    libopenjp2-7 \
-    libtiff5-dev \
-    libsm6 \
-    libxext6 \
-    libxrender-dev \
-    pkg-config \
-    \
-    # Image format support
-    libpng-dev \
-    libjpeg-dev \
-    libfreetype6 \
-    libharfbuzz0b \
-    libwebp-dev \
-    \
-    # Audio/Video codec libraries (FIX for libavcodec.so error)
-    libavcodec-dev \
-    libavformat-dev \
-    libavutil-dev \
-    libswscale-dev \
-    \
-    # Additional tools
-    libgl1 \
-    libxcb-glx0 \
-    curl \
-    ffmpeg \
-    && rm -rf /var/lib/apt/lists/* \
-    && rm -rf /usr/share/man/* /usr/share/doc/* /usr/share/locale/*
-
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Copy pre-built Python packages from builder stage
+COPY --from=builder /root/.local /root/.local
+ENV PATH=/root/.local/bin:$PATH
 
 COPY app.py .
-RUN chmod +x app.py && mkdir -p uploads tmp
+RUN chmod +x app.py && mkdir -p uploads tmp && \
+    python3 -c "import cv2; print('OpenCV OK:', cv2.__version__)" || exit 1
 
 EXPOSE 5000
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD python3 -c "import cv2; print('OpenCV OK:', cv2.__version__)" || exit 1
+    CMD python3 -c "import cv2; print('OpenCV OK')" || exit 1
 
 ENTRYPOINT ["./app.py"]

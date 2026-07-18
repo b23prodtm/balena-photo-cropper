@@ -91,8 +91,8 @@ target "web" {
   depends_on = ["cropper"]
   
   secret = [
-    "id=DB_ROOT_PASSWORD,src=.balena/secrets/db_root_password",
-    "id=DB_PASSWORD,src=.balena/secrets/db_password",
+    "id=MYSQL_ROOT_PASSWORD,src=.balena/secrets/mysql_root_password",
+    "id=MYSQL_PASSWORD,src=.balena/secrets/mysql_password",
   ]
 }
 
@@ -114,6 +114,11 @@ target "nginx" {
   # Dynamic dockerfile selection based on BALENA_ARCH
   dockerfile = "Dockerfile.${BALENA_ARCH}"
   
+  secret = [
+    "id=SSL_KEY,src=.balena/secrets/ssl_key",
+    "id=SSL_CRT,src=.balena/secrets/ssl_crt",
+  ]
+
   output = ["type=registry"]
   
   depends_on = ["web"]
@@ -140,8 +145,8 @@ target "mysqldb" {
     PGID = "1000"
   }
   secret = [
-    "id=DB_ROOT_PASSWORD,src=.balena/secrets/db_root_password",
-    "id=DB_PASSWORD,src=.balena/secrets/db_password",
+    "id=MYSQL_ROOT_PASSWORD,src=.balena/secrets/mysql_root_password",
+    "id=MYSQL_PASSWORD,src=.balena/secrets/mysql_password",
   ]
 }
 
