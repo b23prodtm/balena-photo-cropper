@@ -1,3 +1,4 @@
+# Dockerfile for AMD64 (x86_64) - Local development
 # Stage 1: Builder (with all dev deps)
 FROM python:3.11-alpine AS builder
 
@@ -65,6 +66,6 @@ RUN chmod +x app.py && mkdir -p uploads tmp && \
 EXPOSE 5000
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD python3 -c "import cv2; print('OpenCV OK')" || exit 1
+    CMD python3 -c "import cv2; import numpy; import fitz; print('All deps OK')" || exit 1
 
-ENTRYPOINT ["./app.py"]
+CMD ["python3", "app.py"]
