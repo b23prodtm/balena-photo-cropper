@@ -89,8 +89,6 @@ jobs:
         cp certs/server.crt .balena/secrets/ssl_crt
         echo "${{ secrets.DB_PASSWORD }}" > .balena/secrets/mysql_password
         echo "${{ secrets.DB_ROOT_PASSWORD }}" > .balena/secrets/mysql_root_password
-        echo "${{ secrets.DB_PASSWORD }}" > .balena/secrets/db_password
-        echo "${{ secrets.DB_ROOT_PASSWORD }}" > .balena/secrets/db_root_password
         chmod 600 .balena/secrets/*
         echo "✅ Secrets created successfully"
         ls -la .balena/secrets/
