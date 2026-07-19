@@ -111,10 +111,8 @@ jobs:
         docker compose up -d cropper
         sleep 10
 
-        echo "--- FFmpeg libs ---"
-        docker compose exec cropper sh -c "ldconfig -p | grep libavcodec || true"
-        docker compose exec cropper sh -c "ldconfig -p | grep libavformat || true"
-        docker compose exec cropper sh -c "ldconfig -p | grep libavutil || true"
+        echo "--- FFmpeg libs / binary ---"
+        docker compose exec cropper sh -c "ffmpeg -version"
 
         echo "--- OpenCV import ---"
         docker compose exec cropper sh -c "python3 -c 'import cv2; print(\"OpenCV OK:\", cv2.__version__)'"
