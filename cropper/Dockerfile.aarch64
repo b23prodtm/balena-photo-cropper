@@ -1,6 +1,6 @@
 # Dockerfile for ARM64 (aarch64) - Raspberry Pi 4/5
 # Stage 1: Builder
-FROM alpine:3.22 AS builder
+FROM alpine:3.19 AS builder
 
 RUN apk add --no-cache \
     python3 \
@@ -14,7 +14,7 @@ COPY requirements.txt .
 RUN python3 -m pip install --user --no-cache-dir -r requirements.txt
 
 # Stage 2: Runtime (minimal - Alpine)
-FROM alpine:3.22
+FROM alpine:3.19
 
 ENV QT_QPA_PLATFORM=linux/arm64 \
     PIP_NO_CACHE_DIR=1 \
