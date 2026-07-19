@@ -131,7 +131,7 @@ jobs:
         # Verify secrets exist on host
         echo "--- Host-side secrets ---"
         [ -f .balena/secrets/mysql_password ] && echo "✅ mysql_password exists" || echo "❌ mysql_password missing"
-        [ -f .balena/secrets/db_root_password ] && echo "✅ db_root_password exists" || echo "❌ db_root_password missing"
+        [ -f .balena/secrets/mysql_root_password ] && echo "✅ mysql_root_password exists" || echo "❌ mysql_root_password missing"
         
         # Start all required services
         echo "--- Starting services with secrets ---"
