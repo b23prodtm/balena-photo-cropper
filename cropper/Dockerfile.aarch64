@@ -7,23 +7,17 @@ RUN apk add --no-cache \
     gcc \
     g++ \
     python3-dev \
-    libopenblas-dev \
+    py3-numpy-dev \
+    openblas-dev \
     lapack-dev \
-    openjp2-dev \
-    tiff-dev \
-    libsm-dev \
-    libxext-dev \
-    libxrender-dev \
-    pkgconfig \
+    libjpeg-turbo-dev \
     libpng-dev \
-    jpeg-dev \
+    openjpeg-dev \
+    tiff-dev \
     freetype-dev \
     harfbuzz-dev \
     libwebp-dev \
-    ffmpeg-dev \
-    libgl \
-    libxcb \
-    curl
+    ffmpeg-dev
 
 WORKDIR /build
 COPY requirements.txt .
@@ -36,22 +30,16 @@ ENV QT_QPA_PLATFORM=linux/arm64 \
     PIP_NO_CACHE_DIR=1
 
 RUN apk add --no-cache \
-    libopenblas \
+    openblas \
     lapack \
-    openjp2 \
-    tiff \
-    libsm \
-    libxext \
-    libxrender \
+    libjpeg-turbo \
     libpng \
-    jpeg \
+    openjpeg \
+    tiff \
     freetype \
     harfbuzz \
     libwebp \
-    ffmpeg \
-    libgl \
-    libxcb \
-    curl
+    ffmpeg
 
 WORKDIR /app
 
@@ -66,6 +54,6 @@ RUN chmod +x app.py && mkdir -p uploads tmp && \
 EXPOSE 5000
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD python3 -c "import cv2; import numpy; import fitz; print('All deps OK')" || exit 1
+    CMD python3 -c "import cv2; import numpy; import pypdfium2; print('All deps OK')" || exit 1
 
 CMD ["python3", "app.py"]
