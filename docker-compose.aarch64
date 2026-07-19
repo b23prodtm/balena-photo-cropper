@@ -59,7 +59,7 @@ services:
     secrets:
       - MYSQL_PASSWORD
 # END DOCKER_BUILDKIT
-volumes:
+    volumes:
       - web_data:/var/www/html
       - cropper_uploads:/app/uploads
       - cropper_cache:/tmp
