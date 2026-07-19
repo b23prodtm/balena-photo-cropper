@@ -107,8 +107,7 @@ echo ""
 # Verify nginx configuration
 # ============================================================================
 echo "=== Validating Nginx Configuration ==="
-nginx -t
-if [ $? -ne 0 ]; then
+if ! nginx -t; then
     echo "❌ Nginx configuration validation failed!"
     exit 1
 fi
