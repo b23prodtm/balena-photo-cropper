@@ -1,6 +1,7 @@
 /nbproject/private/
 /.last_build_sigs
 /.balena/secrets/*
+/.idea/
 *.sed
 *.old
 .DS_Store
