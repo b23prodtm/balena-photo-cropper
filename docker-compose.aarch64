@@ -14,8 +14,8 @@ services:
     restart: unless-stopped
     # PR #9: attend que web soit prêt avant de servir
     command: ["/wait-for-it.sh", "web", "9000"]
-### BUILDKIT BEGIN    secrets:
-      - SSL_KEY
+### BUILDKIT BEGIN
+    secrets:      - SSL_KEY
       - SSL_CRT
 ### BUILDKIT END    depends_on:
       - web
@@ -53,8 +53,8 @@ services:
     restart: unless-stopped
     # PR #9: attend que cropper Flask soit ready
     command: ["/bin/sh", "-c", "/wait-for-it.sh cropper 5000 sh -c '/wait-for-it.sh db 3306 php-fpm -F'"]
-### BUILDKIT BEGIN    secrets:
-      - MYSQL_PASSWORD
+### BUILDKIT BEGIN
+    secrets:      - MYSQL_PASSWORD
 ### BUILDKIT END    volumes:
       - web_data:/var/www/html
       - cropper_uploads:/app/uploads
@@ -72,8 +72,8 @@ services:
     environment:
       MYSQL_DATABASE: cake_db
       MYSQL_USER: cake_user
-### BUILDKIT BEGIN    secrets:
-      - MYSQL_PASSWORD
+### BUILDKIT BEGIN
+    secrets:      - MYSQL_PASSWORD
       - MYSQL_ROOT_PASSWORD
 ### BUILDKIT END    volumes:
       - db_data:/var/lib/mysql
@@ -118,8 +118,8 @@ volumes:
   web_data:
     driver: local
 
-### BUILDKIT BEGINsecrets:
-  SSL_KEY:
+### BUILDKIT BEGIN
+secrets:  SSL_KEY:
     file: ./.balena/secrets/ssl_key
   SSL_CRT:
     file: ./.balena/secrets/ssl_crt
