@@ -10,8 +10,13 @@ RUN apk add --no-cache \
 
 WORKDIR /app
 COPY requirements.txt .
-RUN pip3 install --no-cache-dir --upgrade pip \
-    && pip3 install --no-cache-dir -r requirements.txt
+
+# Create and use venv (PEP 668-safe)
+RUN python3 -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+RUN pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
@@ -23,4 +28,4 @@ EXPOSE 5000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD python3 -c "import cv2, numpy, pypdfium2; from PIL import Image; print('OpenCV OK:', cv2.__version__); print('All deps OK')"
 
-CMD python3 -c ./app.py
+CMD ["python3", "app.py"]
