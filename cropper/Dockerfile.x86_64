@@ -9,14 +9,10 @@ RUN apk add --no-cache \
     ffmpeg
 
 WORKDIR /app
+
 COPY requirements.txt .
 
-# Create and use venv (PEP 668-safe)
-RUN python3 -m venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
-
-RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir -r requirements.txt
+RUN pip install --break-system-packages --no-cache-dir -r requirements.txt
 
 COPY . .
 
