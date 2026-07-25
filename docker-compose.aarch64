@@ -14,12 +14,10 @@ services:
     restart: unless-stopped
     # PR #9: attend que web soit prêt avant de servir
     command: ["/wait-for-it.sh", "web", "9000"]
-# BEGIN DOCKER_BUILDKIT
-    secrets:
+### BUILDKIT BEGIN    secrets:
       - SSL_KEY
       - SSL_CRT
-# END DOCKER_BUILDKIT
-    depends_on:
+### BUILDKIT END    depends_on:
       - web
       - cropper
     networks:
@@ -55,11 +53,9 @@ services:
     restart: unless-stopped
     # PR #9: attend que cropper Flask soit ready
     command: ["/bin/sh", "-c", "/wait-for-it.sh cropper 5000 sh -c '/wait-for-it.sh db 3306 php-fpm -F'"]
-# BEGIN DOCKER_BUILDKIT
-    secrets:
+### BUILDKIT BEGIN    secrets:
       - MYSQL_PASSWORD
-# END DOCKER_BUILDKIT
-    volumes:
+### BUILDKIT END    volumes:
       - web_data:/var/www/html
       - cropper_uploads:/app/uploads
       - cropper_cache:/tmp
@@ -76,12 +72,10 @@ services:
     environment:
       MYSQL_DATABASE: cake_db
       MYSQL_USER: cake_user
-# BEGIN DOCKER_BUILDKIT
-    secrets:
+### BUILDKIT BEGIN    secrets:
       - MYSQL_PASSWORD
       - MYSQL_ROOT_PASSWORD
-# END DOCKER_BUILDKIT
-    volumes:
+### BUILDKIT END    volumes:
       - db_data:/var/lib/mysql
       - db_init:/docker-entrypoint-initdb.d
     networks:
@@ -124,8 +118,7 @@ volumes:
   web_data:
     driver: local
 
-# BEGIN DOCKER_BUILDKIT
-secrets:
+### BUILDKIT BEGINsecrets:
   SSL_KEY:
     file: ./.balena/secrets/ssl_key
   SSL_CRT:
@@ -134,8 +127,7 @@ secrets:
     file: ./.balena/secrets/mysql_password
   MYSQL_ROOT_PASSWORD:
     file: ./.balena/secrets/mysql_root_password
-# END DOCKER_BUILDKIT
-
+### BUILDKIT END
 networks:
   cakephp-network:
     driver: bridge
