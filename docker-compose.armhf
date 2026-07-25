@@ -51,7 +51,7 @@ services:
     command: >
       /bin/sh -c "
       /wait-for-it.sh cropper 5000 &&
-      /wait-for-it.sh db 3306 &&
+      /wait-for-it.sh mysqldb 3306 &&
       php-fpm -F
       "
     volumes:
