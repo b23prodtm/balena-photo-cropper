@@ -117,7 +117,7 @@ jobs:
         docker compose exec cropper sh -c "ffmpeg -version"
 
         echo "--- OpenCV import ---"
-        docker compose exec cropper sh -c "/opt/venv/bin/python -c 'import cv2; print(\"OpenCV OK:\", cv2.__version__)'"
+        docker compose exec cropper sh -c "python3 -c 'import cv2; print(\"OpenCV OK:\", cv2.__version__)'"
 
         echo "=== Pre-flight check OK ==="
 

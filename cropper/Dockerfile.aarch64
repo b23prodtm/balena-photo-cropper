@@ -1,40 +1,17 @@
-# Stage 1: Builder
-FROM alpine:3.19 AS builder
+FROM alpine:3.19
 
 RUN apk add --no-cache \
     python3 \
     py3-pip \
     py3-opencv \
     py3-numpy \
-    py3-pillow
-
-WORKDIR /build
-COPY requirements.txt .
-RUN python3 -m venv /opt/venv \
-    && /opt/venv/bin/pip install --no-cache-dir --upgrade pip \
-    && /opt/venv/bin/pip install --no-cache-dir -r requirements.txt
-
-# Stage 2: Runtime (minimal - Alpine)
-FROM alpine:3.19
-
-ENV QT_QPA_PLATFORM=linux/arm64 \
-    PIP_NO_CACHE_DIR=1 \
-    PATH=/root/.local/bin:$PATH
-
-RUN apk add --no-cache \
-    python3 \
-    py3-opencv \
-    py3-numpy \
     py3-pillow \
     ffmpeg
 
 WORKDIR /app
-
-# Copy pre-built Python packages from builder stage
-COPY --from=builder /opt/venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
-# Copy app code
-COPY --from=builder /build /app
+COPY requirements.txt .
+RUN pip3 install --no-cache-dir --upgrade pip \
+    && pip3 install --no-cache-dir -r requirements.txt
 
 COPY . .
 
