@@ -50,7 +50,12 @@ services:
     mem_reservation: 64m
     restart: unless-stopped
     # PR #9: attend que cropper Flask soit ready
-    command: ["/bin/sh", "-c", "/wait-for-it.sh cropper 5000 sh -c '/wait-for-it.sh mysqldb 3306 php-fpm -F'"]
+    command: >
+      /bin/sh -c "
+      /wait-for-it.sh cropper 5000 &&
+      /wait-for-it.sh db 3306 &&
+      php-fpm -F
+      "
     volumes:
       - web_data:/var/www/html
       - cropper_uploads:/app/uploads
