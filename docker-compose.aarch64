@@ -17,7 +17,8 @@ services:
 ### BUILDKIT BEGIN
     secrets:      - SSL_KEY
       - SSL_CRT
-### BUILDKIT END    depends_on:
+### BUILDKIT END
+    depends_on:
       - web
       - cropper
     networks:
@@ -55,7 +56,8 @@ services:
     command: ["/bin/sh", "-c", "/wait-for-it.sh cropper 5000 sh -c '/wait-for-it.sh db 3306 php-fpm -F'"]
 ### BUILDKIT BEGIN
     secrets:      - MYSQL_PASSWORD
-### BUILDKIT END    volumes:
+### BUILDKIT END
+    volumes:
       - web_data:/var/www/html
       - cropper_uploads:/app/uploads
       - cropper_cache:/tmp
@@ -75,7 +77,8 @@ services:
 ### BUILDKIT BEGIN
     secrets:      - MYSQL_PASSWORD
       - MYSQL_ROOT_PASSWORD
-### BUILDKIT END    volumes:
+### BUILDKIT END
+    volumes:
       - db_data:/var/lib/mysql
       - db_init:/docker-entrypoint-initdb.d
     networks:
@@ -128,6 +131,7 @@ secrets:  SSL_KEY:
   MYSQL_ROOT_PASSWORD:
     file: ./.balena/secrets/mysql_root_password
 ### BUILDKIT END
+
 networks:
   cakephp-network:
     driver: bridge

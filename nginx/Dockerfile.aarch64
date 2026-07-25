@@ -33,7 +33,8 @@ RUN \
 ### BUILDKIT BEGIN
     --mount=type=secret,id=ssl_key,target=/run/secrets/SSL_KEY \
     --mount=type=secret,id=ssl_crt,target=/run/secrets/SSL_CRT \
-    ### BUILDKIT END    mkdir -p /etc/nginx/ssl && \
+    ### BUILDKIT END
+    mkdir -p /etc/nginx/ssl && \
     if [ -f /run/secrets/SSL_KEY ] && [ -s /run/secrets/SSL_KEY ]; then \
         cp /run/secrets/SSL_KEY /etc/nginx/ssl/server.key; \
         cp /run/secrets/SSL_CRT /etc/nginx/ssl/server.crt; \

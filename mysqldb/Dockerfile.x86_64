@@ -21,7 +21,8 @@ RUN \
 ### BUILDKIT BEGIN
     --mount=type=secret,id=mysql_password,target=/run/secrets/MYSQL_PASSWORD \
     --mount=type=secret,id=mysql_root_password,target=/run/secrets/MYSQL_ROOT_PASSWORD \
-    ### BUILDKIT END    export MYSQL_PASSWORD=$(cat /run/secrets/MYSQL_PASSWORD) && \
+    ### BUILDKIT END
+    export MYSQL_PASSWORD=$(cat /run/secrets/MYSQL_PASSWORD) && \
     export MYSQL_ROOT_PASSWORD=$(cat /run/secrets/MYSQL_ROOT_PASSWORD)
 
 COPY conf.d/my.cnf /etc/my.cnf.d/my.cnf
