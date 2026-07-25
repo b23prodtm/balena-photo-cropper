@@ -33,11 +33,11 @@ COPY --from=builder /root/.local /root/.local
 
 COPY app.py .
 RUN chmod +x app.py && mkdir -p uploads tmp && \
-    python3 -c "import cv2; import numpy; import pypdfium2; from PIL import Image; print('All deps OK')" || exit 1
+    python3 -c "import cv2, numpy, pypdfium2; from PIL import Image; print('OpenCV OK:', cv2.__version__); print('All deps OK')" || exit 1
 
 EXPOSE 5000
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD python3 -c "import cv2; import numpy; import pypdfium2; from PIL import Image; print('All deps OK')" || exit 1
+    CMD python3 -c "import cv2, numpy, pypdfium2; from PIL import Image; print('OpenCV OK:', cv2.__version__)" || exit 1
 
 ENTRYPOINT ["./app.py"]

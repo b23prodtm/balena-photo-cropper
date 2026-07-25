@@ -124,7 +124,7 @@ jobs:
     # ============================================================
     # PRE-FLIGHT CHECK: Secrets Passing at Build & Runtime
     # ============================================================
-    - name: Pre-flight check: Secrets passed to build and runtime
+    - name: Pre-flight check Secrets passed to build and runtime
       run: |
         echo "=== Pre-flight: Checking Secrets Availability ==="
         
@@ -165,7 +165,7 @@ jobs:
     # ============================================================
     # PRE-FLIGHT CHECK: Nginx + SSL Certificates
     # ============================================================
-    - name: Pre-flight check: Nginx SSL and routing
+    - name: Pre-flight check Nginx SSL and routing
       run: |
         echo "=== Pre-flight: Checking Nginx SSL & Routing ==="
         
