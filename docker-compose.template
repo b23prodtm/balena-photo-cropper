@@ -16,6 +16,8 @@ services:
     depends_on:
       - web
       - cropper
+  volumes:
+    - web_data:/var/www/html:ro
     networks:
       - cakephp-network
 
@@ -52,6 +54,11 @@ services:
       /bin/sh -c "
       /wait-for-it.sh cropper 5000 &&
       /wait-for-it.sh mysqldb 3306 &&
+      if [ ! -f /var/www/html/webroot/index.php ]; then
+          echo 'Initializing CakePHP volume';
+          cp -a /var/www/cakephp/. /var/www/html/;
+      fi &&
+      chown -R www-data:www-data /var/www/html &&
       php-fpm -F
       "
     volumes:

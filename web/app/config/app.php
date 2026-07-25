@@ -52,21 +52,19 @@ return [
     'App' => [
         'namespace' => 'App',
         'encoding' => env('APP_ENCODING', 'UTF-8'),
-        'defaultLocale' => env('APP_DEFAULT_LOCALE', 'en_US'),
-        'defaultTimezone' => env('APP_DEFAULT_TIMEZONE', 'UTC'),
         'base' => false,
+        'baseUrl' => env('SCRIPT_NAME'),
         'dir' => 'src',
         'webroot' => 'webroot',
         'wwwRoot' => WWW_ROOT,
-        //'baseUrl' => env('SCRIPT_NAME'),
-        'fullBaseUrl' => env('APP_FULL_BASE_URL', false),
+        'fullBaseUrl' => false,
         'imageBaseUrl' => 'img/',
-        'cssBaseUrl' => 'css/',
         'jsBaseUrl' => 'js/',
+        'cssBaseUrl' => 'css/',
         'paths' => [
             'plugins' => [ROOT . DS . 'plugins' . DS],
-            'templates' => [ROOT . DS . 'templates' . DS],
-            'locales' => [RESOURCES . 'locales' . DS],
+            'templates' => [APP . 'templates' . DS],
+            'locales' => [APP . 'locales' . DS],
         ],
     ],
 
@@ -323,6 +321,12 @@ return [
              * which is the recommended value in production environments
              */
             //'init' => ['SET GLOBAL innodb_stats_on_metadata = 0'],
+            
+            'host' => env('DB_HOST', 'mysqldb'),
+            'username' => env('DB_USER', 'cake_user'),
+            'password' => file_get_contents(env('DB_PASSWORD_FILE', '/run/secrets/MYSQL_PASSWORD')),
+            'database' => env('DB_NAME', 'cake_db'),
+            'port' => '3306',
         ],
 
         /*
