@@ -1,55 +1,40 @@
 # Dockerfile for AMD64 (x86_64) - Local development
-# Stage 1: Builder (with all dev deps)
-FROM python:3.11-alpine AS builder
+# Stage 1: Builder
+FROM alpine:3.19 AS builder
 
 RUN apk add --no-cache \
-    build-base \
-    gcc \
-    g++ \
-    python3-dev \
-    py3-numpy-dev \
-    openblas-dev \
-    lapack-dev \
-    libjpeg-turbo-dev \
-    libpng-dev \
-    openjpeg-dev \
-    tiff-dev \
-    freetype-dev \
-    harfbuzz-dev \
-    libwebp-dev \
-    ffmpeg-dev
+    python3 \
+    py3-pip \
+    py3-opencv \
+    py3-numpy \
+    py3-pillow
 
 WORKDIR /build
 COPY requirements.txt .
-RUN pip install --user --no-cache-dir -r requirements.txt
+RUN python3 -m pip install --user --no-cache-dir -r requirements.txt
 
 # Stage 2: Runtime (minimal - Alpine)
-FROM python:3.11-alpine
+FROM alpine:3.19
 
 ENV QT_QPA_PLATFORM=linux/amd64 \
-    PIP_NO_CACHE_DIR=1
+    PIP_NO_CACHE_DIR=1 \
+    PATH=/root/.local/bin:$PATH
 
 RUN apk add --no-cache \
-    openblas \
-    lapack \
-    libjpeg-turbo \
-    libpng \
-    openjpeg \
-    tiff \
-    freetype \
-    harfbuzz \
-    libwebp \
+    python3 \
+    py3-opencv \
+    py3-numpy \
+    py3-pillow \
     ffmpeg
 
 WORKDIR /app
 
 # Copy pre-built Python packages from builder stage
 COPY --from=builder /root/.local /root/.local
-ENV PATH=/root/.local/bin:$PATH
 
 COPY app.py .
 RUN chmod +x app.py && mkdir -p uploads tmp && \
-    python3 -c "import cv2; print('OpenCV OK:', cv2.__version__)" || exit 1
+    python3 -c "import cv2; import numpy; import pypdfium2; from PIL import Image; print('All deps OK')" || exit 1
 
 EXPOSE 5000
 

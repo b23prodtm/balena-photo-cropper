@@ -5,10 +5,7 @@ flask>=2.3.0
 werkzeug>=2.3.0
 gunicorn>=20.1.0
 
-# Image processing - use versions with ARMv7 wheels
-opencv-python-headless==4.8.1.78
-numpy==1.26.4  # Last version with ARMv7 wheel support
-Pillow>=9.5.0
+# Image processing is installed from Alpine packages in the Docker image
 
 # PDF processing - use musllinux wheels available on x86_64/aarch64/armv7l
 pypdfium2>=4.30.0
