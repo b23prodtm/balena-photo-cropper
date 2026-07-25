@@ -5,3 +5,5 @@
 *.sed
 *.old
 .DS_Store
+*.crt
+*.key
