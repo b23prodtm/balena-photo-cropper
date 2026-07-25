@@ -27,16 +27,17 @@ services:
       dockerfile: Dockerfile.x86_64
     restart: "no"
     command: >
-      sh -c "
-      if [ ! -f /var/www/html/app/webroot/index.php ]; then
-        echo 'Initializing CakePHP...';
-        cp -a /var/www/cakephp/. /var/www/html/;
-        chown -R www-data:www-data /var/www/html;
-        echo 'Initialization complete.';
-      else
-        echo 'CakePHP already initialized.';
-      fi
-      "
+      sh -c '
+        if [ ! -f /var/www/html/.initialized ]; then
+          echo "Initializing CakePHP volume..."
+          cp -a /var/www/cakephp/. /var/www/html/
+          chown -R www-data:www-data /var/www/html
+          touch /var/www/html/.initialized
+          echo "Done."
+        else
+          echo "Already initialized."
+        fi
+      '
     volumes:
       - web_data:/var/www/html
     networks:
@@ -69,6 +70,10 @@ services:
     mem_limit: 128m
     mem_reservation: 64m
     restart: unless-stopped
+    depends_on:
+      - init-web
+      - cropper
+      - mysqldb
     # PR #9: attend que cropper Flask soit ready
     command: >
       /bin/sh -c "
@@ -121,8 +126,6 @@ services:
 # Volumes - ONLY named volumes (no bind mounts for Balena Cloud compatibility)
 volumes:
   cropper-data:
-    driver: local
-  cakephp_data:
     driver: local
   db_data:
     driver: local
