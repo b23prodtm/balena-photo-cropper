@@ -44,25 +44,23 @@ RUN curl -sS https://getcomposer.org/installer | php -- \
 # --- SECURE SETUP ---
 # 1. Create project in /var/www/html
 WORKDIR /var/www/html
-RUN composer install && \
-    # 2. Fix permissions (FPM runs as www-data)
-    chown -R www-data:www-data /var/www/html && \
-    chmod -R 775 /var/www/html/tmp && \
-    chmod -R 775 /var/www/html/logs && \
-    # 3. Configure PHP-FPM for CakePHP
-    echo "php_admin_value[error_log] = /var/www/cakephp/logs/php-fpm.log" >> /usr/local/etc/php-fpm.d/www.conf && \
-    echo "php_admin_flag[log_errors] = on" >> /usr/local/etc/php-fpm.d/www.conf
+
 
 # Copy application source
-COPY . .
-
-# Fix perms
-RUN chown -R www-data:www-data /var/www/html
+COPY ./app/ /var/www/html
 
 # Install CakePHP dependencies (if composer.json exists)
 RUN if [ -f composer.json ]; then \
         composer install --no-dev --optimize-autoloader --no-interaction; \
     fi
+# 2. Fix permissions (FPM runs as www-data)
+RUN chown -R www-data:www-data /var/www/html && \
+    chmod -R 775 /var/www/html/app/tmp && \
+    chmod -R 775 /var/www/html/app/logs && \
+    # 3. Configure PHP-FPM for CakePHP
+    echo "php_admin_value[error_log] = /var/www/html/app/logs/php-fpm.log" >> /usr/local/etc/php-fpm.d/www.conf && \
+    echo "php_admin_flag[log_errors] = on" >> /usr/local/etc/php-fpm.d/www.conf
+
 
 RUN \
 ### BUILDKIT BEGIN
