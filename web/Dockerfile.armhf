@@ -42,25 +42,22 @@ RUN curl -sS https://getcomposer.org/installer | php -- \
     --install-dir=/usr/local/bin --filename=composer
 
 # --- SECURE SETUP ---
-# 1. Create project in /var/www/cakephp (NOT document root)
-WORKDIR /var/www
-RUN composer create-project --prefer-dist cakephp/app:^5.0 cakephp && \
+# 1. Create project in /var/www/html
+WORKDIR /var/www/html
+RUN composer install && \
     # 2. Fix permissions (FPM runs as www-data)
-    chown -R www-data:www-data /var/www/cakephp && \
-    chmod -R 775 /var/www/cakephp/tmp && \
-    chmod -R 775 /var/www/cakephp/logs && \
+    chown -R www-data:www-data /var/www/html && \
+    chmod -R 775 /var/www/html/tmp && \
+    chmod -R 775 /var/www/html/logs && \
     # 3. Configure PHP-FPM for CakePHP
     echo "php_admin_value[error_log] = /var/www/cakephp/logs/php-fpm.log" >> /usr/local/etc/php-fpm.d/www.conf && \
     echo "php_admin_flag[log_errors] = on" >> /usr/local/etc/php-fpm.d/www.conf
-
-# 4. Set working directory for CLI commands
-WORKDIR /var/www/cakephp
 
 # Copy application source
 COPY . .
 
 # Fix perms
-RUN chown -R www-data:www-data /var/www/cakephp
+RUN chown -R www-data:www-data /var/www/html
 
 # Install CakePHP dependencies (if composer.json exists)
 RUN if [ -f composer.json ]; then \
@@ -68,9 +65,9 @@ RUN if [ -f composer.json ]; then \
     fi
 
 RUN \
-# BUILDKIT BEGIN
-#  --mount=type=secret,id=mysql_password,target=/run/secrets/MYSQL_PASSWORD \
-# BUILDKIT END
+### BUILDKIT BEGIN
+    --mount=type=secret,id=mysql_password,target=/run/secrets/MYSQL_PASSWORD \
+    ### BUILDKIT END
     export MYSQL_PASSWORD=$(cat /run/secrets/MYSQL_PASSWORD)
 EXPOSE 9000
 
