@@ -1,3 +1,4 @@
+# Mandatory for Balena Cloud Services compatibility
 version: '2.1'
 
 services:
