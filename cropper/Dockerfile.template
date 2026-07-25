@@ -10,7 +10,9 @@ RUN apk add --no-cache \
 
 WORKDIR /build
 COPY requirements.txt .
-RUN python3 -m pip install --user --no-cache-dir -r requirements.txt
+RUN python3 -m venv /opt/venv \
+    && /opt/venv/bin/pip install --no-cache-dir --upgrade pip \
+    && /opt/venv/bin/pip install --no-cache-dir -r requirements.txt
 
 # Stage 2: Runtime (minimal - Alpine)
 FROM alpine:3.19
@@ -29,9 +31,13 @@ RUN apk add --no-cache \
 WORKDIR /app
 
 # Copy pre-built Python packages from builder stage
-COPY --from=builder /root/.local /root/.local
+COPY --from=builder /opt/venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+# Copy app code
+COPY --from=builder /build /app
 
-COPY app.py .
+COPY . .
+
 RUN chmod +x app.py && mkdir -p uploads tmp && \
     python3 -c "import cv2, numpy, pypdfium2; from PIL import Image; print('OpenCV OK:', cv2.__version__); print('All deps OK')" || exit 1
 
