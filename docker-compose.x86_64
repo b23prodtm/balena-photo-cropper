@@ -13,8 +13,6 @@ services:
     mem_limit: 64m
     mem_reservation: 32m
     restart: unless-stopped
-    # PR #9: attend que web soit prêt avant de servir
-    command: ["/wait-for-it.sh", "web", "9000"]
     depends_on:
       - web
       - cropper
