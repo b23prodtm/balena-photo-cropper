@@ -6,7 +6,7 @@ services:
   nginx:
     build:
       context: ./nginx
-      dockerfile: Dockerfile.aarch64
+      dockerfile: Dockerfile.armhf
     ports:
     - "8080:80"    # HTTP redirect
     - "8443:443"    # HTTPS
@@ -24,7 +24,7 @@ services:
   init-web:
     build:
       context: ./web
-      dockerfile: Dockerfile.aarch64
+      dockerfile: Dockerfile.armhf
     restart: "no"
     command: >
       sh -c "
@@ -45,7 +45,7 @@ services:
   web:
     build:
       context: ./web
-      dockerfile: Dockerfile.aarch64
+      dockerfile: Dockerfile.armhf
     environment:
       PHP_FPM_PM: ondemand
       PHP_FPM_MAX_CHILDREN: 2
@@ -69,10 +69,6 @@ services:
     mem_limit: 128m
     mem_reservation: 64m
     restart: unless-stopped
-    depends-on:
-      - init-web
-      - mysqldb
-      - cropper
     # PR #9: attend que cropper Flask soit ready
     command: >
       /bin/sh -c "
@@ -94,7 +90,7 @@ services:
   mysqldb:
     build:
       context: ./mysqldb
-      dockerfile: Dockerfile.aarch64
+      dockerfile: Dockerfile.armhf
     ports:
       - "3306:3306"
     environment:
@@ -109,7 +105,7 @@ services:
   cropper:
     build:
       context: ./cropper
-      dockerfile: Dockerfile.aarch64
+      dockerfile: Dockerfile.armhf
     ports:
       - "5000:5000"
     environment:
