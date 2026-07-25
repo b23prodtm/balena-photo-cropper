@@ -69,10 +69,6 @@ services:
     mem_limit: 128m
     mem_reservation: 64m
     restart: unless-stopped
-    depends-on:
-      - init-web
-      - mysqldb
-      - cropper
     # PR #9: attend que cropper Flask soit ready
     command: >
       /bin/sh -c "
