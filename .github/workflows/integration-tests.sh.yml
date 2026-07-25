@@ -101,7 +101,7 @@ jobs:
     # ============================================================
     # PRE-FLIGHT CHECK: OpenCV + FFmpeg inside cropper container
     # ============================================================
-    - name: Pre-flight check: OpenCV + FFmpeg availability
+    - name: Pre-flight check OpenCV + FFmpeg availability
       run: |
         echo "=== Pre-flight: Checking OpenCV + FFmpeg ==="
 
