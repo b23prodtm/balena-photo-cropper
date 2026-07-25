@@ -68,9 +68,9 @@ RUN if [ -f composer.json ]; then \
     fi
 
 RUN \
-### BUILDKIT BEGIN
-    --mount=type=secret,id=mysql_password,target=/run/secrets/MYSQL_PASSWORD \
-    ### BUILDKIT END    export MYSQL_PASSWORD=$(cat /run/secrets/MYSQL_PASSWORD)
+# BUILDKIT BEGIN
+#  --mount=type=secret,id=mysql_password,target=/run/secrets/MYSQL_PASSWORD \
+# BUILDKIT END    export MYSQL_PASSWORD=$(cat /run/secrets/MYSQL_PASSWORD)
 EXPOSE 9000
 
 # Health check - verify PHP-FPM is working
