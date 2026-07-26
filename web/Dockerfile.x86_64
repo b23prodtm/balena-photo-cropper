@@ -54,9 +54,10 @@ RUN if [ -f composer.json ]; then \
     fi
 
 # 2. Fix permissions (FPM runs as www-data)
-RUN chown -R www-data:www-data /var/www/cakephp && \
-    chmod -R 775 /var/www/cakephp/app/tmp && \
-    chmod -R 775 /var/www/cakephp/app/logs && \
+RUN mkdir -p app/tmp && mkdir -p app/tmp/logs && \
+    chown -R www-data:www-data . && \
+    chmod -R 775 app/tmp && \
+    chmod -R 775 app/logs && \
     # 3. Configure PHP-FPM for CakePHP
     echo "php_admin_value[error_log] = /var/www/cakephp/app/logs/php-fpm.log" >> /usr/local/etc/php-fpm.d/www.conf && \
     echo "php_admin_flag[log_errors] = on" >> /usr/local/etc/php-fpm.d/www.conf
