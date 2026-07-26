@@ -88,8 +88,8 @@ target "init-web" {
   output = ["type=registry"]
   
   secret = [
-    "id=SECURITY_SALT,src=.balena/secrets/security_salt",
-    "id=MYSQL_PASSWORD,src=.balena/secrets/mysql_password",
+    "id=SECURITY_SALT,src=.balena/secrets/security_salt_file",
+    "id=mysql_password,src=.balena/secrets/mysql_password_file",
   ]
 }
 target "web" {
@@ -117,8 +117,8 @@ target "web" {
   depends_on = ["init-web"]
   
   secret = [
-    "id=SECURITY_SALT,src=.balena/secrets/security_salt",
-    "id=MYSQL_PASSWORD,src=.balena/secrets/mysql_password",
+    "id=SECURITY_SALT,src=.balena/secrets/security_salt_file",
+    "id=mysql_password,src=.balena/secrets/mysql_password_file",
   ]
 }
 
@@ -171,8 +171,8 @@ target "mysqldb" {
     PGID = "1000"
   }
   secret = [
-    "id=MYSQL_ROOT_PASSWORD,src=.balena/secrets/mysql_root_password",
-    "id=MYSQL_PASSWORD,src=.balena/secrets/mysql_password",
+    "id=mysql_root_password,src=.balena/secrets/mysql_root_password_file",
+    "id=mysql_password,src=.balena/secrets/mysql_password_file",
   ]
 }
 
