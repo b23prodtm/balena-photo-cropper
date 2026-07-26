@@ -100,7 +100,7 @@ services:
         /wait-for-it.sh cropper 5000
         /wait-for-it.sh mysqldb 3306
 
-        until [ -f /var/www/html/webroot/index.php ]; do
+        until [ -f /var/www/html/app/webroot/index.php ]; do
           echo "Waiting for CakePHP initialization..."
           sleep 1
         done
