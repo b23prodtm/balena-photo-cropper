@@ -63,9 +63,9 @@ RUN chown -R www-data:www-data /var/www/cakephp && \
 
 
 RUN \
-### BUILDKIT BEGIN
-    --mount=type=secret,id=mysql_password,target=/run/secrets/MYSQL_PASSWORD \
-    ### BUILDKIT END
+# BUILDKIT BEGIN
+#  --mount=type=secret,id=mysql_password,target=/run/secrets/MYSQL_PASSWORD \
+# BUILDKIT END
     export MYSQL_PASSWORD=$(cat /run/secrets/MYSQL_PASSWORD)
 EXPOSE 9000
 
