@@ -324,7 +324,7 @@ return [
             
             'host' => env('DB_HOST', 'mysqldb'),
             'username' => env('DB_USER', 'cake_user'),
-            'password' => file_get_contents(env('DB_PASSWORD_FILE', '/run/secrets/MYSQL_PASSWORD')),
+            'password' => env('MYSQL_PASSWORD', file_get_contents('/run/secrets/MYSQL_PASSWORD')),
             'database' => env('DB_NAME', 'cake_db'),
             'port' => '3306',
         ],
