@@ -185,11 +185,11 @@ networks:
 ### BUILDKIT BEGIN
 secrets:
   MYSQL_PASSWORD:
-    file: .balena/secrets/MYSQL_PASSWORD
+    file: .balena/secrets/mysql_password
   MYSQL_ROOT_PASSWORD:
-    file: .balena/secrets/MYSQL_ROOT_PASSWORD
+    file: .balena/secrets/mysql_root_password
   SSL_CRT:
-    file: .balena/secrets/SSL_CRT
+    file: .balena/secrets/ssl_crt
   SSL_KEY:
-    file: .balena/secrets/SSL_KEY
+    file: .balena/secrets/ssl_key
 ### BUILDKIT END
