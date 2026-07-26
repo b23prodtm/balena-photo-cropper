@@ -6,7 +6,7 @@ services:
   nginx:
     build:
       context: ./nginx
-      dockerfile: Dockerfile.x86_64
+      dockerfile: Dockerfile.armhf
   ### BUILDKIT BEGIN
     secrets:
       - SSL_CRT
@@ -33,7 +33,7 @@ services:
   init-web:
     build:
       context: ./web
-      dockerfile: Dockerfile.x86_64
+      dockerfile: Dockerfile.armhf
     restart: "no"
     command:
       - /bin/sh
@@ -42,8 +42,7 @@ services:
         if [ ! -f /var/www/html/webroot/index.php ]; then
           echo "Initializing CakePHP volume..."
 
-          cp -a /var/www/cakephp/app/. /var/www/html/
-          cp -a /var/www/cakephp/vendor /var/www/html/
+          cp -a /var/www/cakephp/. /var/www/html/
 
           chown -R www-data:www-data /var/www/html
 
@@ -58,7 +57,7 @@ services:
   web:
     build:
       context: ./web
-      dockerfile: Dockerfile.x86_64
+      dockerfile: Dockerfile.armhf
   ### BUILDKIT BEGIN
     secrets:
       - MYSQL_PASSWORD
@@ -118,7 +117,7 @@ services:
   mysqldb:
     build:
       context: ./mysqldb
-      dockerfile: Dockerfile.x86_64
+      dockerfile: Dockerfile.armhf
   ### BUILDKIT BEGIN
     secrets:
       - MYSQL_PASSWORD
@@ -140,7 +139,7 @@ services:
   cropper:
     build:
       context: ./cropper
-      dockerfile: Dockerfile.x86_64
+      dockerfile: Dockerfile.armhf
     ports:
       - "5000:5000"
     environment:
