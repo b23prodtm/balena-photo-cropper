@@ -66,6 +66,32 @@ target "cropper" {
 # ============================================================================
 # WEB SERVICE - PHP-FPM with CakePHP3 Support
 # ============================================================================
+target "init-web" {
+  inherits = ["common"]
+  
+  # Context: ./web (NOT ./services/web/)
+  context = "./web"
+  
+  args = {
+    BUILDKIT_CONTEXT_KEEP_GIT_DIR = 1
+  }
+  
+  tags = [
+    "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-init-web:latest",
+    BAKE_TAG != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-init-web:${replace(BAKE_TAG, "/", "-")}" : "",
+    GITHUB_SHA != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-init-web:${GITHUB_SHA}" : ""
+  ]
+  
+  # Dynamic dockerfile selection based on BALENA_ARCH
+  dockerfile = "Dockerfile.${BALENA_ARCH}"
+  
+  output = ["type=registry"]
+  
+  secret = [
+    "id=MYSQL_ROOT_PASSWORD,src=.balena/secrets/mysql_root_password",
+    "id=MYSQL_PASSWORD,src=.balena/secrets/mysql_password",
+  ]
+}
 target "web" {
   inherits = ["common"]
   
@@ -88,7 +114,7 @@ target "web" {
   output = ["type=registry"]
   
   # Force dependency to ensure ordered builds
-  depends_on = ["cropper"]
+  depends_on = ["init-web"]
   
   secret = [
     "id=MYSQL_ROOT_PASSWORD,src=.balena/secrets/mysql_root_password",
@@ -121,7 +147,7 @@ target "nginx" {
 
   output = ["type=registry"]
   
-  depends_on = ["web"]
+  depends_on = ["init-web"]
 }
 
 # ============================================================================
