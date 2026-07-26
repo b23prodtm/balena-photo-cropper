@@ -88,7 +88,7 @@ target "init-web" {
   output = ["type=registry"]
   
   secret = [
-    "id=MYSQL_ROOT_PASSWORD,src=.balena/secrets/mysql_root_password",
+    "id=SECURITY_SALT,src=.balena/secrets/security_salt",
     "id=MYSQL_PASSWORD,src=.balena/secrets/mysql_password",
   ]
 }
@@ -117,7 +117,7 @@ target "web" {
   depends_on = ["init-web"]
   
   secret = [
-    "id=MYSQL_ROOT_PASSWORD,src=.balena/secrets/mysql_root_password",
+    "id=SECURITY_SALT,src=.balena/secrets/security_salt",
     "id=MYSQL_PASSWORD,src=.balena/secrets/mysql_password",
   ]
 }

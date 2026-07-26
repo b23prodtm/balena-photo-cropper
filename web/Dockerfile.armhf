@@ -64,16 +64,16 @@ RUN mkdir -p app/tmp && mkdir -p app/logs && \
 
 
 RUN \
-# BUILDKIT BEGIN
-#  --mount=type=secret,id=security_salt,target=/run/secrets/SECURITY_SALT \
-#  --mount=type=secret,id=mysql_password,target=/run/secrets/MYSQL_PASSWORD \
-# BUILDKIT END
- if [ -f /run/secrets/SECURITY_SALT ]; then \
-        export SECURITY_SALT=$(cat /run/secrets/SECURITY_SALT); \
+### BUILDKIT BEGIN
+    --mount=type=secret,id=security_salt,target=/run/secrets/security_salt \
+    --mount=type=secret,id=mysql_password,target=/run/secrets/mysql_password \
+    ### BUILDKIT END
+ if [ -f /run/secrets/security_salt ]; then \
+        export SECURITY_SALT=$(cat /run/secrets/security_salt); \
         echo "Secret loaded"; \
-    fi
- if [ -f /run/secrets/MYSQL_PASSWORD ]; then \
-        export MYSQL_PASSWORD=$(cat /run/secrets/MYSQL_PASSWORD); \
+    fi; \
+ if [ -f /run/secrets/mysql_password ]; then \
+        export MYSQL_PASSWORD=$(cat /run/secrets/mysql_password); \
         echo "Secret loaded"; \
     fi
 

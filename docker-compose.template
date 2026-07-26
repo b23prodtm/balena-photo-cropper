@@ -9,8 +9,8 @@ services:
       dockerfile: Dockerfile.%%BALENA_ARCH%%
   ### BUILDKIT BEGIN
     secrets:
-      - SSL_CRT
-      - SSL_KEY
+      - ssl_crt
+      - ssl_key
   ### BUILDKIT END
     ports:
     - "8080:80"    # HTTP redirect
@@ -18,8 +18,8 @@ services:
     mem_limit: 64m
     mem_reservation: 32m
     environment:
-      SSL_CRT_FILE: /run/secrets/SSL_CRT
-      SSL_KEY_FILE: /run/secrets/SSL_KEY
+      SSL_CRT_FILE: /run/secrets/ssl_crt
+      SSL_KEY_FILE: /run/secrets/ssl_key
     restart: unless-stopped
     depends_on:
       - web
@@ -60,8 +60,8 @@ services:
       dockerfile: Dockerfile.%%BALENA_ARCH%%
   ### BUILDKIT BEGIN
     secrets:
-      - MYSQL_PASSWORD
-      - SECURITY_SALT
+      - mysql_password
+      - security_salt
   ### BUILDKIT END
     environment:
       DEBUG: "true"
@@ -85,8 +85,8 @@ services:
       # Performance
       WORKERS: "4"
       TIMEOUT: "30"      
-      MYSQL_PASSWORD_FILE: /run/secrets/MYSQL_PASSWORD
-      SECURITY_SALT_FILE: /run/secrets/SECURITY_SALT_FILE
+      MYSQL_PASSWORD_FILE: /run/secrets/mysql_password
+      SECURITY_SALT_FILE: /run/secrets/security_salt
     mem_limit: 128m
     mem_reservation: 64m
     restart: unless-stopped
@@ -122,16 +122,16 @@ services:
       dockerfile: Dockerfile.%%BALENA_ARCH%%
   ### BUILDKIT BEGIN
     secrets:
-      - MYSQL_PASSWORD
-      - MYSQL_ROOT_PASSWORD
+      - mysql_password
+      - mysql_root_password
   ### BUILDKIT END
     ports:
       - "3306:3306"
     environment:
       MYSQL_DATABASE: cake_db
       MYSQL_USER: cake_user
-      MYSQL_PASSWORD_FILE: /run/secrets/MYSQL_PASSWORD
-      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/MYSQL_ROOT_PASSWORD
+      MYSQL_PASSWORD_FILE: /run/secrets/mysql_password
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/mysql_root_password
     volumes:
       - db_data:/var/lib/mysql
       - db_init:/docker-entrypoint-initdb.d
@@ -176,14 +176,14 @@ networks:
     driver: bridge
 ### BUILDKIT BEGIN
 secrets:
-  MYSQL_PASSWORD:
-    file: .balena/secrets/mysql_password
-  MYSQL_ROOT_PASSWORD:
-    file: .balena/secrets/mysql_root_password
-  SSL_CRT:
-    file: .balena/secrets/ssl_crt
-  SSL_KEY:
-    file: .balena/secrets/ssl_keycrt
-  SECURITY_SALT:
-    file: .balena/secrets/security_salt
+  mysql_password:
+    file: .balena/secrets/mysql_password_file
+  mysql_root_password:
+    file: .balena/secrets/mysql_root_password_file
+  ssl_crt:
+    file: .balena/secrets/ssl_crt_file
+  ssl_key:
+    file: .balena/secrets/ssl_key_file
+  security_salt:
+    file: .balena/secrets/security_salt_file
 ### BUILDKIT END
