@@ -6,7 +6,7 @@ services:
   nginx:
     build:
       context: ./nginx
-      dockerfile: Dockerfile.armhf
+      dockerfile: Dockerfile.x86_64
     ports:
     - "8080:80"    # HTTP redirect
     - "8443:443"    # HTTPS
@@ -24,7 +24,7 @@ services:
   init-web:
     build:
       context: ./web
-      dockerfile: Dockerfile.armhf
+      dockerfile: Dockerfile.x86_64
     restart: "no"
     command: >
       sh -c '
@@ -47,7 +47,7 @@ services:
   web:
     build:
       context: ./web
-      dockerfile: Dockerfile.armhf
+      dockerfile: Dockerfile.x86_64
     environment:
       PHP_FPM_PM: ondemand
       PHP_FPM_MAX_CHILDREN: 2
@@ -96,7 +96,7 @@ services:
   mysqldb:
     build:
       context: ./mysqldb
-      dockerfile: Dockerfile.armhf
+      dockerfile: Dockerfile.x86_64
     ports:
       - "3306:3306"
     environment:
@@ -111,7 +111,7 @@ services:
   cropper:
     build:
       context: ./cropper
-      dockerfile: Dockerfile.armhf
+      dockerfile: Dockerfile.x86_64
     ports:
       - "5000:5000"
     environment:

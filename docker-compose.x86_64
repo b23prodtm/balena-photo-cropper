@@ -30,7 +30,8 @@ services:
       sh -c '
         if [ ! -f /var/www/html/.initialized ]; then
           echo "Initializing CakePHP volume..."
-          cp -a /var/www/cakephp/. /var/www/html/
+          cp -a /var/www/cakephp/app/. /var/www/html/
+          cp -a /var/www/cakephp/vendor /var/www/html/
           chown -R www-data:www-data /var/www/html
           touch /var/www/html/.initialized
           echo "Done."
@@ -79,7 +80,7 @@ services:
       /bin/sh -c "
       /wait-for-it.sh cropper 5000 &&
       /wait-for-it.sh mysqldb 3306 &&
-      until [ -f /var/www/html/.initialized ]; then
+      until [ -f /var/www/html/webroot/index.php ]; then
         sleep 1
       done
       php-fpm -F
