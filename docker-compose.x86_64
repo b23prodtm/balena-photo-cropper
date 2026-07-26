@@ -21,17 +21,6 @@ services:
       SSL_CRT_FILE: /run/secrets/SSL_CRT
       SSL_KEY_FILE: /run/secrets/SSL_KEY
     restart: unless-stopped
-    command:
-      - /bin/sh
-      - -c
-      - |
-        if [ -f "$$SSL_KEY_FILE" ] && [ -s "$$SSL_KEY_FILE" ]; then
-          cp "$$SSL_KEY_FILE" /etc/nginx/ssl/server.key;
-          cp "$$SSL_CRT_FILE" /etc/nginx/ssl/server.crt;
-        fi
-
-        nginx -t
-        exec nginx -g "daemon off;"
     depends_on:
       - web
       - cropper
