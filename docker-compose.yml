@@ -6,7 +6,7 @@ services:
   nginx:
     build:
       context: ./nginx
-      dockerfile: Dockerfile.aarch64
+      dockerfile: Dockerfile.armhf
   ### BUILDKIT BEGIN
     secrets:
       - SSL_CRT
@@ -44,7 +44,7 @@ services:
   init-web:
     build:
       context: ./web
-      dockerfile: Dockerfile.aarch64
+      dockerfile: Dockerfile.armhf
     restart: "no"
     command:
       - /bin/sh
@@ -69,7 +69,7 @@ services:
   web:
     build:
       context: ./web
-      dockerfile: Dockerfile.aarch64
+      dockerfile: Dockerfile.armhf
   ### BUILDKIT BEGIN
     secrets:
       - MYSQL_PASSWORD
@@ -127,7 +127,7 @@ services:
   mysqldb:
     build:
       context: ./mysqldb
-      dockerfile: Dockerfile.aarch64
+      dockerfile: Dockerfile.armhf
   ### BUILDKIT BEGIN
     secrets:
       - MYSQL_PASSWORD
@@ -140,8 +140,6 @@ services:
       MYSQL_USER: cake_user
       MYSQL_PASSWORD_FILE: /run/secrets/MYSQL_PASSWORD
       MYSQL_ROOT_PASSWORD_FILE: /run/secrets/MYSQL_ROOT_PASSWORD
-      SSL_CRT_FILE: /run/secrets/SSL_CRT
-      SSL_KEY_FILE: /run/secrets/SSL_KEY
     volumes:
       - db_data:/var/lib/mysql
       - db_init:/docker-entrypoint-initdb.d
@@ -151,7 +149,7 @@ services:
   cropper:
     build:
       context: ./cropper
-      dockerfile: Dockerfile.aarch64
+      dockerfile: Dockerfile.armhf
     ports:
       - "5000:5000"
     environment:

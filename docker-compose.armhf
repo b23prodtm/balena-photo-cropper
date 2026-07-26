@@ -140,8 +140,6 @@ services:
       MYSQL_USER: cake_user
       MYSQL_PASSWORD_FILE: /run/secrets/MYSQL_PASSWORD
       MYSQL_ROOT_PASSWORD_FILE: /run/secrets/MYSQL_ROOT_PASSWORD
-      SSL_CRT_FILE: /run/secrets/SSL_CRT
-      SSL_KEY_FILE: /run/secrets/SSL_KEY
     volumes:
       - db_data:/var/lib/mysql
       - db_init:/docker-entrypoint-initdb.d
