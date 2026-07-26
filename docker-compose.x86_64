@@ -39,7 +39,7 @@ services:
       - /bin/sh
       - -c
       - |
-        if [ ! -f /var/www/html/webroot/index.php ]; then
+        if [ ! -f /var/www/html/app/webroot/index.php ]; then
           echo "Initializing CakePHP volume..."
 
           cp -a /var/www/cakephp/. /var/www/html/
