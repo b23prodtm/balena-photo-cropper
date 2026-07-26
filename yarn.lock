@@ -2,6 +2,7 @@
 # yarn lockfile v1
 
 
-"balena-cloud-apps@file:../../../../opt/local/lib/node_modules/balena-cloud-apps":
+balena-cloud-apps@^1.2.4:
   version "1.2.4"
-  resolved "file:../../../../opt/local/lib/node_modules/balena-cloud-apps"
+  resolved "https://registry.npmjs.org/balena-cloud-apps/-/balena-cloud-apps-1.2.4.tgz"
+  integrity sha512-gK/1TrIYv/jMVqaqQQYJWpSGsAzDCHcqmQ06dcnSEE7IGdyR5kDMFEEm5jvkA8grGSmcFAbRsflUM+ENtnyLXw==

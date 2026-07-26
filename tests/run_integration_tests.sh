@@ -202,8 +202,8 @@ except Exception as e:
     pass
 ')"
     else
-        export DB_PASSWORD=$(cat .balena/secrets/db_password)
-        export DB_ROOT_PASSWORD=$(cat .balena/secrets/db_root_password)
+        export MYSQL_PASSWORD=$(cat .balena/secrets/mysql_password)
+        export MYSQL_ROOT_PASSWORD=$(cat .balena/secrets/mysql_root_password)
     fi
 
     

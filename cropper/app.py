@@ -8,7 +8,7 @@ import threading
 import logging
 from pathlib import Path
 from PIL import Image
-import fitz  # PyMuPDF for PDF support
+import pypdfium2 as pdfium
 import tempfile
 
 logging.basicConfig(level=logging.INFO)
@@ -64,18 +64,17 @@ class ScannerProcessor:
         return crops
 
     def pdf_to_images(self, pdf_bytes):
-        """Convert multipage PDF to image list"""
+        """Convert multipage PDF to image list (via pypdfium2 / libpdfium.so)"""
         try:
-            doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+            pdf = pdfium.PdfDocument(pdf_bytes)
             images = []
-            for page_num in range(len(doc)):
-                page = doc[page_num]
-                pix = page.get_pixmap(matrix=fitz.Matrix(2, 2))
-                img_data = pix.tobytes("ppm")
-                img_array = cv2.imdecode(np.frombuffer(img_data, np.uint8), cv2.IMREAD_COLOR)
-                if img_array is not None:
-                    images.append(img_array)
-            doc.close()
+            for page in pdf:
+                bitmap = page.render(scale=2)
+                pil_image = bitmap.to_pil()
+                img_array = cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR)
+                images.append(img_array)
+                page.close()
+            pdf.close()
             return images
         except Exception as e:
             logger.error(f"PDF conversion error: {e}")

@@ -25,8 +25,10 @@ variable "BALENA_ARCH" {
   default = "x86_64"
 }
 
+# ============================================================================
+# COMMON CONFIGURATION
+# ============================================================================
 target "common" {
-  
   # GitHub Actions cache (fastest)
   cache-from = ["type=gha"]
   cache-to = ["type=gha,mode=max"]
@@ -64,6 +66,32 @@ target "cropper" {
 # ============================================================================
 # WEB SERVICE - PHP-FPM with CakePHP3 Support
 # ============================================================================
+target "init-web" {
+  inherits = ["common"]
+  
+  # Context: ./web (NOT ./services/web/)
+  context = "./web"
+  
+  args = {
+    BUILDKIT_CONTEXT_KEEP_GIT_DIR = 1
+  }
+  
+  tags = [
+    "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-init-web:latest",
+    BAKE_TAG != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-init-web:${replace(BAKE_TAG, "/", "-")}" : "",
+    GITHUB_SHA != "" ? "${REGISTRY}/${REGISTRY_IMAGE}/balena-photo-cropper-init-web:${GITHUB_SHA}" : ""
+  ]
+  
+  # Dynamic dockerfile selection based on BALENA_ARCH
+  dockerfile = "Dockerfile.${BALENA_ARCH}"
+  
+  output = ["type=registry"]
+  
+  secret = [
+    "id=SECURITY_SALT,src=.balena/secrets/security_salt_file",
+    "id=mysql_password,src=.balena/secrets/mysql_password_file",
+  ]
+}
 target "web" {
   inherits = ["common"]
   
@@ -86,11 +114,11 @@ target "web" {
   output = ["type=registry"]
   
   # Force dependency to ensure ordered builds
-  depends_on = ["cropper"]
+  depends_on = ["init-web"]
   
   secret = [
-    "id=DB_ROOT_PASSWORD,src=.balena/secrets/db_root_password",
-    "id=DB_PASSWORD,src=.balena/secrets/db_password",
+    "id=SECURITY_SALT,src=.balena/secrets/security_salt_file",
+    "id=mysql_password,src=.balena/secrets/mysql_password_file",
   ]
 }
 
@@ -112,9 +140,14 @@ target "nginx" {
   # Dynamic dockerfile selection based on BALENA_ARCH
   dockerfile = "Dockerfile.${BALENA_ARCH}"
   
+  secret = [
+    "id=ssl_key,src=.balena/secrets/ssl_key_file",
+    "id=ssl_crt,src=.balena/secrets/ssl_crt_file",
+  ]
+
   output = ["type=registry"]
   
-  depends_on = ["web"]
+  depends_on = ["init-web"]
 }
 
 # ============================================================================
@@ -138,8 +171,8 @@ target "mysqldb" {
     PGID = "1000"
   }
   secret = [
-    "id=DB_ROOT_PASSWORD,src=.balena/secrets/db_root_password",
-    "id=DB_PASSWORD,src=.balena/secrets/db_password",
+    "id=mysql_root_password,src=.balena/secrets/mysql_root_password_file",
+    "id=mysql_password,src=.balena/secrets/mysql_password_file",
   ]
 }
 
@@ -249,7 +282,7 @@ target "mysqldb-aarch64" {
   ]
 }
 
-# Build for AMD64  (local development)
+# Build for AMD64 (local development)
 group "x86_64" {
   targets = ["cropper-x86_64", "web-x86_64", "nginx-x86_64", "mysqldb-x86_64"]
 }

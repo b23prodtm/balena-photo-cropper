@@ -18,13 +18,18 @@ ENV MYSQL_BIND_ADDRESS=${MYSQL_BIND_ADDRESS:-0.0.0.0}
 # They must be provided via: docker buildx build --secret id=mytoken,src=.balena/secrets/secret_mytoken
 COPY . .
 RUN \
-# BEGIN DOCKER_BUILDKIT
-    --mount=type=secret,id=DB_PASSWORD \
-    --mount=type=secret,id=DB_ROOT_PASSWORD \
-    # END DOCKER_BUILDKIT
-    export MYSQL_PASSWORD=$(cat /run/secrets/DB_PASSWORD) && \
-    export MYSQL_ROOT_PASSWORD=$(cat /run/secrets/DB_ROOT_PASSWORD)
-
+### BUILDKIT BEGIN
+    --mount=type=secret,id=mysql_password,target=/run/secrets/mysql_password \
+    --mount=type=secret,id=mysql_root_password,target=/run/secrets/mysql_root_password \
+    ### BUILDKIT END
+    if [ -f /run/secrets/mysql_password ]; then \
+        export MYSQL_PASSWORD=$(cat /run/secrets/mysql_password); \
+        echo "Secret loaded"; \
+    fi; \
+    if [ -f /run/secrets/mysql_root_password ]; then \
+        export MYSQL_ROOT_PASSWORD=$(cat /run/secrets/mysql_root_password); \
+        echo "Secret loaded"; \
+    fi
 COPY conf.d/my.cnf /etc/my.cnf.d/my.cnf
 RUN sed -i.bind "/bind-address/s/=.*$/= ${MYSQL_BIND_ADDRESS}/" /etc/my.cnf.d/my.cnf
 RUN sed -i.user "/user/s/=.*$/= ${USER}/" /etc/my.cnf.d/my.cnf
@@ -39,8 +44,8 @@ RUN apk update \
     && apk del build-base \
     && rm -rf /var/cache/apk/*
 
-RUN chmod 1755 mysql_secure_shell \
-    && ./mysql_secure_shell
+COPY mysql_secure_shell /usr/local/bin/mysql_secure_shell
+RUN chmod 755 /usr/local/bin/mysql_secure_shell
 
 # This script runs ONCE at first container start, using runtime env vars
 COPY init-db.sh /docker-entrypoint-initdb.d/init-db.sh

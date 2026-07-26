@@ -42,38 +42,40 @@ RUN curl -sS https://getcomposer.org/installer | php -- \
     --install-dir=/usr/local/bin --filename=composer
 
 # --- SECURE SETUP ---
-# 1. Create project in /var/www/cakephp (NOT document root)
-WORKDIR /var/www
-RUN composer create-project --prefer-dist cakephp/app:^5.0 cakephp && \
-    # 2. Fix permissions (FPM runs as www-data)
-    chown -R www-data:www-data /var/www/cakephp && \
-    chmod -R 775 /var/www/cakephp/tmp && \
-    chmod -R 775 /var/www/cakephp/logs && \
-    # 3. Configure PHP-FPM for CakePHP
-    echo "php_admin_value[error_log] = /var/www/cakephp/logs/php-fpm.log" >> /usr/local/etc/php-fpm.d/www.conf && \
-    echo "php_admin_flag[log_errors] = on" >> /usr/local/etc/php-fpm.d/www.conf
-
-# 4. Set working directory for CLI commands
+# 1. Create project in /var/www/cakephp
 WORKDIR /var/www/cakephp
 
 # Copy application source
 COPY . .
-
-# Fix perms
-RUN chown -R www-data:www-data /var/www/cakephp
 
 # Install CakePHP dependencies (if composer.json exists)
 RUN if [ -f composer.json ]; then \
         composer install --no-dev --optimize-autoloader --no-interaction; \
     fi
 
+# 2. Fix permissions (FPM runs as www-data)
+RUN mkdir -p app/tmp && mkdir -p app/logs && \
+    chown -R www-data:www-data . && \
+    chmod -R 775 app/tmp && \
+    chmod -R 775 app/logs && \
+    # 3. Configure PHP-FPM for CakePHP
+    echo "php_admin_value[error_log] = /var/www/cakephp/app/logs/php-fpm.log" >> /usr/local/etc/php-fpm.d/www.conf && \
+    echo "php_admin_flag[log_errors] = on" >> /usr/local/etc/php-fpm.d/www.conf
+
+
 RUN \
-# BEGIN DOCKER_BUILDKIT
-    --mount=type=secret,id=DB_PASSWORD \
-    --mount=type=secret,id=DB_ROOT_PASSWORD \
-    # END DOCKER_BUILDKIT
-    export MYSQL_PASSWORD=$(cat /run/secrets/DB_PASSWORD) && \
-    export MYSQL_ROOT_PASSWORD=$(cat /run/secrets/DB_ROOT_PASSWORD)
+### BUILDKIT BEGIN
+    --mount=type=secret,id=security_salt,target=/run/secrets/security_salt \
+    --mount=type=secret,id=mysql_password,target=/run/secrets/mysql_password \
+    ### BUILDKIT END
+ if [ -f /run/secrets/security_salt ]; then \
+        export SECURITY_SALT=$(cat /run/secrets/security_salt); \
+        echo "Secret loaded"; \
+    fi; \
+ if [ -f /run/secrets/mysql_password ]; then \
+        export MYSQL_PASSWORD=$(cat /run/secrets/mysql_password); \
+        echo "Secret loaded"; \
+    fi
 
 EXPOSE 9000
 
