@@ -80,7 +80,7 @@ services:
       /bin/sh -c "
       /wait-for-it.sh cropper 5000 &&
       /wait-for-it.sh mysqldb 3306 &&
-      until [ -f /var/www/html/webroot/index.php ]; then
+      until [ -f /var/www/html/webroot/index.php ]; do
         sleep 1
       done
       php-fpm -F
