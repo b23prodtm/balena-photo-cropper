@@ -6,7 +6,7 @@ services:
   nginx:
     build:
       context: ./nginx
-      dockerfile: Dockerfile.aarch64
+      dockerfile: Dockerfile.armhf
     ports:
     - "8080:80"    # HTTP redirect
     - "8443:443"    # HTTPS
@@ -24,13 +24,14 @@ services:
   init-web:
     build:
       context: ./web
-      dockerfile: Dockerfile.aarch64
+      dockerfile: Dockerfile.armhf
     restart: "no"
     command: >
       sh -c '
         if [ ! -f /var/www/html/.initialized ]; then
           echo "Initializing CakePHP volume..."
-          cp -a /var/www/cakephp/. /var/www/html/
+          cp -a /var/www/cakephp/app/. /var/www/html/
+          cp -a /var/www/cakephp/vendor /var/www/html/
           chown -R www-data:www-data /var/www/html
           touch /var/www/html/.initialized
           echo "Done."
@@ -46,7 +47,7 @@ services:
   web:
     build:
       context: ./web
-      dockerfile: Dockerfile.aarch64
+      dockerfile: Dockerfile.armhf
     environment:
       PHP_FPM_PM: ondemand
       PHP_FPM_MAX_CHILDREN: 2
@@ -79,7 +80,7 @@ services:
       /bin/sh -c "
       /wait-for-it.sh cropper 5000 &&
       /wait-for-it.sh mysqldb 3306 &&
-      until [ -f /var/www/html/.initialized ]; then
+      until [ -f /var/www/html/webroot/index.php ]; then
         sleep 1
       done
       php-fpm -F
@@ -95,7 +96,7 @@ services:
   mysqldb:
     build:
       context: ./mysqldb
-      dockerfile: Dockerfile.aarch64
+      dockerfile: Dockerfile.armhf
     ports:
       - "3306:3306"
     environment:
@@ -110,7 +111,7 @@ services:
   cropper:
     build:
       context: ./cropper
-      dockerfile: Dockerfile.aarch64
+      dockerfile: Dockerfile.armhf
     ports:
       - "5000:5000"
     environment:
