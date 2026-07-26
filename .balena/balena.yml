@@ -8,3 +8,5 @@ build-secrets:
       dest: SSL_KEY
     - source: ssl_crt
       dest: SSL_CRT
+    - source: security_salt
+      dest: SECURITY_SALT

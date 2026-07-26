@@ -7,6 +7,7 @@ use Cake\Log\Engine\FileLog;
 use Cake\Mailer\Transport\MailTransport;
 use function Cake\Core\env;
 
+$securitySaltFile = env('SECURITY_SALT_FILE', '/run/secrets/SECURITY_SALT');
 $mysqlPasswordFile = env('MYSQL_PASSWORD_FILE', '/run/secrets/MYSQL_PASSWORD');
 
 return [
@@ -56,8 +57,8 @@ return [
         'encoding' => env('APP_ENCODING', 'UTF-8'),
         'base' => false,
         'baseUrl' => env('SCRIPT_NAME'),
-        'dir' => APP_DIR,
-        'webroot' => WEBROOT_DIR,
+        'dir' => 'app',
+        'webroot' => 'webroot',
         'wwwRoot' => WWW_ROOT,
         'fullBaseUrl' => false,
         'imageBaseUrl' => 'img/',
@@ -78,7 +79,7 @@ return [
      *   You should treat it as extremely sensitive data.
      */
     'Security' => [
-        'salt' => env('SECURITY_SALT'),
+        'salt' => is_readable($securitySaltFile) ? trim(file_get_contents($securitySaltFile)) : env('SECURITY_SALT', ''),
     ],
 
     /*

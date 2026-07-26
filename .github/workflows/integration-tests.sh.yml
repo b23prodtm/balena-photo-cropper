@@ -243,7 +243,7 @@ jobs:
       if: always()
       run: |
         echo "## 🧪 Integration Test Results" >> $GITHUB_STEP_SUMMARY
-        if [ "${{ steps.integration-tests.outcome }}" == "success" ]; then
+        if [ "${{ steps.integration-tests.outcome }}" = "success" ]; then
           echo "✅ All tests passed!" >> $GITHUB_STEP_SUMMARY
           echo "- Flask API routes" >> $GITHUB_STEP_SUMMARY
           echo "- CakePHP web routes" >> $GITHUB_STEP_SUMMARY
