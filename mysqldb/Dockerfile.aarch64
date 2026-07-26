@@ -44,8 +44,8 @@ RUN apk update \
     && apk del build-base \
     && rm -rf /var/cache/apk/*
 
-RUN chmod 1755 mysql_secure_shell \
-    && ./mysql_secure_shell
+COPY mysql_secure_shell /usr/local/bin/mysql_secure_shell
+RUN chmod 755 /usr/local/bin/mysql_secure_shell
 
 # This script runs ONCE at first container start, using runtime env vars
 COPY init-db.sh /docker-entrypoint-initdb.d/init-db.sh
