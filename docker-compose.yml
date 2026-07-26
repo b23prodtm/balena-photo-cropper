@@ -6,7 +6,10 @@ services:
   nginx:
     build:
       context: ./nginx
-      dockerfile: Dockerfile.aarch64
+      dockerfile: Dockerfile.armhf
+      environment:
+        SSL_CRT_FILE: /run/secrets/SSL_CRT
+        SSL_KEY_FILE: /run/secrets/SSL_KEY
   ### BUILDKIT BEGIN
     secrets:
       - SSL_CRT
@@ -17,9 +20,6 @@ services:
     - "8443:443"    # HTTPS
     mem_limit: 64m
     mem_reservation: 32m
-    environment:
-      SSL_CRT_FILE: /run/secrets/SSL_CRT
-      SSL_KEY_FILE: /run/secrets/SSL_KEY
     restart: unless-stopped
     command:
       - /bin/sh
@@ -44,7 +44,7 @@ services:
   init-web:
     build:
       context: ./web
-      dockerfile: Dockerfile.aarch64
+      dockerfile: Dockerfile.armhf
     restart: "no"
     command:
       - /bin/sh
@@ -69,7 +69,7 @@ services:
   web:
     build:
       context: ./web
-      dockerfile: Dockerfile.aarch64
+      dockerfile: Dockerfile.armhf
   ### BUILDKIT BEGIN
     secrets:
       - MYSQL_PASSWORD
@@ -127,7 +127,7 @@ services:
   mysqldb:
     build:
       context: ./mysqldb
-      dockerfile: Dockerfile.aarch64
+      dockerfile: Dockerfile.armhf
   ### BUILDKIT BEGIN
     secrets:
       - MYSQL_PASSWORD
@@ -149,7 +149,7 @@ services:
   cropper:
     build:
       context: ./cropper
-      dockerfile: Dockerfile.aarch64
+      dockerfile: Dockerfile.armhf
     ports:
       - "5000:5000"
     environment:
