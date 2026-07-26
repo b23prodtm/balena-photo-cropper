@@ -7,6 +7,8 @@ use Cake\Log\Engine\FileLog;
 use Cake\Mailer\Transport\MailTransport;
 use function Cake\Core\env;
 
+$mysqlPasswordFile = env('MYSQL_PASSWORD_FILE', '/run/secrets/MYSQL_PASSWORD');
+
 return [
     /*
      * Debug Level:
@@ -324,7 +326,7 @@ return [
             
             'host' => env('DB_HOST', 'mysqldb'),
             'username' => env('DB_USER', 'cake_user'),
-            'password' => env('MYSQL_PASSWORD', file_get_contents('/run/secrets/MYSQL_PASSWORD')),
+            'password' => is_readable($mysqlPasswordFile) ? trim(file_get_contents($mysqlPasswordFile)) : env('MYSQL_PASSWORD', ''),
             'database' => env('DB_NAME', 'cake_db'),
             'port' => '3306',
         ],
