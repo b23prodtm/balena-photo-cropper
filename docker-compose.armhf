@@ -7,11 +7,11 @@ services:
     build:
       context: ./nginx
       dockerfile: Dockerfile.armhf
-# BUILDKIT BEGIN
-# secrets:
-# - SSL_CRT
-# - SSL_KEY
-# BUILDKIT END
+  ### BUILDKIT BEGIN
+    secrets:
+      - SSL_CRT
+      - SSL_KEY
+  ### BUILDKIT END
     ports:
     - "8080:80"    # HTTP redirect
     - "8443:443"    # HTTPS
@@ -39,7 +39,7 @@ services:
       - /bin/sh
       - -c
       - |
-        if [ ! -f /var/www/html/webroot/index.php ]; then
+        if [ ! -f /var/www/html/app/webroot/index.php ]; then
           echo "Initializing CakePHP volume..."
 
           cp -a /var/www/cakephp/. /var/www/html/
@@ -58,10 +58,10 @@ services:
     build:
       context: ./web
       dockerfile: Dockerfile.armhf
-# BUILDKIT BEGIN
-# secrets:
-# - MYSQL_PASSWORD
-# BUILDKIT END
+  ### BUILDKIT BEGIN
+    secrets:
+      - MYSQL_PASSWORD
+  ### BUILDKIT END
     environment:
       DEBUG: "true"
       APP_DEFAULT_TIMEZONE: Europe/Paris
@@ -118,11 +118,11 @@ services:
     build:
       context: ./mysqldb
       dockerfile: Dockerfile.armhf
-# BUILDKIT BEGIN
-# secrets:
-# - MYSQL_PASSWORD
-# - MYSQL_ROOT_PASSWORD
-# BUILDKIT END
+  ### BUILDKIT BEGIN
+    secrets:
+      - MYSQL_PASSWORD
+      - MYSQL_ROOT_PASSWORD
+  ### BUILDKIT END
     ports:
       - "3306:3306"
     environment:
@@ -172,14 +172,14 @@ volumes:
 networks:
   cakephp-network:
     driver: bridge
-# BUILDKIT BEGIN
-# secrets:
-# MYSQL_PASSWORD:
-# file: .balena/secrets/mysql_password
-# MYSQL_ROOT_PASSWORD:
-# file: .balena/secrets/mysql_root_password
-# SSL_CRT:
-# file: .balena/secrets/ssl_crt
-# SSL_KEY:
-# file: .balena/secrets/ssl_key
-# BUILDKIT END
+### BUILDKIT BEGIN
+secrets:
+  MYSQL_PASSWORD:
+    file: .balena/secrets/mysql_password
+  MYSQL_ROOT_PASSWORD:
+    file: .balena/secrets/mysql_root_password
+  SSL_CRT:
+    file: .balena/secrets/ssl_crt
+  SSL_KEY:
+    file: .balena/secrets/ssl_key
+### BUILDKIT END

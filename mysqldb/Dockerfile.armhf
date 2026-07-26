@@ -18,17 +18,17 @@ ENV MYSQL_BIND_ADDRESS=${MYSQL_BIND_ADDRESS:-0.0.0.0}
 # They must be provided via: docker buildx build --secret id=mytoken,src=.balena/secrets/secret_mytoken
 COPY . .
 RUN \
-# BUILDKIT BEGIN
-#  --mount=type=secret,id=mysql_password,target=/run/secrets/MYSQL_PASSWORD \
-#  --mount=type=secret,id=mysql_root_password,target=/run/secrets/MYSQL_ROOT_PASSWORD \
-# BUILDKIT END
+### BUILDKIT BEGIN
+    --mount=type=secret,id=mysql_password,target=/run/secrets/MYSQL_PASSWORD \
+    --mount=type=secret,id=mysql_root_password,target=/run/secrets/MYSQL_ROOT_PASSWORD \
+    ### BUILDKIT END
     if [ -f /run/secrets/MYSQL_PASSWORD ]; then \
         export MYSQL_PASSWORD=$(cat /run/secrets/MYSQL_PASSWORD); \
         echo "Secret loaded"; \
     fi; \
     if [ -f /run/secrets/MYSQL_ROOT_PASSWORD ]; then \
-       export MYSQL_ROOT_PASSWORD=$(cat /run/secrets/MYSQL_ROOT_PASSWORD) \
-    echo "Secret loaded"; \
+        export MYSQL_ROOT_PASSWORD=$(cat /run/secrets/MYSQL_ROOT_PASSWORD); \
+        echo "Secret loaded"; \
     fi
 COPY conf.d/my.cnf /etc/my.cnf.d/my.cnf
 RUN sed -i.bind "/bind-address/s/=.*$/= ${MYSQL_BIND_ADDRESS}/" /etc/my.cnf.d/my.cnf
