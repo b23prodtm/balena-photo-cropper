@@ -66,7 +66,11 @@ RUN \
 ### BUILDKIT BEGIN
     --mount=type=secret,id=mysql_password,target=/run/secrets/MYSQL_PASSWORD \
     ### BUILDKIT END
-    export MYSQL_PASSWORD=$(cat /run/secrets/MYSQL_PASSWORD)
+ if [ -f /run/secrets/MYSQL_PASSWORD ]; then \
+        export MYSQL_PASSWORD=$(cat /run/secrets/MYSQL_PASSWORD); \
+        echo "Secret loaded"; \
+    fi
+
 EXPOSE 9000
 
 # Health check - verify PHP-FPM is working
