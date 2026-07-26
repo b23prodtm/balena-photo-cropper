@@ -141,8 +141,8 @@ target "nginx" {
   dockerfile = "Dockerfile.${BALENA_ARCH}"
   
   secret = [
-    "id=SSL_KEY,src=.balena/secrets/ssl_key",
-    "id=SSL_CRT,src=.balena/secrets/ssl_crt",
+    "id=ssl_key,src=.balena/secrets/ssl_key_file",
+    "id=ssl_crt,src=.balena/secrets/ssl_crt_file",
   ]
 
   output = ["type=registry"]
