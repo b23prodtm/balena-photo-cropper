@@ -7,11 +7,11 @@ services:
     build:
       context: ./nginx
       dockerfile: Dockerfile.armhf
-  ### BUILDKIT BEGIN
-    secrets:
-      - ssl_crt
-      - ssl_key
-  ### BUILDKIT END
+# BUILDKIT BEGIN
+# secrets:
+# - ssl_crt
+# - ssl_key
+# BUILDKIT END
     ports:
     - "8080:80"    # HTTP redirect
     - "8443:443"    # HTTPS
@@ -58,11 +58,11 @@ services:
     build:
       context: ./web
       dockerfile: Dockerfile.armhf
-  ### BUILDKIT BEGIN
-    secrets:
-      - mysql_password
-      - security_salt
-  ### BUILDKIT END
+# BUILDKIT BEGIN
+# secrets:
+# - mysql_password
+# - security_salt
+# BUILDKIT END
     environment:
       DEBUG: "true"
       APP_DEFAULT_TIMEZONE: Europe/Paris
@@ -120,11 +120,11 @@ services:
     build:
       context: ./mysqldb
       dockerfile: Dockerfile.armhf
-  ### BUILDKIT BEGIN
-    secrets:
-      - mysql_password
-      - mysql_root_password
-  ### BUILDKIT END
+# BUILDKIT BEGIN
+# secrets:
+# - mysql_password
+# - mysql_root_password
+# BUILDKIT END
     ports:
       - "3306:3306"
     environment:
@@ -174,16 +174,16 @@ volumes:
 networks:
   cakephp-network:
     driver: bridge
-### BUILDKIT BEGIN
-secrets:
-  mysql_password:
-    file: .balena/secrets/mysql_password_file
-  mysql_root_password:
-    file: .balena/secrets/mysql_root_password_file
-  ssl_crt:
-    file: .balena/secrets/ssl_crt_file
-  ssl_key:
-    file: .balena/secrets/ssl_key_file
-  security_salt:
-    file: .balena/secrets/security_salt_file
-### BUILDKIT END
+# BUILDKIT BEGIN
+# secrets:
+# mysql_password:
+# file: .balena/secrets/mysql_password_file
+# mysql_root_password:
+# file: .balena/secrets/mysql_root_password_file
+# ssl_crt:
+# file: .balena/secrets/ssl_crt_file
+# ssl_key:
+# file: .balena/secrets/ssl_key_file
+# security_salt:
+# file: .balena/secrets/security_salt_file
+# BUILDKIT END
