@@ -21,6 +21,7 @@ services:
     networks:
       - cakephp-network
 
+  # Web Service - PHP-FPM CakePHP
   init-web:
     build:
       context: ./web
@@ -46,7 +47,6 @@ services:
       - web_data:/var/www/html
     networks:
       - cakephp-network
-  # Web Service - PHP-FPM CakePHP
   web:
     build:
       context: ./web
