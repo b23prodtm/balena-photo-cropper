@@ -64,6 +64,8 @@ services:
       - MYSQL_PASSWORD
   ### BUILDKIT END
     environment:
+      DEBUG: "true"
+      APP_DEFAULT_TIMEZONE: Europe/Paris
       PHP_FPM_PM: ondemand
       PHP_FPM_MAX_CHILDREN: 2
       PHP_FPM_MAX_REQUESTS: 100
