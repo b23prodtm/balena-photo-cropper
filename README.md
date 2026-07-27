@@ -35,10 +35,54 @@ tools/launcher.command tests/images/test_image.jpg --output result.jpg
 tools/launcher.bat tests/images/test_image.jpg --output result.jpg
 ```
 
-## 🚀 Installation
+## 🔐 `.balena/secrets` setup (Linux/macOS)
+
+Create the secrets directory:
+
+```bash
+mkdir -p .balena/secrets
+```
+
+Create each secret file, then write the value into it:
+
+```bash
+touch .balena/secrets/mysql_root_password_file
+printf '%s' 'som@PAssword)' > .balena/secrets/mysql_root_password_file
+chmod 600 .balena/secrets/mysql_root_password_file
+```
+
+Example for app MySQL password:
+
+```bash
+touch .balena/secrets/mysqlpassword_file
+printf '%s' 'anotherStrongPassword123!' > .balena/secrets/mysqlpassword_file
+chmod 600 .balena/secrets/mysqlpassword_file
+```
+
+Generate HTTPS self-signed cert/key as secret files:
+
+```bash
+openssl req -x509 -newkey rsa:4096 \
+  -keyout .balena/secrets/ssl_key_file \
+  -out .balena/secrets/ssl_cert_file \
+  -days 365 -nodes \
+  -subj "/CN=localhost"
+chmod 600 .balena/secrets/ssl_key_file .balena/secrets/ssl_cert_file
+```
+
+Optional check:
+
+```bash
+ls -la .balena/secrets
+```
+
+> Do not commit `.balena/secrets/*` to git.
+
+## 🚀 Deployment in Balena Cloud Fleets
 
 1. **Clone via SSH** : `git clone git@github.com:votre-utilisateur/balena-photo-cropper.git`
-2. **Push vers Balena** : `node_modules/.bin/balena_deploy ./`
-
+2. **Install balena CLI** : `sudo npm -g install balena-cli`
+3. **Login to balenaCloud** : `balena login`
+4. **Push to Balena** : `balena push <your_fleet_name>`
 ---
 **Author**: [www.b23prodtm.info](https://www.b23prodtm.info) | **License**: Apache v2
