@@ -83,6 +83,15 @@ ls -la .balena/secrets
 1. **Clone via SSH** : `git clone git@github.com:votre-utilisateur/balena-photo-cropper.git`
 2. **Install balena CLI** : `sudo npm -g install balena-cli`
 3. **Login to balenaCloud** : `balena login`
-4. **Push to Balena** : `balena push <your_fleet_name>`
+4. **Update templates** : `node_modules/.bin/balena_deploy update_templates`
+5. **Fix architecture symlink** *(if you see `data should NOT have additional properties`)*:
+
+   ```bash
+   ln -sf docker-compose.armhf docker-compose.yml
+   ```
+
+   Replace `armhf` with the architecture you are deploying to (`armhf`, `aarch64`, or `x86_64`).
+
+6. **Push to Balena** : `balena push <your_fleet_name>`
 ---
 **Author**: [www.b23prodtm.info](https://www.b23prodtm.info) | **License**: Apache v2
