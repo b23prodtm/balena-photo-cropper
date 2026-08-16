@@ -83,6 +83,12 @@ ls -la .balena/secrets
 1. **Clone via SSH** : `git clone git@github.com:votre-utilisateur/balena-photo-cropper.git`
 2. **Install balena CLI** : `sudo npm -g install balena-cli`
 3. **Login to balenaCloud** : `balena login`
-4. **Push to Balena** : `balena push <your_fleet_name>`
+4. **Push to Balena** : `balena push <your_fleet_name>` or `balena_deploy .`
+
+### When you see the message "data should NOT have additional properties"
+
+That error occurs because unsupported docker `secrets:` declaration in the compose file, link the target architecture compose file commented out any BUILDKIT blocks, e.g. for ARMv7 (armhf) : `update_templates && ln -sf docker-compose.armhf docker-compose.yml`
+[Build Time secrets](https://docs.balena.io/learn/more/masterclasses/cli-masterclass#id-8.1-build-time-secrets)
+
 ---
 **Author**: [www.b23prodtm.info](https://www.b23prodtm.info) | **License**: Apache v2
