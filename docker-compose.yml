@@ -6,7 +6,7 @@ services:
   nginx:
     build:
       context: ./nginx
-      dockerfile: Dockerfile.aarch64
+      dockerfile: Dockerfile.armhf
   ### BUILDKIT BEGIN
     secrets:
       - ssl_crt
@@ -57,7 +57,7 @@ services:
   web:
     build:
       context: ./web
-      dockerfile: Dockerfile.aarch64
+      dockerfile: Dockerfile.armhf
   ### BUILDKIT BEGIN
     secrets:
       - mysql_password
@@ -119,7 +119,7 @@ services:
   mysqldb:
     build:
       context: ./mysqldb
-      dockerfile: Dockerfile.aarch64
+      dockerfile: Dockerfile.armhf
   ### BUILDKIT BEGIN
     secrets:
       - mysql_password
