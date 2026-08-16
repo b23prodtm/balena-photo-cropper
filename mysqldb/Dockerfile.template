@@ -33,6 +33,19 @@ RUN apk update \
 
 COPY mysql_secure_shell /usr/local/bin/mysql_secure_shell
 RUN chmod 755 /usr/local/bin/mysql_secure_shell
+RUN \
+### BUILDKIT BEGIN
+    --mount=type=secret,id=mysql_password,target=/run/secrets/mysql_password \
+    --mount=type=secret,id=mysql_root_password,target=/run/secrets/mysql_root_password \
+    ### BUILDKIT END
+    if [ -f /run/secrets/mysql_password ]; then \
+        export MYSQL_PASSWORD_FILE=$(cat /run/secrets/mysql_password); \
+        echo "Secret file loaded"; \
+    fi; \
+    if [ -f /run/secrets/mysql_root_password ]; then \
+        export MYSQL_ROOT_PASSWORD_FILE=$(cat /run/secrets/mysql_root_password); \
+        echo "Secret file loaded"; \
+    fi
 COPY verify-secrets.sh /usr/local/bin/verify-secrets.sh
 RUN chmod 755 /usr/local/bin/verify-secrets.sh
 
