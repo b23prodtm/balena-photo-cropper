@@ -7,3 +7,6 @@
 .DS_Store
 *.crt
 *.key
+*.log
+/env/
+/node_modules/
