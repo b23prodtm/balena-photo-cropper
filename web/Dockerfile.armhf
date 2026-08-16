@@ -28,7 +28,6 @@ RUN apk add --no-cache \
     bash \
     curl \
     netcat-openbsd \
-    php84-intl \
     imagemagick-dev \
     shadow
 
@@ -54,21 +53,23 @@ RUN if [ -f composer.json ]; then \
     fi
 
 # 2. Fix permissions (FPM runs as www-data)
-RUN mkdir -p app/tmp && mkdir -p app/logs && \
+RUN mkdir -p tmp && mkdir -p logs && \
     chown -R www-data:www-data . && \
-    chmod -R 775 app/tmp && \
-    chmod -R 775 app/logs && \
-    touch /var/www/cakephp/app/logs/php-fpm.log && \
+    chmod -R 775 tmp && \
+    chmod -R 775 logs && \
     # 3. Configure PHP-FPM for CakePHP
-    echo "php_admin_value[error_log] = /var/www/cakephp/app/logs/php-fpm.log" >> /usr/local/etc/php-fpm.d/www.conf && \
-    echo "php_admin_flag[log_errors] = on" >> /usr/local/etc/php-fpm.d/www.conf
+    echo "php_admin_flag[log_errors] = on" >> /usr/local/etc/php-fpm.d/www.conf && \
+    echo "php_admin_value[error_log] = /proc/self/fd/2" >> /usr/local/etc/php-fpm.d/www.conf && \
+    # 4. Redirect FPM master process log to container stderr (docker/balena logs)
+    echo "[global]" > /usr/local/etc/php-fpm.d/zz-log.conf && \
+    echo "error_log = /proc/self/fd/2" >> /usr/local/etc/php-fpm.d/zz-log.conf
 
 
 RUN \
-### BUILDKIT BEGIN
-    --mount=type=secret,id=security_salt,target=/run/secrets/security_salt \
-    --mount=type=secret,id=mysql_password,target=/run/secrets/mysql_password \
-    ### BUILDKIT END
+# BUILDKIT BEGIN
+#  --mount=type=secret,id=security_salt,target=/run/secrets/security_salt \
+#  --mount=type=secret,id=mysql_password,target=/run/secrets/mysql_password \
+# BUILDKIT END
  if [ -f /run/secrets/security_salt ]; then \
         export SECURITY_SALT=$(cat /run/secrets/security_salt); \
         echo "Secret loaded"; \
