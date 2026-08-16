@@ -91,13 +91,13 @@ ls -la .balena/secrets
 npm install
 ```
 
-Then update Balena templates and link the ARMHF compose file:
+Then update Balena templates and link the compose file for your target architecture:
 
 ```bash
 update_templates && ln -sf docker-compose.armhf docker-compose.yml
 ```
 
-> Example above is for the **ARMHF** architecture.
+> Replace `armhf` with the architecture you deploy to: `armhf`, `aarch64`, or `x86_64`.
 
 4. **Push to Balena** : `balena push <your_fleet_name>` or `balena_deploy .`
 
