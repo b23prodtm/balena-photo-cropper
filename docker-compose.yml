@@ -120,11 +120,11 @@ services:
     build:
       context: ./mysqldb
       dockerfile: Dockerfile.armhf
-  ### BUILDKIT BEGIN
-    secrets:
-      - mysql_password
-      - mysql_root_password
-  ### BUILDKIT END
+### BUILDKIT BEGIN
+#    secrets:
+#     - mysql_password
+#      - mysql_root_password
+### BUILDKIT END
     ports:
       - "3306:3306"
     environment:
