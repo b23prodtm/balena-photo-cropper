@@ -7,7 +7,8 @@ set -e
 
 # Fail fast if any required secret is missing
 for var in MYSQL_ROOT_PASSWORD MYSQL_USER MYSQL_PASSWORD MYSQL_DATABASE; do
-  if [ -z "$var" ]; then
+  eval val=\${$var:-}
+  if [ -z "$val" ]; then
     echo "ERROR: $var is not set. Secrets must be provided at runtime."
     exit 1
   fi
