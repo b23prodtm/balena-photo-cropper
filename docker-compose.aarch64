@@ -13,8 +13,8 @@ services:
       - ssl_key
   ### BUILDKIT END
     ports:
-    - "8080:80"    # HTTP redirect
-    - "8443:443"    # HTTPS
+    - "80:80"    # HTTP redirect
+    - "43:443"    # HTTPS
     mem_limit: 64m
     mem_reservation: 32m
     environment:
