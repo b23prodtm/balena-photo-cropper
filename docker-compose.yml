@@ -141,7 +141,7 @@ services:
   cropper:
     build:
       context: ./cropper
-      dockerfile: Dockerfile.x86_64
+      dockerfile: Dockerfile.aarch64
     ports:
       - "5000:5000"
     environment:
