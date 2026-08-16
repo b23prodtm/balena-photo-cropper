@@ -23,13 +23,14 @@ RUN \
     --mount=type=secret,id=mysql_root_password,target=/run/secrets/mysql_root_password \
     ### BUILDKIT END
     if [ -f /run/secrets/mysql_password ]; then \
-        export MYSQL_PASSWORD=$(cat /run/secrets/mysql_password); \
-        echo "Secret loaded"; \
+        export MYSQL_PASSWORD_FILE=$(cat /run/secrets/mysql_password); \
+        echo "Secret file loaded"; \
     fi; \
     if [ -f /run/secrets/mysql_root_password ]; then \
-        export MYSQL_ROOT_PASSWORD=$(cat /run/secrets/mysql_root_password); \
-        echo "Secret loaded"; \
+        export MYSQL_ROOT_PASSWORD_FILE=$(cat /run/secrets/mysql_root_password); \
+        echo "Secret file loaded"; \
     fi
+
 COPY conf.d/my.cnf /etc/my.cnf.d/my.cnf
 RUN sed -i.bind "/bind-address/s/=.*$/= ${MYSQL_BIND_ADDRESS}/" /etc/my.cnf.d/my.cnf
 RUN sed -i.user "/user/s/=.*$/= ${USER}/" /etc/my.cnf.d/my.cnf
@@ -46,6 +47,8 @@ RUN apk update \
 
 COPY mysql_secure_shell /usr/local/bin/mysql_secure_shell
 RUN chmod 755 /usr/local/bin/mysql_secure_shell
+COPY verify-secrets.sh /usr/local/bin/verify-secrets.sh
+RUN chmod 755 /usr/local/bin/verify-secrets.sh
 
 # This script runs ONCE at first container start, using runtime env vars
 COPY init-db.sh /docker-entrypoint-initdb.d/init-db.sh
@@ -55,3 +58,6 @@ RUN chmod 755 /docker-entrypoint-initdb.d/init-db.sh
 RUN cat mariadb.ans
 
 VOLUME /var/run/mysqld
+
+# Keep upstream entrypoint behavior, but verify runtime secret wiring first.
+CMD ["/bin/sh", "-lc", "/usr/local/bin/verify-secrets.sh mysqldb; exec docker-entrypoint.sh mysqld"]
