@@ -60,4 +60,4 @@ RUN cat mariadb.ans
 VOLUME /var/run/mysqld
 
 # Keep upstream entrypoint behavior, but verify runtime secret wiring first.
-CMD ["/bin/sh", "-lc", "/usr/local/bin/verify-secrets.sh mysqldb; exec docker-entrypoint.sh mysqld"]
+ENTRYPOINT ["/bin/sh", "-lc", "/usr/local/bin/verify-secrets.sh mysqldb; exec /init"]
