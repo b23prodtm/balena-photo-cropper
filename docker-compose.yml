@@ -1,4 +1,3 @@
-# Mandatory for Balena Cloud Services compatibility
 version: '2.1'
 
 services:
@@ -7,69 +6,35 @@ services:
     build:
       context: ./nginx
       dockerfile: Dockerfile.armhf
-# BUILDKIT BEGIN
-# secrets:
-# - ssl_crt
-# - ssl_key
-# BUILDKIT END
     ports:
     - "8080:80"    # HTTP redirect
     - "8443:443"    # HTTPS
     mem_limit: 64m
     mem_reservation: 32m
-    environment:
-      SSL_CRT_FILE: /run/secrets/ssl_crt
-      SSL_KEY_FILE: /run/secrets/ssl_key
     restart: unless-stopped
+    # PR #9: attend que web soit prêt avant de servir
+    command: ["/wait-for-it.sh", "web", "9000"]
+# BEGIN DOCKER_BUILDKIT
+    secrets:
+      - SSL_KEY
+      - SSL_CRT
+# END DOCKER_BUILDKIT
     depends_on:
       - web
       - cropper
-    volumes:
-      - web_data:/var/www/html:ro
     networks:
       - cakephp-network
 
   # Web Service - PHP-FPM CakePHP
-  init-web:
-    build:
-      context: ./web
-      dockerfile: Dockerfile.armhf
-    restart: "no"
-    command:
-      - /bin/sh
-      - -c
-      - |
-        if [ ! -f /var/www/html/app/webroot/index.php ]; then
-          echo "Initializing CakePHP volume..."
-
-          cp -a /var/www/cakephp/. /var/www/html/
-
-          chown -R www-data:www-data /var/www/html
-
-          echo "CakePHP initialized"
-        else
-          echo "CakePHP already initialized"
-        fi
-    volumes:
-      - web_data:/var/www/html
-    networks:
-      - cakephp-network
   web:
     build:
       context: ./web
       dockerfile: Dockerfile.armhf
-# BUILDKIT BEGIN
-# secrets:
-# - mysql_password
-# - security_salt
-# BUILDKIT END
     environment:
-      DEBUG: "true"
-      APP_DEFAULT_TIMEZONE: Europe/Paris
       PHP_FPM_PM: ondemand
       PHP_FPM_MAX_CHILDREN: 2
       PHP_FPM_MAX_REQUESTS: 100
-      DB_HOST: mysqldb
+      DB_HOST: db
       DB_NAME: cake_db
       DB_USER: cake_user
       # Runtime
@@ -84,31 +49,17 @@ services:
       
       # Performance
       WORKERS: "4"
-      TIMEOUT: "30"      
-      MYSQL_PASSWORD_FILE: /run/secrets/mysql_password
-      SECURITY_SALT_FILE: /run/secrets/security_salt
+      TIMEOUT: "30"
     mem_limit: 128m
     mem_reservation: 64m
     restart: unless-stopped
-    depends_on:
-      - init-web
-      - cropper
-      - mysqldb
     # PR #9: attend que cropper Flask soit ready
-    command:
-      - /bin/sh
-      - -c
-      - |
-        /wait-for-it.sh cropper 5000
-        /wait-for-it.sh mysqldb 3306
-
-        until [ -f /var/www/html/app/webroot/index.php ]; do
-          echo "Waiting for CakePHP initialization..."
-          sleep 1
-        done
-
-        exec php-fpm -F
-    volumes:
+    command: ["/bin/sh", "-c", "/wait-for-it.sh cropper 5000 sh -c '/wait-for-it.sh db 3306 php-fpm -F'"]
+# BEGIN DOCKER_BUILDKIT
+    secrets:
+      - MYSQL_PASSWORD
+# END DOCKER_BUILDKIT
+volumes:
       - web_data:/var/www/html
       - cropper_uploads:/app/uploads
       - cropper_cache:/tmp
@@ -120,23 +71,23 @@ services:
     build:
       context: ./mysqldb
       dockerfile: Dockerfile.armhf
-# BUILDKIT BEGIN
-# secrets:
-# - mysql_password
-# - mysql_root_password
-# BUILDKIT END
     ports:
       - "3306:3306"
     environment:
       MYSQL_DATABASE: cake_db
       MYSQL_USER: cake_user
-      MYSQL_PASSWORD_FILE: /run/secrets/mysql_password
-      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/mysql_root_password
+# BEGIN DOCKER_BUILDKIT
+    secrets:
+      - MYSQL_PASSWORD
+      - MYSQL_ROOT_PASSWORD
+# END DOCKER_BUILDKIT
     volumes:
       - db_data:/var/lib/mysql
       - db_init:/docker-entrypoint-initdb.d
     networks:
-      - cakephp-network
+      cakephp-network:
+        aliases:
+          - db
 
   cropper:
     build:
@@ -158,6 +109,8 @@ services:
 volumes:
   cropper-data:
     driver: local
+  cakephp_data:
+    driver: local
   db_data:
     driver: local
   db_init:
@@ -171,19 +124,18 @@ volumes:
   web_data:
     driver: local
 
+# BEGIN DOCKER_BUILDKIT
+secrets:
+  SSL_KEY:
+    file: ./.balena/secrets/ssl_key
+  SSL_CRT:
+    file: ./.balena/secrets/ssl_crt
+  MYSQL_PASSWORD:
+    file: ./.balena/secrets/mysql_password
+  MYSQL_ROOT_PASSWORD:
+    file: ./.balena/secrets/mysql_root_password
+# END DOCKER_BUILDKIT
+
 networks:
   cakephp-network:
     driver: bridge
-# BUILDKIT BEGIN
-# secrets:
-# mysql_password:
-# file: .balena/secrets/mysql_password_file
-# mysql_root_password:
-# file: .balena/secrets/mysql_root_password_file
-# ssl_crt:
-# file: .balena/secrets/ssl_crt_file
-# ssl_key:
-# file: .balena/secrets/ssl_key_file
-# security_salt:
-# file: .balena/secrets/security_salt_file
-# BUILDKIT END
