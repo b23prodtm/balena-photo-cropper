@@ -7,11 +7,11 @@ services:
     build:
       context: ./nginx
       dockerfile: Dockerfile.x86_64
-  ### BUILDKIT BEGIN
+### BUILDKIT BEGIN
     secrets:
       - ssl_crt
       - ssl_key
-  ### BUILDKIT END
+### BUILDKIT END
     ports:
     - "80:80"    # HTTP redirect
     - "43:443"    # HTTPS
@@ -58,11 +58,11 @@ services:
     build:
       context: ./web
       dockerfile: Dockerfile.x86_64
-  ### BUILDKIT BEGIN
+### BUILDKIT BEGIN
     secrets:
       - mysql_password
       - security_salt
-  ### BUILDKIT END
+### BUILDKIT END
     environment:
       DEBUG: "true"
       APP_DEFAULT_TIMEZONE: Europe/Paris
@@ -120,11 +120,11 @@ services:
     build:
       context: ./mysqldb
       dockerfile: Dockerfile.x86_64
-  ### BUILDKIT BEGIN
+### BUILDKIT BEGIN
     secrets:
       - mysql_password
       - mysql_root_password
-  ### BUILDKIT END
+### BUILDKIT END
     ports:
       - "3306:3306"
     environment:
