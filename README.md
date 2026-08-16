@@ -83,6 +83,22 @@ ls -la .balena/secrets
 1. **Clone via SSH** : `git clone git@github.com:votre-utilisateur/balena-photo-cropper.git`
 2. **Install balena CLI** : `sudo npm -g install balena-cli`
 3. **Login to balenaCloud** : `balena login`
+
+4. **Install project dependencies:**
+
+```bash
+# with npm
+npm install
+```
+
+Then update Balena templates and link the ARMHF compose file:
+
+```bash
+update_templates && ln -sf docker-compose.armhf docker-compose.yml
+```
+
+> Example above is for the **ARMHF** architecture.
+
 4. **Push to Balena** : `balena push <your_fleet_name>` or `balena_deploy .`
 
 ### When you see the message "data should NOT have additional properties"
