@@ -59,7 +59,10 @@ RUN mkdir -p tmp && mkdir -p logs && \
     chmod -R 775 logs && \
     # 3. Configure PHP-FPM for CakePHP
     echo "php_admin_flag[log_errors] = on" >> /usr/local/etc/php-fpm.d/www.conf && \
-    echo "php_admin_value[error_log] = /proc/self/fd/2" >> /usr/local/etc/php-fpm.d/www.conf
+    echo "php_admin_value[error_log] = /proc/self/fd/2" >> /usr/local/etc/php-fpm.d/www.conf && \
+    # 4. Redirect FPM master process log to container stderr (docker/balena logs)
+    echo "[global]" > /usr/local/etc/php-fpm.d/zz-log.conf && \
+    echo "error_log = /proc/self/fd/2" >> /usr/local/etc/php-fpm.d/zz-log.conf
 
 
 RUN \
