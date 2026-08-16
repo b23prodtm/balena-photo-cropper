@@ -28,7 +28,6 @@ RUN apk add --no-cache \
     bash \
     curl \
     netcat-openbsd \
-    php84-intl \
     imagemagick-dev \
     shadow
 
@@ -54,13 +53,16 @@ RUN if [ -f composer.json ]; then \
     fi
 
 # 2. Fix permissions (FPM runs as www-data)
-RUN mkdir -p app/tmp && mkdir -p app/logs && \
+RUN mkdir -p tmp && mkdir -p logs && \
     chown -R www-data:www-data . && \
-    chmod -R 775 app/tmp && \
-    chmod -R 775 app/logs && \
+    chmod -R 775 tmp && \
+    chmod -R 775 logs && \
     # 3. Configure PHP-FPM for CakePHP
-    echo "php_admin_value[error_log] = /var/www/cakephp/app/logs/php-fpm.log" >> /usr/local/etc/php-fpm.d/www.conf && \
-    echo "php_admin_flag[log_errors] = on" >> /usr/local/etc/php-fpm.d/www.conf
+    echo "php_admin_flag[log_errors] = on" >> /usr/local/etc/php-fpm.d/www.conf && \
+    echo "php_admin_value[error_log] = /proc/self/fd/2" >> /usr/local/etc/php-fpm.d/www.conf && \
+    # 4. Redirect FPM master process log to container stderr (docker/balena logs)
+    echo "[global]" > /usr/local/etc/php-fpm.d/zz-log.conf && \
+    echo "error_log = /proc/self/fd/2" >> /usr/local/etc/php-fpm.d/zz-log.conf
 
 
 RUN \
@@ -85,5 +87,8 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 
 COPY scripts/wait-for-it.sh /wait-for-it.sh
 RUN chmod 755 /wait-for-it.sh
+COPY scripts/verify-secrets.sh /usr/local/bin/verify-secrets.sh
+RUN chmod 755 /usr/local/bin/verify-secrets.sh
 
-CMD ["php-fpm", "-F"]
+# Verify runtime secret files/env wiring on startup (non-fatal warning mode in script).
+CMD ["/bin/sh", "-lc", "/usr/local/bin/verify-secrets.sh web; exec php-fpm -F"]
