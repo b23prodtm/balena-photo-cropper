@@ -66,10 +66,10 @@ RUN mkdir -p tmp && mkdir -p logs && \
 
 
 RUN \
-# BUILDKIT BEGIN
-#  --mount=type=secret,id=security_salt,target=/run/secrets/security_salt \
-#  --mount=type=secret,id=mysql_password,target=/run/secrets/mysql_password \
-# BUILDKIT END
+### BUILDKIT BEGIN
+    --mount=type=secret,id=security_salt,target=/run/secrets/security_salt \
+    --mount=type=secret,id=mysql_password,target=/run/secrets/mysql_password \
+    ### BUILDKIT END
  if [ -f /run/secrets/security_salt ]; then \
         export SECURITY_SALT=$(cat /run/secrets/security_salt); \
         echo "Secret loaded"; \
@@ -87,5 +87,8 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 
 COPY scripts/wait-for-it.sh /wait-for-it.sh
 RUN chmod 755 /wait-for-it.sh
+COPY scripts/verify-secrets.sh /usr/local/bin/verify-secrets.sh
+RUN chmod 755 /usr/local/bin/verify-secrets.sh
 
-CMD ["php-fpm", "-F"]
+# Verify runtime secret files/env wiring on startup (non-fatal warning mode in script).
+CMD ["/bin/sh", "-lc", "/usr/local/bin/verify-secrets.sh web; exec php-fpm -F"]
