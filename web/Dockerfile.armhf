@@ -66,10 +66,10 @@ RUN mkdir -p tmp && mkdir -p logs && \
 
 
 RUN \
-### BUILDKIT BEGIN
-    --mount=type=secret,id=security_salt,target=/run/secrets/security_salt \
-    --mount=type=secret,id=mysql_password,target=/run/secrets/mysql_password \
-    ### BUILDKIT END
+# BUILDKIT BEGIN
+#  --mount=type=secret,id=security_salt,target=/run/secrets/security_salt \
+#  --mount=type=secret,id=mysql_password,target=/run/secrets/mysql_password \
+# BUILDKIT END
  if [ -f /run/secrets/security_salt ]; then \
         export SECURITY_SALT=$(cat /run/secrets/security_salt); \
         echo "Secret loaded"; \
