@@ -30,10 +30,10 @@ RUN chmod 755 /wait-for-it.sh
 
 # Mount SSL secrets at build time (balena Cloud: provided via .balena/balena.yml)
 RUN \
-### BUILDKIT BEGIN
-    --mount=type=secret,id=ssl_key,target=/run/secrets/ssl_key \
-    --mount=type=secret,id=ssl_crt,target=/run/secrets/ssl_crt \
-    ### BUILDKIT END
+# BUILDKIT BEGIN
+#  --mount=type=secret,id=ssl_key,target=/run/secrets/ssl_key \
+#  --mount=type=secret,id=ssl_crt,target=/run/secrets/ssl_crt \
+# BUILDKIT END
     mkdir -p /etc/nginx/ssl && \
     if [ -f /run/secrets/ssl_key ] && [ -s /run/secrets/ssl_key ]; then \
         cp /run/secrets/ssl_key /etc/nginx/ssl/server.key; \
