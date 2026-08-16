@@ -240,6 +240,7 @@ jobs:
       run: |
         docker compose logs cropper || true
         docker compose logs web || true
+        docker compose logs mysqldb || true
         docker compose logs nginx || true
         [ -f test_output.log ] && cat test_output.log
 
