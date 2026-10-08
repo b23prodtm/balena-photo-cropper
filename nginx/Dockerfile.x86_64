@@ -17,7 +17,8 @@ RUN mkdir -p /var/www/html && mkdir -p /etc/nginx/conf.d && mkdir -p /etc/nginx/
 # Copy entrypoint and wait-for-it scripts
 COPY scripts/entrypoint.sh /entrypoint.sh
 COPY scripts/wait-for-it.sh /wait-for-it.sh
-RUN chmod 755 /entrypoint.sh /wait-for-it.sh
+COPY scripts/verify-secrets.sh /usr/local/bin/verify-secrets.sh
+RUN chmod 755 /entrypoint.sh /wait-for-it.sh /usr/local/bin/verify-secrets.sh
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
@@ -44,4 +45,4 @@ RUN \
 EXPOSE 80 443
 
 # Use entrypoint script for SSL certificate handling
-ENTRYPOINT ["/entrypoint.sh"]
+ENTRYPOINT ["/bin/sh", "-lc", "/usr/local/bin/verify-secrets.sh nginx; exec /entrypoint.sh"]

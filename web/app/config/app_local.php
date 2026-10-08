@@ -3,6 +3,24 @@
 use function Cake\Core\env;
 
 /*
+ * Read secret/config from KEY_FILE or KEY.
+ * Priority: KEY_FILE -> KEY -> default.
+ */
+if (!function_exists('env_or_file')) {
+    function env_or_file(string $key, $default = null)
+    {
+        $file = env($key . '_FILE', null);
+        if ($file && is_readable($file)) {
+            $value = trim((string)file_get_contents($file));
+            return $value !== '' ? $value : $default;
+        }
+
+        $value = env($key, null);
+        return $value !== null ? $value : $default;
+    }
+}
+
+/*
  * Local configuration file to provide any overrides to your app.php configuration.
  * Copy and save this file as app_local.php and make changes as required.
  * Note: It is not recommended to commit files with credentials such as app_local.php
@@ -28,7 +46,7 @@ return [
      *   You should treat it as extremely sensitive data.
      */
     'Security' => [
-        'salt' => env('SECURITY_SALT', '__SALT__'),
+        'salt' => env_or_file('SECURITY_SALT', '__SALT__'),
     ],
 
     /*
@@ -48,7 +66,7 @@ return [
             'port' => env('DB_PORT', 3306),
 
             'username' => env('DB_USER', 'my_app'),
-            'password' => env('DB_PASSWORD', 'secret'),
+            'password' => env_or_file('DB_PASSWORD', 'secret'),
 
             'database' => env('DB_NAME', 'my_app'),
             /*
@@ -70,7 +88,7 @@ return [
             'host' => env('DB_TEST_HOST', 'localhost'),
             //'port' => 'non_standard_port_number',
             'username' => env('DB_TEST_USERNAME', 'my_app'),
-            'password' => env('DB_TEST_PASSWORD', 'secret'),
+            'password' => env_or_file('DB_TEST_PASSWORD', 'secret'),
             'database' => env('DB_TEST_DATABASE', 'test_myapp'),
             //'schema' => 'myapp',
             'url' => env('DATABASE_TEST_URL', 'sqlite://127.0.0.1/tmp/tests.sqlite'),
@@ -89,7 +107,7 @@ return [
             'host' => env('EMAIL_HOST', 'localhost'),
             'port' => (int)env('EMAIL_PORT', 25),
             'username' => env('EMAIL_USERNAME', null),
-            'password' => env('EMAIL_PASSWORD', null),
+            'password' => env_or_file('EMAIL_PASSWORD', null),
             'client' => env('EMAIL_CLIENT', null),
             'url' => env('EMAIL_TRANSPORT_DEFAULT_URL', null),
         ],
