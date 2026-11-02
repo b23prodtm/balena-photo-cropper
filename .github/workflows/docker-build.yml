@@ -156,10 +156,33 @@ jobs:
               exit 1
           fi
           
-      - name: Deploy stack (Balena Cloud compatible - named volumes only)
+      # The armhf stack is built and run on the device itself, through balena
+      # (balena_deploy ... 1 = armhf, 2 = Balena Cloud flavour). It cannot be
+      # started with `docker compose up` on this x86_64 runner: that rebuilt every
+      # image from scratch with no platform, build args or build secrets.
+      # Here we only run the same template filtering as balena_deploy and
+      # validate what it generates.
+      - name: Generate Balena files for ${{ matrix.balena_arch }} (balena_deploy)
+        env:
+          DEBIAN_FRONTEND: noninteractive
         run: |
-          ln -sf docker-compose.${{ matrix.balena_arch }} docker-compose.yml
-          ln -sf ${{ matrix.balena_arch }}.env .env
-          # Only start Balena-compatible services (no bind mounts)
-          docker compose up -d  cropper init-web web mysqldb nginx
-          
+          npm ci --no-audit --no-fund
+          export PATH="$PWD/node_modules/.bin:$PATH"
+          export USER="${USER:-runner}"
+          mkdir -p "$HOME/.ssh"
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # Filters Dockerfile.template, docker-compose.template and <arch>.env
+          # (same as: balena_deploy ./ 1 2 0 for armhf). No balena CLI here, so
+          # the final push is skipped by the script.
+          balena_deploy ./ "${{ matrix.balena_arch }}" 2 0
+
+      - name: Validate generated Balena compose file
+        run: |
+          COMPOSE_FILE="docker-compose.${{ matrix.balena_arch }}"
+          docker compose -f "$COMPOSE_FILE" --env-file "${{ matrix.balena_arch }}.env" config -q
+          # Balena Cloud has no compose-level secrets (they come from .balena/balena.yml)
+          if grep -nE '^\s*secrets:' "$COMPOSE_FILE"; then
+            echo "::error::$COMPOSE_FILE still has a secrets block; Balena filter was not applied"
+            exit 1
+          fi
